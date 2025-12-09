@@ -1,0 +1,16 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3001",
+  "executionArgs": {
+    "projectName": "custom-hat-service",
+    "projectPath": "/Users/whs-95/Desktop/런하우스자료/custmom/custom-hat-service",
+    "testIds": [],
+    "additionalInstruction": "Ensure the HatCanvas image drag and drop works, and that changing colors in the sidebar updates the hat image. Also verify Admin login redirect.",
+    "envs": {
+      "API_KEY": "sk-user-wrCQ_zooW1_HBd5BSQRAFDQ3tRWnwBwcGllSgbgs7MsZVAEQauk10e97JsPLpoKxAWXMq-JuClqj6pIKTQZGoHABv8fykbdoE1LQy9vXR54imIkvGRWmoFPaX4bZlDjzTQ8"
+    }
+  },
+  "proxy": "http://8f7f3b26-d269-4055-86aa-6a3a4db95687:A66A9mNz1H9kzSg17h65WL52trPLtTqt@tun.testsprite.com:8080"
+}

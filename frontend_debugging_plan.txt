@@ -1,0 +1,58 @@
+RUNHOUSE FRONTEND DEBUGGING PLAN
+
+---------------------------------------------------
+1. STUDIO (CORE FEATURES)
+   The "Hat Customizer" is the critical path.
+
+   [ ] Drag & Drop: Verify the "Image Layer" drags smoothly within the canvas.
+   [ ] Resizing: Verify the image can be resized using the corner handles (if visible) or is at least scaled correctly on load.
+   [ ] Boundary Check: Drag the image to the edge. Does it disappear or stay visible? (Intended: Visible but clipped if outside container, or overlay on top).
+   [ ] Multiple Layers: Add 2 Images and 1 Text item. Can you select/drag each one independently?
+   [ ] Layer Deletion:
+       - Click X on the floating layer (on canvas).
+       - Click X in the "Layers" panel (left side).
+       - Verify layer is removed from both views.
+
+   [ ] Add Text: Click "Add Text". Does "CREW NAME" appear?
+   [ ] Text Editing: Click the text. Is it editable?
+   [ ] Upload Image: Click "Upload". Select a PNG (transparent) and a JPG (solid). Verify both render correctly.
+
+   [ ] Safe Zone Overlay: Login to Admin -> Change Safe Zone dimensions. Refresh Studio. Does the dashed box change?
+   [ ] Hat Images: Login to Admin -> Change "Front View" image for Black Hat. Refresh Studio. Does the hat image update?
+
+---------------------------------------------------
+2. PRODUCT SIDEBAR (COMMERCE)
+
+   [ ] Color Switching:
+       - Select "Red". Does the Main Canvas hat image change?
+       - CRITICAL: Do your added Layers (Logo/Text) STAY on the hat, or do they disappear? (Intended: They should stay).
+   [ ] Size Selection: Click S, M, L. Visual feedback works?
+   [ ] Quantity Logic:
+       - Click +. Does Price Subtotal update? (22,400 * 2 = 44,800)
+       - Click - at 1. Does it stay at 1?
+       - Bulk Discount: Increase Qty to 10. Does the "-15,000 Bulk Discount" line appear?
+
+---------------------------------------------------
+3. ADMIN DASHBOARD
+   Access via /admin (ID: runhouse, PW: runhouse12312!)
+
+   [ ] Login Redirect: Access /admin/dashboard without logging in. Should redirect to /admin/login.
+   [ ] Price Update: Change Base Price to 25000. Click Save. Go to Studio. Does sidebar show 25,000?
+   [ ] Image Upload: Upload a new generic image to "Khaki - Front". Verify it persists after refresh.
+
+---------------------------------------------------
+4. INTERNATIONALIZATION (i18n)
+
+   [ ] Language Toggle: Click KO/EN toggle.
+   [ ] Text Updates:
+       - Navbar: "Studio", "My Orders" should change language.
+       - Sidebar: "Color", "Size", "Total" should change language.
+   [ ] Missing Keys: Check Console for "Translation missing for key..." warnings.
+
+---------------------------------------------------
+5. MOBILE RESPONSIVENESS
+   Test by resizing browser to mobile width (~375px).
+
+   [ ] Canvas Scaling: Does the Hat Canvas fit the screen? Is it cut off?
+   [ ] Sidebar Layout: Does the layout stack vertically (Canvas top, Sidebar bottom)?
+   [ ] Touch Events: Does dragging the logo work with touch?

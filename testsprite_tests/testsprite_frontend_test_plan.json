@@ -1,0 +1,300 @@
+[
+  {
+    "id": "TC001",
+    "title": "Image Upload and Drag-Drop on Hat Canvas",
+    "description": "Verify users can upload images and drag, resize, and position them smoothly on the hat canvas within safe printing zones.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Design Studio"
+      },
+      {
+        "type": "action",
+        "description": "Upload an image file"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that the uploaded image is displayed on the hat canvas"
+      },
+      {
+        "type": "action",
+        "description": "Drag the image within the safe printing zone on the canvas"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the image moves smoothly and stays within the boundaries of the safe zone"
+      },
+      {
+        "type": "action",
+        "description": "Resize the image using control handles"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm resizing functions smoothly and image remains visible within safe printing zones"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Text Addition and Layer Management",
+    "description": "Ensure users can add text layers, modify text properties, reorder layers, and remove layers accurately on the hat canvas.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open Design Studio and add a text layer"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text appears on the hat canvas"
+      },
+      {
+        "type": "action",
+        "description": "Edit text content, font size, and color"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm changes are reflected immediately on canvas"
+      },
+      {
+        "type": "action",
+        "description": "Reorder multiple layers using layer management controls"
+      },
+      {
+        "type": "assertion",
+        "description": "Check layering order updates consistently across canvas and layer panel"
+      },
+      {
+        "type": "action",
+        "description": "Remove a text layer"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify layer is removed and canvas updates accordingly"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Product Configuration and Price Update",
+    "description": "Validate hat color, size, and quantity selections update the price dynamically including application of bulk discounts.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Design Studio"
+      },
+      {
+        "type": "action",
+        "description": "Select different hat colors and sizes from product sidebar"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm hat image and available options reflect chosen color and size"
+      },
+      {
+        "type": "action",
+        "description": "Adjust quantity incrementally, including bulk quantities"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify price updates dynamically with correct bulk discount applied"
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Safe Printing Zone Enforcement",
+    "description": "Verify that safe printing zones overlay updates per admin configuration and that design elements clip correctly without losing visibility.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login to Admin Dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Modify safe printing zone dimensions"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that the updated safe zone overlays reflect immediately in Design Studio"
+      },
+      {
+        "type": "action",
+        "description": "Place design elements partially outside the new safe zone boundaries"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm elements are clipped correctly without complete loss of visibility"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Language Toggle and Internationalization Support",
+    "description": "Ensure that switching languages updates all UI text dynamically without missing translation keys or console errors.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to any page"
+      },
+      {
+        "type": "action",
+        "description": "Toggle application language via language selector"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify all visible text updates to the selected language"
+      },
+      {
+        "type": "assertion",
+        "description": "Check browser console for absence of translation or runtime errors"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Mobile Responsiveness and Touch Interaction",
+    "description": "Test the application UI on mobile devices ensuring canvas scales correctly, sidebar stacks properly, and touch-based draggable elements function smoothly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access Design Studio on a mobile device or emulator"
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure the canvas is scaled properly without overflow"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the sidebar stacks beneath or above the canvas with accessible controls"
+      },
+      {
+        "type": "action",
+        "description": "Use touch gestures to drag and resize design elements"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm touch interactions are smooth, precise, and consistent"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Admin Dashboard Authentication and Access Control",
+    "description": "Confirm that only authenticated users can access Admin Dashboard and unauthenticated users are redirected appropriately.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to access Admin Dashboard URL without logging in"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify redirection to login page"
+      },
+      {
+        "type": "action",
+        "description": "Log in with valid admin credentials"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm successful login and access to Admin Dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Log out and attempt to access Admin Dashboard again"
+      },
+      {
+        "type": "assertion",
+        "description": "Validate user is redirected to login page after logout"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "User Dashboard Order Status Tracking",
+    "description": "Verify that logged-in users can view their order status on the User Dashboard correctly and order data updates as expected.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as a standard user"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to User Dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that the user’s order list and their current statuses are displayed"
+      },
+      {
+        "type": "action",
+        "description": "Simulate or update order status"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the order status updates reflect on the dashboard in real-time or upon refresh"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Gallery Display and Navigation",
+    "description": "Ensure the Gallery page loads design examples and user reviews correctly with navigation functioning.",
+    "category": "functional",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Gallery page"
+      },
+      {
+        "type": "assertion",
+        "description": "Validate that design examples and user reviews are visible"
+      },
+      {
+        "type": "action",
+        "description": "Use navigation controls to browse gallery items"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm navigation works correctly and content loads without delays or errors"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Error Handling on Invalid Image Upload",
+    "description": "Verify the system handles invalid image formats or corrupted files gracefully with appropriate error messages.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to upload a non-image or corrupted file in Design Studio"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that the upload is rejected and a user-friendly error message is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm no crashes or unhandled exceptions occur"
+      }
+    ]
+  }
+]

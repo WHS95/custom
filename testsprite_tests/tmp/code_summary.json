@@ -1,0 +1,53 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "Next.js",
+    "React",
+    "Tailwind CSS",
+    "shadcn/ui",
+    "react-rnd"
+  ],
+  "features": [
+    {
+      "name": "Design Studio",
+      "description": "Main customizer interface allowing users to upload images, add text, and position them on a hat canvas. Includes layer management and product configuration.",
+      "files": [
+        "src/components/studio/StudioLayout.tsx",
+        "src/components/studio/HatCanvas.tsx",
+        "src/components/studio/DesignToolbar.tsx",
+        "src/components/studio/ProductSidebar.tsx",
+        "src/app/page.tsx"
+      ]
+    },
+    {
+      "name": "Admin Dashboard",
+      "description": "Administrative interface for managing product pricing, colors, hat assets, and print zone definitions.",
+      "files": [
+        "src/app/admin/dashboard/page.tsx",
+        "src/app/admin/login/page.tsx"
+      ]
+    },
+    {
+      "name": "Global Contexts",
+      "description": "State management for Studio Configuration (Prices, Zones) and Internationalization.",
+      "files": [
+        "src/lib/store/studio-context.tsx",
+        "src/lib/i18n/language-context.tsx"
+      ]
+    },
+    {
+      "name": "User Dashboard",
+      "description": "View for tracking order status.",
+      "files": [
+        "src/app/dashboard/page.tsx"
+      ]
+    },
+    {
+      "name": "Gallery",
+      "description": "Showcase page for reviews and examples.",
+      "files": [
+        "src/app/gallery/page.tsx"
+      ]
+    }
+  ]
+}
