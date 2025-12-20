@@ -201,7 +201,7 @@ export function HatCanvas({ hatColor, currentView, onViewChange, layers, onRemov
                 <img
                     src={hatImage}
                     alt={`${hatColor} ${currentView}`}
-                    className={`absolute inset-0 bg-gray-50 w-full h-full object-contain pointer-events-none select-none drop-shadow-xl 
+                    className={`absolute inset-0 w-full h-full object-contain pointer-events-none select-none drop-shadow-xl 
                         ${currentView === 'right' && hatColor !== 'black' ? 'scale-x-[-1]' : ''}
                         ${currentView === 'top' ? 'rotate-180' : ''}
                     `}
