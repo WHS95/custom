@@ -82,6 +82,7 @@ const DEFAULT_CONFIG: StudioConfig = {
         }
     },
   ],
+  //디자인 로고를 두는 안전 영역
   safeZones: {
       front: { x: 30, y: 30, width: 40, height: 30 },
       left: { x: 30, y: 40, width: 40, height: 20 },

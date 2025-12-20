@@ -1,24 +1,20 @@
-import React, { useRef } from "react"
+import React, { useRef, useState, useEffect, useCallback } from "react"
 import { Rnd } from "react-rnd"
-import { X, RotateCcw, RotateCw, Trash2, Maximize, Box } from "lucide-react"
+import { X, RotateCcw, RotateCw, Trash2, FlipHorizontal, FlipVertical, Box } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useStudioConfig, HatView } from "@/lib/store/studio-context"
+import { DesignLayer } from "@/lib/store/design-store"
 
 /**
- * 레이어 인터페이스 정의
- * 캔버스 위에 올라가는 각 디자인 요소(이미지, 텍스트 등)의 데이터 구조입니다.
+ * 캔버스 스케일링 상수
+ * 기준 크기(BASE_SIZE)를 기반으로 화면 크기 변화에 따른 스케일을 계산합니다.
+ * 최소 스케일(MIN_SCALE)을 설정하여 너무 작아지지 않도록 제한합니다.
  */
-export interface Layer {
-    id: string              // 레이어의 고유 식별자
-    type: 'image' | 'text'  // 레이어 타입 (이미지 또는 텍스트)
-    content: string         // 내용 (이미지 URL 또는 텍스트 문자열)
-    x: number               // 캔버스 내 x 좌표
-    y: number               // 캔버스 내 y 좌표
-    width?: number          // 너비 (선택적)
-    height?: number         // 높이 (선택적)
-    color?: string          // 텍스트 색상 (선택적)
-    view: HatView           // 해당 레이어가 속한 모자 뷰 (front, back 등)
-}
+export const BASE_SIZE = 800  // 기준 캔버스 크기 (px)
+export const MIN_SCALE = 0.5  // 최소 스케일 비율 (50% 이하로 줄어들지 않음)
+
+// Layer 타입을 DesignLayer로 재정의 (하위 호환성 유지)
+export type Layer = DesignLayer
 
 /**
  * HatCanvasProps 인터페이스
@@ -28,8 +24,9 @@ interface HatCanvasProps {
   hatColor: string                        // 현재 선택된 모자 색상 ID
   currentView: HatView                    // 현재 보고 있는 모자 뷰 (앞, 뒤, 좌, 우, 위)
   onViewChange: (view: HatView) => void   // 뷰 변경 시 호출될 콜백 함수
-  layers: Layer[]                         // 전체 레이어 목록
+  layers: DesignLayer[]                   // 전체 레이어 목록
   onRemoveLayer: (id: string) => void     // 레이어 삭제 시 호출될 콜백 함수
+  onUpdateLayer?: (id: string, updates: Partial<DesignLayer>) => void  // 레이어 업데이트 콜백 (위치, 크기 변경 시)
 }
 
 /**
@@ -37,9 +34,45 @@ interface HatCanvasProps {
  * 모자 디자인 스튜디오의 메인 캔버스 영역을 담당합니다.
  * 사용자는 여기서 모자의 뷰를 변경하고, 디자인 레이어를 확인 및 조작할 수 있습니다.
  */
-export function HatCanvas({ hatColor, currentView, onViewChange, layers, onRemoveLayer }: HatCanvasProps) {
-  // 캔버스 컨테이너에 대한 참조 (드래그 앤 드롭 범위 제한 등에 사용될 수 있음)
+export function HatCanvas({ hatColor, currentView, onViewChange, layers, onRemoveLayer, onUpdateLayer }: HatCanvasProps) {
+  // 외부 캔버스 컨테이너 참조 (전체 영역)
   const containerRef = useRef<HTMLDivElement>(null)
+  // 모자 이미지 영역 참조 (레이어가 배치되는 실제 영역)
+  const hatAreaRef = useRef<HTMLDivElement>(null)
+  
+  // 모자 이미지 영역 크기 상태 (레이어 스케일 계산에 사용)
+  const [hatAreaSize, setHatAreaSize] = useState({ width: BASE_SIZE, height: BASE_SIZE })
+  
+  // 스케일 계산: 모자 이미지 영역 크기 / 기준 크기, 최소 스케일 적용
+  // 이렇게 하면 화면이 작아져도 MIN_SCALE 이하로 줄어들지 않습니다.
+  const scale = Math.max(
+    Math.min(hatAreaSize.width, hatAreaSize.height) / BASE_SIZE,
+    MIN_SCALE
+  )
+  
+  // ResizeObserver를 사용하여 모자 이미지 영역 크기 변화를 감지합니다.
+  useEffect(() => {
+    const hatArea = hatAreaRef.current
+    if (!hatArea) return
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (entry) {
+        const { width, height } = entry.contentRect
+        setHatAreaSize({ width, height })
+      }
+    })
+
+    resizeObserver.observe(hatArea)
+    
+    // 초기 크기 설정
+    setHatAreaSize({
+      width: hatArea.offsetWidth,
+      height: hatArea.offsetHeight
+    })
+
+    return () => resizeObserver.disconnect()
+  }, [])
   
   // 전역 스튜디오 설정(config)을 가져옵니다.
   const { config } = useStudioConfig()
@@ -55,6 +88,12 @@ export function HatCanvas({ hatColor, currentView, onViewChange, layers, onRemov
   // 전체 레이어 중 현재 보고 있는 뷰(view)에 속한 레이어만 필터링합니다.
   // 다른 뷰의 레이어는 현재 화면에 렌더링되지 않도록 합니다.
   const currentLayers = layers.filter(l => l.view === currentView)
+  
+  // 정규화된 좌표를 실제 픽셀 좌표로 변환 (BASE_SIZE 기준 → 현재 스케일)
+  const toPixel = useCallback((value: number) => value * scale, [scale])
+  
+  // 실제 픽셀 좌표를 정규화된 좌표로 변환 (현재 스케일 → BASE_SIZE 기준)
+  const toNormalized = useCallback((value: number) => value / scale, [scale])
 
   // 사용 가능한 뷰 목록 정의 (UI 버튼 생성용)
   const views: {id: HatView, label: string}[] = [
@@ -131,28 +170,38 @@ export function HatCanvas({ hatColor, currentView, onViewChange, layers, onRemov
        </div>
 
       {/* 메인 캔버스 영역 */}
+      {/* 최소 크기를 설정하여 일정 크기 이하로 줄어들지 않도록 합니다. */}
       <div 
         ref={containerRef}
         className="relative w-full h-full max-w-[800px] max-h-[800px] aspect-square"
+        style={{
+          minWidth: `${BASE_SIZE * MIN_SCALE}px`,
+          minHeight: `${BASE_SIZE * MIN_SCALE}px`,
+        }}
       >
-        {/* 모자 기본 이미지 (Base Hat Image) */}
-        <div className="absolute inset-0 flex items-center justify-center p-12 ">
-            <div className="relative w-full h-full">
+        {/* 모자 기본 이미지 및 레이어 컨테이너 */}
+        {/* 레이어가 모자 이미지와 동일한 영역에 배치되도록 함 */}
+        <div className="absolute inset-0 flex items-center justify-center p-12">
+            {/* 모자 이미지 영역 - 레이어가 이 영역 기준으로 배치됨 */}
+            <div 
+                ref={hatAreaRef}
+                className="relative w-full h-full"
+            >
                 {/* 현재 뷰 표시 배지 (좌측 상단) */}
-                <div className="absolute top-0 left-0  text-white text-xs px-2 py-1 rounded backdrop-blur-sm z-10 pointer-events-none">
+                <div className="absolute top-0 left-0 text-white text-xs px-2 py-1 rounded backdrop-blur-sm z-10 pointer-events-none">
                     {currentView.toUpperCase()} VIEW
                 </div>
 
                 {/* 모자 이미지 렌더링 */}
                 {/* 
-                    - pointer-events-none: 이미지가 클릭 이벤트를 가로채지 않도록 하여 드래그 동작 등을 방헤하지 않음
+                    - pointer-events-none: 이미지가 클릭 이벤트를 가로채지 않도록 하여 드래그 동작 등을 방해하지 않음
                     - scale-x-[-1]: 우측면 뷰에서 모자 이미지가 반전되어야 하는 경우(검정색 제외) 좌우 반전 처리
                     - rotate-180: 윗면 뷰일 경우 180도 회전하여 올바른 방향으로 표시
                 */}
                 <img
                     src={hatImage}
                     alt={`${hatColor} ${currentView}`}
-                    className={`bg-gray-50 w-full h-full object-contain pointer-events-none select-none drop-shadow-xl 
+                    className={`absolute inset-0 bg-gray-50 w-full h-full object-contain pointer-events-none select-none drop-shadow-xl 
                         ${currentView === 'right' && hatColor !== 'black' ? 'scale-x-[-1]' : ''}
                         ${currentView === 'top' ? 'rotate-180' : ''}
                     `}
@@ -161,7 +210,7 @@ export function HatCanvas({ hatColor, currentView, onViewChange, layers, onRemov
                 {/* 인쇄 가능 영역 표시 (Printable Zone Overlay) */}
                 {/* 점선으로 표시되는 인쇄 영역 가이드입니다. */}
                 <div 
-                    className="absolute border-2 border-dashed border-blue-500/50 bg-blue-500/5 pointer-events-none"
+                    className="absolute border-2 border-dashed border-blue-500/50 bg-blue-500/5 pointer-events-none z-[5]"
                     style={{
                         left: `${zone?.x || 30}%`,      // 안전 영역의 X 위치 (퍼센트)
                         top: `${zone?.y || 30}%`,       // 안전 영역의 Y 위치 (퍼센트)
@@ -172,40 +221,146 @@ export function HatCanvas({ hatColor, currentView, onViewChange, layers, onRemov
                     {/* 영역 라벨 */}
                     <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-1 rounded-bl">
                         PRINT AREA
-                    </div>
-                </div>
             </div>
         </div>
 
         {/* 드래그 가능한 레이어들 (Draggable Layers) */}
-        {/* react-rnd 라이브러리를 사용하여 크기 조절 및 드래그 가능한 요소를 렌더링합니다. */}
-        {currentLayers.map(layer => (
+                {/* 레이어가 모자 이미지 영역 내부에 배치되어 화면 크기 변경 시에도 올바른 위치를 유지합니다. */}
+                {currentLayers.map(layer => {
+                    // 레이어의 회전 및 반전 변환 스타일 계산
+                    const rotation = layer.rotation || 0
+                    const scaleX = layer.flipX ? -1 : 1
+                    const scaleY = layer.flipY ? -1 : 1
+                    const transformStyle = `rotate(${rotation}deg) scaleX(${scaleX}) scaleY(${scaleY})`
+
+                    return (
              <Rnd
                 key={layer.id}
-                default={{
-                    x: layer.x,
-                    y: layer.y,
-                    width: layer.width || 150,
-                    height: layer.height || 150,
-                }}
-                bounds={containerRef.current || "parent"} // 드래그 범위를 캔버스 내로 제한
+                        position={{
+                            x: toPixel(layer.x),
+                            y: toPixel(layer.y),
+                        }}
+                        size={{
+                            width: toPixel(layer.width || 150),
+                            height: toPixel(layer.height || 150),
+                        }}
+                        bounds="parent" // 드래그 범위를 모자 이미지 영역 내로 제한
                 className="z-10 group border-2 border-transparent hover:border-blue-500/50 transition-colors" // 호버 시 테두리 표시
                 lockAspectRatio={layer.type === 'image'} // 이미지는 비율 유지
+                        scale={scale} // 현재 스케일을 Rnd에 전달하여 드래그/리사이즈 정확도 향상
+                        onDragStop={(e, d) => {
+                            // 드래그 완료 시 정규화된 좌표로 저장
+                            onUpdateLayer?.(layer.id, {
+                                x: toNormalized(d.x),
+                                y: toNormalized(d.y),
+                            })
+                        }}
+                        onResizeStop={(e, direction, ref, delta, position) => {
+                            // 리사이즈 완료 시 정규화된 크기와 위치로 저장
+                            onUpdateLayer?.(layer.id, {
+                                x: toNormalized(position.x),
+                                y: toNormalized(position.y),
+                                width: toNormalized(parseFloat(ref.style.width)),
+                                height: toNormalized(parseFloat(ref.style.height)),
+                            })
+                        }}
             >
                 <div className="relative w-full h-full flex items-center justify-center">
+                            {/* 이미지에 회전/반전 변환 적용 */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                         src={layer.content} 
                         alt="Logo" 
-                        className="w-full h-full object-contain pointer-events-none" 
-                    />
-                    {/* 레이어 삭제 버튼 (개별 레이어 우측 상단에 표시) */}
-                    <div className="absolute -top-3 -right-3 bg-white border shadow-sm rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-red-500 hover:text-red-600">
+                                className="w-full h-full object-contain pointer-events-none transition-transform duration-200" 
+                                style={{ transform: transformStyle }}
+                            />
+                            
+                            {/* 레이어 컨트롤 패널 (호버 시 표시) */}
+                            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-white border shadow-lg rounded-lg p-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                {/* 45도 반시계 방향 회전 */}
+                                <button 
+                                    className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        const newRotation = ((layer.rotation || 0) - 45 + 360) % 360
+                                        onUpdateLayer?.(layer.id, { rotation: newRotation })
+                                    }}
+                                    title="45° 반시계 회전"
+                                >
+                                    <RotateCcw size={14} />
+                                </button>
+                                
+                                {/* 45도 시계 방향 회전 */}
+                                <button 
+                                    className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        const newRotation = ((layer.rotation || 0) + 45) % 360
+                                        onUpdateLayer?.(layer.id, { rotation: newRotation })
+                                    }}
+                                    title="45° 시계 회전"
+                                >
+                                    <RotateCw size={14} />
+                                </button>
+                                
+                                <div className="w-px bg-gray-200 my-1" />
+                                
+                                {/* 좌우 반전 */}
+                                <button 
+                                    className={`p-1.5 hover:bg-gray-100 rounded transition-colors ${layer.flipX ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onUpdateLayer?.(layer.id, { flipX: !layer.flipX })
+                                    }}
+                                    title="좌우 반전"
+                                >
+                                    <FlipHorizontal size={14} />
+                                </button>
+                                
+                                {/* 상하 반전 */}
+                                <button 
+                                    className={`p-1.5 hover:bg-gray-100 rounded transition-colors ${layer.flipY ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onUpdateLayer?.(layer.id, { flipY: !layer.flipY })
+                                    }}
+                                    title="상하 반전"
+                                >
+                                    <FlipVertical size={14} />
+                                </button>
+                                
+                                <div className="w-px bg-gray-200 my-1" />
+                                
+                                {/* 삭제 버튼 */}
+                                <button 
+                                    className="p-1.5 hover:bg-red-50 rounded text-gray-600 hover:text-red-500 transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onRemoveLayer(layer.id)
+                                    }}
+                                    title="삭제"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                            
+                            {/* 회전 각도 표시 (0이 아닐 때만) */}
+                            {rotation !== 0 && (
+                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {rotation}°
+                                </div>
+                            )}
+                            
+                            {/* 레이어 삭제 버튼 (우측 상단 - 빠른 접근용) */}
+                            <div className="absolute -top-3 -right-3 bg-white border shadow-sm rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-red-500 hover:text-red-600 z-20">
                         <X size={14} onClick={() => onRemoveLayer(layer.id)} />
                     </div>
                 </div>
             </Rnd>
-        ))}
+                    )
+                })}
+            </div>
+        </div>
       </div>
     </div>
   )
