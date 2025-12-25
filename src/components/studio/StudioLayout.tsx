@@ -6,7 +6,8 @@ import { ProductSidebar } from "./ProductSidebar"
 import { DesignToolbar } from "./DesignToolbar"
 import { toast } from "sonner"
 import { useDesignStore, useCurrentColorLayers } from "@/lib/store/design-store"
-import { BASE_SIZE } from "./HatCanvas"
+import { useStudioConfig } from "@/lib/store/studio-context"
+import { getDefaultLayerPosition } from "@/components/shared/HatDesignCanvas"
 
 /**
  * StudioLayout 컴포넌트
@@ -27,7 +28,10 @@ export function StudioLayout() {
   const addLayer = useDesignStore((state) => state.addLayer)
   const updateLayer = useDesignStore((state) => state.updateLayer)
   const removeLayer = useDesignStore((state) => state.removeLayer)
-  
+
+  // 스튜디오 설정 (안전 영역 등)
+  const { config } = useStudioConfig()
+
   // 현재 색상의 모든 레이어 가져오기
   const currentColorLayers = useCurrentColorLayers()
 
@@ -41,30 +45,25 @@ export function StudioLayout() {
 
     const reader = new FileReader()
     reader.onload = (ev) => {
-      // 프린트 영역 중앙에 배치
-      const printAreaCenterX = (30 + 40 / 2) / 100  // 50%
-      const printAreaCenterY = (30 + 30 / 2) / 100  // 45%
-      const layerSize = 100
+      // 공통 함수를 사용하여 기본 위치 계산
+      const defaultPos = getDefaultLayerPosition(currentView, config)
 
       addLayer({
         type: "image",
         content: ev.target?.result as string,
-        x: BASE_SIZE * printAreaCenterX - layerSize / 2,
-        y: BASE_SIZE * printAreaCenterY - layerSize / 2,
-        width: layerSize,
-        height: layerSize,
+        ...defaultPos,
         view: currentView,
         rotation: 0,
         flipX: false,
         flipY: false,
       })
-      
+
       toast.success("이미지 레이어가 추가되었습니다")
     }
     reader.readAsDataURL(file)
-    
+
     // 파일 입력 초기화 (같은 파일 다시 선택 가능하도록)
-    e.target.value = ''
+    e.target.value = ""
   }
 
   /**

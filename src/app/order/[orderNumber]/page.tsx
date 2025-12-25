@@ -1,9 +1,8 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Rnd } from "react-rnd"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -17,7 +16,6 @@ import {
   FlipVertical,
   Trash2,
   Upload,
-  CheckCircle,
   AlertCircle,
   Loader2,
   ArrowLeft,
@@ -27,29 +25,12 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { useStudioConfig, HatView } from "@/lib/store/studio-context"
+import { ORDER_STATUS_LABELS, type OrderStatus } from "@/domain/order"
 import {
-  ORDER_STATUS_LABELS,
-  type OrderStatus,
-} from "@/domain/order"
-
-// 캔버스 상수
-const BASE_SIZE = 800
-const MIN_SCALE = 0.5
-
-interface DesignLayer {
-  id: string
-  type: "image" | "text"
-  content: string
-  x: number
-  y: number
-  width: number
-  height: number
-  rotation: number
-  flipX: boolean
-  flipY: boolean
-  view: "front" | "back" | "left" | "right" | "top"
-  color?: string
-}
+  HatDesignCanvas,
+  DesignLayer,
+  getDefaultLayerPosition,
+} from "@/components/shared/HatDesignCanvas"
 
 interface OrderItem {
   id: string
@@ -93,13 +74,20 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   cancelled: "bg-gray-100 text-gray-700",
 }
 
+const VIEWS: { id: HatView; label: string }[] = [
+  { id: "front", label: "정면" },
+  { id: "back", label: "후면" },
+  { id: "left", label: "좌측" },
+  { id: "right", label: "우측" },
+  { id: "top", label: "상단" },
+]
+
 export default function OrderDetailPage() {
   const params = useParams()
   const router = useRouter()
   const orderNumber = params.orderNumber as string
 
   const { config } = useStudioConfig()
-  const hatAreaRef = useRef<HTMLDivElement>(null)
 
   // 주문 데이터
   const [order, setOrder] = useState<OrderDetail | null>(null)
@@ -116,12 +104,6 @@ export default function OrderDetailPage() {
   // 캔버스 상태
   const [currentView, setCurrentView] = useState<HatView>("front")
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null)
-  const [hatAreaSize, setHatAreaSize] = useState({ width: BASE_SIZE, height: BASE_SIZE })
-
-  const scale = Math.max(
-    Math.min(hatAreaSize.width, hatAreaSize.height) / BASE_SIZE,
-    MIN_SCALE
-  )
 
   // 현재 선택된 아이템
   const currentItem = order?.items[selectedItemIndex]
@@ -134,11 +116,11 @@ export default function OrderDetailPage() {
   // 현재 뷰의 레이어만 필터링
   const viewLayers = currentLayers.filter((l) => l.view === currentView)
 
-  // 디자인이 있는 뷰 목록
-  const viewsWithDesign = [...new Set(currentLayers.map((l) => l.view))]
-
   // 수정 가능 여부 (디자인 확정 전까지만)
   const canEdit = order?.status === "pending"
+
+  // 선택된 레이어
+  const selectedLayer = currentLayers.find((l) => l.id === selectedLayerId)
 
   // 주문 데이터 로드
   useEffect(() => {
@@ -176,37 +158,12 @@ export default function OrderDetailPage() {
       if (layers.length > 0) {
         setCurrentView(layers[0].view)
       }
+      setSelectedLayerId(null)
     }
-  }, [selectedItemIndex, currentItem, editedLayers])
-
-  // 캔버스 크기 감지
-  useEffect(() => {
-    const hatArea = hatAreaRef.current
-    if (!hatArea) return
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      const entry = entries[0]
-      if (entry) {
-        const { width, height } = entry.contentRect
-        setHatAreaSize({ width, height })
-      }
-    })
-
-    resizeObserver.observe(hatArea)
-    setHatAreaSize({
-      width: hatArea.offsetWidth,
-      height: hatArea.offsetHeight,
-    })
-
-    return () => resizeObserver.disconnect()
-  }, [])
-
-  // 좌표 변환
-  const toPixel = useCallback((value: number) => value * scale, [scale])
-  const toNormalized = useCallback((value: number) => value / scale, [scale])
+  }, [selectedItemIndex, currentItem?.id])
 
   // 레이어 업데이트
-  const handleUpdateLayer = (layerId: string, updates: Partial<DesignLayer>) => {
+  const handleLayerUpdate = (layerId: string, updates: Partial<DesignLayer>) => {
     if (!canEdit || !currentItem) return
 
     const currentItemLayers = editedLayers[currentItem.id] || currentItem.designSnapshot || []
@@ -222,7 +179,7 @@ export default function OrderDetailPage() {
   }
 
   // 레이어 삭제
-  const handleRemoveLayer = (layerId: string) => {
+  const handleLayerRemove = (layerId: string) => {
     if (!canEdit || !currentItem) return
 
     const currentItemLayers = editedLayers[currentItem.id] || currentItem.designSnapshot || []
@@ -238,24 +195,18 @@ export default function OrderDetailPage() {
 
   // 레이어 회전
   const handleRotate = (degrees: number) => {
-    if (!selectedLayerId) return
-    const layer = currentLayers.find((l) => l.id === selectedLayerId)
-    if (layer) {
-      handleUpdateLayer(selectedLayerId, {
-        rotation: (layer.rotation + degrees + 360) % 360,
-      })
-    }
+    if (!selectedLayerId || !selectedLayer) return
+    handleLayerUpdate(selectedLayerId, {
+      rotation: (selectedLayer.rotation + degrees + 360) % 360,
+    })
   }
 
   // 레이어 반전
   const handleFlip = (axis: "x" | "y") => {
-    if (!selectedLayerId) return
-    const layer = currentLayers.find((l) => l.id === selectedLayerId)
-    if (layer) {
-      handleUpdateLayer(selectedLayerId, {
-        [axis === "x" ? "flipX" : "flipY"]: axis === "x" ? !layer.flipX : !layer.flipY,
-      })
-    }
+    if (!selectedLayerId || !selectedLayer) return
+    handleLayerUpdate(selectedLayerId, {
+      [axis === "x" ? "flipX" : "flipY"]: axis === "x" ? !selectedLayer.flipX : !selectedLayer.flipY,
+    })
   }
 
   // 이미지 업로드
@@ -268,14 +219,13 @@ export default function OrderDetailPage() {
     const reader = new FileReader()
     reader.onload = (event) => {
       const content = event.target?.result as string
+      const defaultPos = getDefaultLayerPosition(currentView, config)
+
       const newLayer: DesignLayer = {
         id: `layer_${Date.now()}`,
         type: "image",
         content,
-        x: 30,
-        y: 30,
-        width: 40,
-        height: 40,
+        ...defaultPos,
         rotation: 0,
         flipX: false,
         flipY: false,
@@ -333,26 +283,6 @@ export default function OrderDetailPage() {
       setSaving(false)
     }
   }
-
-  // 모자 이미지 URL
-  const hatImage = currentItem
-    ? config.colors.find((c) => c.id === currentItem.color)?.views[currentView] || ""
-    : ""
-
-  // 안전 영역
-  const zone = config.safeZones[currentView]
-
-  // 선택된 레이어
-  const selectedLayer = currentLayers.find((l) => l.id === selectedLayerId)
-
-  // 뷰 목록
-  const views: { id: HatView; label: string }[] = [
-    { id: "front", label: "정면" },
-    { id: "back", label: "후면" },
-    { id: "left", label: "좌측" },
-    { id: "right", label: "우측" },
-    { id: "top", label: "상단" },
-  ]
 
   if (loading) {
     return (
@@ -490,14 +420,10 @@ export default function OrderDetailPage() {
           <div className="bg-white border-b px-4 py-2">
             <Tabs value={currentView} onValueChange={(v) => setCurrentView(v as HatView)}>
               <TabsList>
-                {views.map((view) => {
+                {VIEWS.map((view) => {
                   const hasDesignInView = currentLayers.some((l) => l.view === view.id)
                   return (
-                    <TabsTrigger
-                      key={view.id}
-                      value={view.id}
-                      className="relative"
-                    >
+                    <TabsTrigger key={view.id} value={view.id} className="relative">
                       {view.label}
                       {hasDesignInView && (
                         <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full" />
@@ -511,138 +437,19 @@ export default function OrderDetailPage() {
 
           {/* 캔버스 영역 */}
           <div className="flex-1 flex items-center justify-center p-8 bg-gray-100">
-            <div
-              ref={hatAreaRef}
-              className="relative bg-white rounded-xl shadow-lg overflow-hidden"
-              style={{
-                width: "min(100%, 600px)",
-                aspectRatio: "1",
-              }}
-              onClick={() => setSelectedLayerId(null)}
-            >
-              {/* 모자 이미지 */}
-              {hatImage && (
-                <img
-                  src={hatImage}
-                  alt="Hat"
-                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-                  draggable={false}
-                />
-              )}
-
-              {/* 안전 영역 표시 */}
-              {zone && (
-                <div
-                  className="absolute border-2 border-dashed border-blue-300 bg-blue-50/20 pointer-events-none"
-                  style={{
-                    left: `${zone.x}%`,
-                    top: `${zone.y}%`,
-                    width: `${zone.width}%`,
-                    height: `${zone.height}%`,
-                  }}
-                />
-              )}
-
-              {/* 디자인 레이어들 */}
-              {viewLayers.map((layer) => {
-                const isSelected = selectedLayerId === layer.id
-
-                if (!canEdit) {
-                  // 읽기 전용 모드
-                  return (
-                    <div
-                      key={layer.id}
-                      className="absolute"
-                      style={{
-                        left: toPixel(layer.x),
-                        top: toPixel(layer.y),
-                        width: toPixel(layer.width),
-                        height: toPixel(layer.height),
-                        transform: `rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
-                      }}
-                    >
-                      {layer.type === "image" ? (
-                        <img
-                          src={layer.content}
-                          alt="Design"
-                          className="w-full h-full object-contain"
-                          draggable={false}
-                        />
-                      ) : (
-                        <div
-                          className="w-full h-full flex items-center justify-center"
-                          style={{ color: layer.color || "#000" }}
-                        >
-                          {layer.content}
-                        </div>
-                      )}
-                    </div>
-                  )
-                }
-
-                // 편집 가능 모드
-                return (
-                  <Rnd
-                    key={layer.id}
-                    position={{
-                      x: toPixel(layer.x),
-                      y: toPixel(layer.y),
-                    }}
-                    size={{
-                      width: toPixel(layer.width),
-                      height: toPixel(layer.height),
-                    }}
-                    onDragStart={(e) => {
-                      e.stopPropagation()
-                      setSelectedLayerId(layer.id)
-                    }}
-                    onDragStop={(e, d) => {
-                      handleUpdateLayer(layer.id, {
-                        x: toNormalized(d.x),
-                        y: toNormalized(d.y),
-                      })
-                    }}
-                    onResizeStop={(e, direction, ref, delta, position) => {
-                      handleUpdateLayer(layer.id, {
-                        x: toNormalized(position.x),
-                        y: toNormalized(position.y),
-                        width: toNormalized(parseFloat(ref.style.width)),
-                        height: toNormalized(parseFloat(ref.style.height)),
-                      })
-                    }}
-                    lockAspectRatio={layer.type === "image"}
-                    bounds="parent"
-                    className={`${isSelected ? "ring-2 ring-blue-500" : ""}`}
-                    onClick={(e: React.MouseEvent) => {
-                      e.stopPropagation()
-                      setSelectedLayerId(layer.id)
-                    }}
-                  >
-                    <div
-                      className="w-full h-full"
-                      style={{
-                        transform: `rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
-                      }}
-                    >
-                      {layer.type === "image" ? (
-                        <img
-                          src={layer.content}
-                          alt="Design"
-                          className="w-full h-full object-contain"
-                          draggable={false}
-                        />
-                      ) : (
-                        <div
-                          className="w-full h-full flex items-center justify-center"
-                          style={{ color: layer.color || "#000" }}
-                        >
-                          {layer.content}
-                        </div>
-                      )}
-                    </div>
-                  </Rnd>
-                )
-              })}
+            <div className="w-full max-w-[600px]">
+              <HatDesignCanvas
+                hatColor={currentItem?.color || "black"}
+                currentView={currentView}
+                layers={currentLayers}
+                editable={canEdit}
+                onLayerUpdate={handleLayerUpdate}
+                onLayerRemove={handleLayerRemove}
+                onLayerSelect={setSelectedLayerId}
+                selectedLayerId={selectedLayerId}
+                showSafeZone={true}
+                className="w-full rounded-xl shadow-lg bg-white"
+              />
             </div>
           </div>
         </div>
@@ -697,35 +504,19 @@ export default function OrderDetailPage() {
                   <h4 className="font-medium text-sm">레이어 편집</h4>
 
                   <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleRotate(-45)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => handleRotate(-45)}>
                       <RotateCcw className="w-4 h-4 mr-1" />
                       -45°
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleRotate(45)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => handleRotate(45)}>
                       <RotateCw className="w-4 h-4 mr-1" />
                       +45°
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleFlip("x")}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => handleFlip("x")}>
                       <FlipHorizontal className="w-4 h-4 mr-1" />
                       좌우
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleFlip("y")}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => handleFlip("y")}>
                       <FlipVertical className="w-4 h-4 mr-1" />
                       상하
                     </Button>
@@ -735,7 +526,7 @@ export default function OrderDetailPage() {
                     variant="destructive"
                     size="sm"
                     className="w-full"
-                    onClick={() => handleRemoveLayer(selectedLayerId!)}
+                    onClick={() => handleLayerRemove(selectedLayerId!)}
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
                     삭제
@@ -753,9 +544,7 @@ export default function OrderDetailPage() {
             {/* 현재 뷰 레이어 목록 */}
             <Separator />
             <div>
-              <h4 className="font-medium text-sm mb-2">
-                레이어 ({viewLayers.length})
-              </h4>
+              <h4 className="font-medium text-sm mb-2">레이어 ({viewLayers.length})</h4>
               {viewLayers.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-4">
                   이 뷰에 디자인이 없습니다

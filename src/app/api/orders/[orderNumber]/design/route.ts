@@ -46,7 +46,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       .from('orders')
       .select('id, status')
       .eq('order_number', orderNumber)
-      .single()
+      .single() as { data: { id: string; status: string } | null; error: unknown }
 
     if (orderError || !order) {
       return NextResponse.json(
@@ -67,10 +67,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const items: ItemUpdate[] = body.items || []
 
     for (const item of items) {
-      const { error: updateError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: updateError } = await (supabase as any)
         .from('order_items')
         .update({
-          design_snapshot: item.designSnapshot as unknown as Record<string, unknown>,
+          design_snapshot: item.designSnapshot,
         })
         .eq('id', item.id)
         .eq('order_id', order.id)
@@ -82,7 +83,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // 4. 주문 updated_at 갱신
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('orders')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', order.id)
