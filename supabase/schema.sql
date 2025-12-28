@@ -60,6 +60,68 @@ INSERT INTO tenants (id, name, slug, contact_email, settings) VALUES (
 );
 
 -- ============================================
+-- 테이블: 상품
+-- ============================================
+
+CREATE TABLE products (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  slug VARCHAR(100) NOT NULL,
+  description TEXT,
+  category VARCHAR(50) NOT NULL DEFAULT 'hat',  -- 'hat', 'clothing', 'accessory'
+  base_price INTEGER NOT NULL,
+  images JSONB DEFAULT '[]'::jsonb,
+  /* 예시:
+  [
+    {"colorId": "black", "view": "front", "url": "https://..."},
+    {"colorId": "black", "view": "back", "url": "https://..."}
+  ]
+  */
+  variants JSONB DEFAULT '[]'::jsonb,
+  /* 예시:
+  [
+    {"id": "black", "label": "Midnight Black", "hex": "#000000", "sizes": ["S", "M", "L", "XL", "FREE"]}
+  ]
+  */
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  UNIQUE(tenant_id, slug)
+);
+
+-- 인덱스
+CREATE INDEX idx_products_tenant_id ON products(tenant_id);
+CREATE INDEX idx_products_category ON products(category);
+CREATE INDEX idx_products_is_active ON products(is_active);
+
+-- ============================================
+-- 테이블: 상품 커스터마이즈 영역
+-- ============================================
+
+CREATE TABLE product_customizable_areas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  view_name VARCHAR(20) NOT NULL,       -- 'front', 'back', 'left', 'right', 'top'
+  display_name VARCHAR(50) NOT NULL,    -- '정면', '후면' 등
+  zone_x DECIMAL(5,2) NOT NULL,         -- 인쇄 가능 영역 X (%)
+  zone_y DECIMAL(5,2) NOT NULL,         -- 인쇄 가능 영역 Y (%)
+  zone_width DECIMAL(5,2) NOT NULL,     -- 인쇄 가능 영역 너비 (%)
+  zone_height DECIMAL(5,2) NOT NULL,    -- 인쇄 가능 영역 높이 (%)
+  image_url TEXT,                       -- 해당 뷰의 기본 이미지
+  is_enabled BOOLEAN NOT NULL DEFAULT true,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  UNIQUE(product_id, view_name)
+);
+
+-- 인덱스
+CREATE INDEX idx_product_customizable_areas_product_id ON product_customizable_areas(product_id);
+
+-- ============================================
 -- 테이블: 고객
 -- ============================================
 
@@ -117,6 +179,16 @@ CREATE TABLE orders (
 
   -- 관리자 메모
   admin_memo TEXT,
+
+  -- 배송 추적 정보
+  tracking_info JSONB DEFAULT NULL,
+  /* 예시:
+  {
+    "carrier": "cj",
+    "trackingNumber": "123456789012",
+    "shippedAt": "2024-12-20T10:00:00Z"
+  }
+  */
 
   -- 타임스탬프
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -257,6 +329,10 @@ CREATE TRIGGER update_orders_updated_at
   BEFORE UPDATE ON orders
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_products_updated_at
+  BEFORE UPDATE ON products
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- ============================================
 -- 트리거: 주문 상태 변경 시 이력 자동 생성
 -- ============================================
@@ -303,6 +379,27 @@ CREATE POLICY "Service role has full access to order_items" ON order_items
 CREATE POLICY "Service role has full access to order_status_history" ON order_status_history
   FOR ALL USING (auth.role() = 'service_role');
 
+-- products, product_customizable_areas RLS
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_customizable_areas ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Service role has full access to products" ON products
+  FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Service role has full access to product_customizable_areas" ON product_customizable_areas
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- 익명 사용자 상품 조회
+CREATE POLICY "Anonymous users can view active products" ON products
+  FOR SELECT USING (is_active = true);
+
+CREATE POLICY "Anonymous users can view product areas" ON product_customizable_areas
+  FOR SELECT USING (true);
+
+-- 익명 사용자 테넌트 조회
+CREATE POLICY "Anonymous users can view tenants" ON tenants
+  FOR SELECT USING (true);
+
 -- 익명 사용자 주문 조회 (전화번호 기반)
 CREATE POLICY "Anonymous users can view their orders" ON orders
   FOR SELECT USING (true);
@@ -315,6 +412,47 @@ CREATE POLICY "Anonymous users can insert orders" ON orders
 
 CREATE POLICY "Anonymous users can insert order items" ON order_items
   FOR INSERT WITH CHECK (true);
+
+-- ============================================
+-- 테이블: 테넌트 관리자 계정
+-- ============================================
+
+CREATE TABLE tenant_admins (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,  -- bcrypt hashed
+  display_name VARCHAR(100),
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  last_login_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 인덱스
+CREATE INDEX idx_tenant_admins_tenant_id ON tenant_admins(tenant_id);
+CREATE INDEX idx_tenant_admins_username ON tenant_admins(username);
+
+-- 트리거
+CREATE TRIGGER update_tenant_admins_updated_at
+  BEFORE UPDATE ON tenant_admins
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- RLS
+ALTER TABLE tenant_admins ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Service role has full access to tenant_admins" ON tenant_admins
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- 런하우스 기본 관리자 계정 (bcrypt hash of 'runrun123!')
+INSERT INTO tenant_admins (tenant_id, username, password_hash, display_name) VALUES (
+  'a0000000-0000-0000-0000-000000000001',
+  'runhouse_admin',
+  '$2b$10$09c80xBHiNkFJPyt1DEXyuPG6mj7XQor6p9eA7ACl7r824VyJ4Awm',
+  '런하우스 관리자'
+);
+
+COMMENT ON TABLE tenant_admins IS '테넌트 관리자 계정';
 
 -- ============================================
 -- 뷰: 주문 목록 (관리자용)
@@ -353,3 +491,33 @@ COMMENT ON TABLE customers IS '고객 정보';
 COMMENT ON TABLE orders IS '주문';
 COMMENT ON TABLE order_items IS '주문 아이템';
 COMMENT ON TABLE order_status_history IS '주문 상태 변경 이력';
+COMMENT ON TABLE products IS '상품';
+COMMENT ON TABLE product_customizable_areas IS '상품 커스터마이즈 영역';
+
+-- ============================================
+-- 기본 상품 데이터: 런하우스 커스텀 모자
+-- ============================================
+
+INSERT INTO products (id, tenant_id, name, slug, description, category, base_price, variants) VALUES (
+  'p0000000-0000-0000-0000-000000000001',
+  'a0000000-0000-0000-0000-000000000001',
+  'Custom Cap',
+  'custom-cap',
+  '나만의 디자인을 담은 커스텀 모자. 고품질 원단과 정교한 자수로 제작됩니다.',
+  'hat',
+  22400,
+  '[
+    {"id": "black", "label": "Midnight Black", "hex": "#000000", "sizes": ["S", "M", "L", "XL", "FREE"]},
+    {"id": "khaki", "label": "Desert Khaki", "hex": "#C3B091", "sizes": ["S", "M", "L", "XL", "FREE"]},
+    {"id": "beige", "label": "Sand Beige", "hex": "#F5F5DC", "sizes": ["S", "M", "L", "XL", "FREE"]},
+    {"id": "red", "label": "Race Red", "hex": "#FF0000", "sizes": ["S", "M", "L", "XL", "FREE"]}
+  ]'::jsonb
+);
+
+-- 커스터마이즈 영역 (모자 5면)
+INSERT INTO product_customizable_areas (product_id, view_name, display_name, zone_x, zone_y, zone_width, zone_height, sort_order) VALUES
+  ('p0000000-0000-0000-0000-000000000001', 'front', '정면', 30, 30, 40, 30, 1),
+  ('p0000000-0000-0000-0000-000000000001', 'back', '후면', 30, 40, 40, 20, 2),
+  ('p0000000-0000-0000-0000-000000000001', 'left', '좌측', 30, 40, 40, 20, 3),
+  ('p0000000-0000-0000-0000-000000000001', 'right', '우측', 30, 40, 40, 20, 4),
+  ('p0000000-0000-0000-0000-000000000001', 'top', '상단', 25, 25, 50, 50, 5);

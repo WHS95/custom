@@ -12,6 +12,7 @@ import {
   CreateOrderDTO,
   UpdateOrderStatusDTO,
   OrderStatusHistory,
+  TrackingInfo,
 } from './types'
 
 /**
@@ -30,6 +31,7 @@ export interface IOrderRepository {
   // 업데이트
   updateStatus(dto: UpdateOrderStatusDTO): Promise<Order>
   updateAdminMemo(orderId: string, memo: string): Promise<Order>
+  updateTrackingInfo(orderId: string, trackingInfo: TrackingInfo): Promise<Order>
 
   // 상태 이력
   getStatusHistory(orderId: string): Promise<OrderStatusHistory[]>

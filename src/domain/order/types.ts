@@ -106,6 +106,42 @@ export interface ShippingInfo {
 }
 
 /**
+ * 택배사 코드
+ */
+export type CarrierCode = 'cj' | 'hanjin' | 'logen' | 'lotte' | 'post'
+
+/**
+ * 택배사 라벨
+ */
+export const CARRIER_LABELS: Record<CarrierCode, string> = {
+  cj: 'CJ대한통운',
+  hanjin: '한진택배',
+  logen: '로젠택배',
+  lotte: '롯데택배',
+  post: '우체국택배',
+}
+
+/**
+ * 택배사 추적 URL
+ */
+export const CARRIER_TRACKING_URLS: Record<CarrierCode, (trackingNumber: string) => string> = {
+  cj: (num) => `https://www.cjlogistics.com/ko/tool/parcel/tracking?gnbInvcNo=${num}`,
+  hanjin: (num) => `https://www.hanjin.com/kor/CMS/DeliveryMgr/WaybillResult.do?mession-id=1&wblnumText2=${num}`,
+  logen: (num) => `https://www.ilogen.com/web/personal/trace/${num}`,
+  lotte: (num) => `https://www.lotteglogis.com/home/reservation/tracking/linkView?InvNo=${num}`,
+  post: (num) => `https://service.epost.go.kr/trace.RetrieveDomRi498.postal?sid1=${num}`,
+}
+
+/**
+ * 배송 추적 정보 (값 객체)
+ */
+export interface TrackingInfo {
+  carrier: CarrierCode       // 택배사 코드
+  trackingNumber: string     // 송장번호
+  shippedAt: string          // 발송일시 (ISO 8601)
+}
+
+/**
  * 디자인 스냅샷 (주문 시점의 디자인 저장)
  */
 export interface DesignSnapshot {
@@ -177,6 +213,9 @@ export interface Order {
 
   // 관리자 메모
   adminMemo?: string
+
+  // 배송 추적 정보
+  trackingInfo?: TrackingInfo
 
   // 타임스탬프
   createdAt: Date

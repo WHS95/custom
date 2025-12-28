@@ -14,6 +14,7 @@ import type {
   ShippingInfo,
   DesignLayerSnapshot,
   OrderStatus,
+  TrackingInfo,
 } from '@/domain/order/types'
 
 /**
@@ -58,15 +59,16 @@ export class SupabaseOrderRepository implements IOrderRepository {
     const { data: orderNumberResult, error: rpcError } = await client
       .rpc('generate_order_number', { p_tenant_id: dto.tenantId })
 
+    let orderNumber: string
     if (rpcError) {
       console.error('주문번호 생성 RPC 에러:', rpcError)
       // RPC가 없으면 직접 생성
       const date = new Date()
       const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`
       const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
-      var orderNumber = `RH-${dateStr}-${random}`
+      orderNumber = `RH-${dateStr}-${random}`
     } else {
-      var orderNumber = orderNumberResult as string
+      orderNumber = orderNumberResult as string
     }
 
     // 2. 상품 합계 계산
@@ -301,6 +303,29 @@ export class SupabaseOrderRepository implements IOrderRepository {
   }
 
   /**
+   * 배송 추적 정보 업데이트
+   */
+  async updateTrackingInfo(orderId: string, trackingInfo: TrackingInfo): Promise<Order> {
+    const client = this.getClient()
+
+    const { data, error } = await client
+      .from('orders')
+      .update({ tracking_info: trackingInfo as unknown as Record<string, unknown> })
+      .eq('id', orderId)
+      .select(`
+        *,
+        order_items (*)
+      `)
+      .single()
+
+    if (error) {
+      throw new Error(`배송 정보 업데이트 실패: ${error.message}`)
+    }
+
+    return this.mapToOrderWithItems(data)
+  }
+
+  /**
    * 상태 이력 조회
    */
   async getStatusHistory(orderId: string): Promise<OrderStatusHistory[]> {
@@ -359,6 +384,7 @@ export class SupabaseOrderRepository implements IOrderRepository {
       status: row.status as OrderStatus,
       statusHistory: [],
       adminMemo: row.admin_memo as string | undefined,
+      trackingInfo: row.tracking_info as TrackingInfo | undefined,
       createdAt: new Date(row.created_at as string),
       updatedAt: new Date(row.updated_at as string),
     }

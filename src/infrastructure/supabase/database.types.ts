@@ -98,6 +98,7 @@ export interface Database {
           total_amount: number
           status: string
           admin_memo: string | null
+          tracking_info: Json | null
           created_at: string
           updated_at: string
         }
@@ -115,6 +116,7 @@ export interface Database {
           total_amount: number
           status?: string
           admin_memo?: string | null
+          tracking_info?: Json | null
           created_at?: string
           updated_at?: string
         }
@@ -132,6 +134,7 @@ export interface Database {
           total_amount?: number
           status?: string
           admin_memo?: string | null
+          tracking_info?: Json | null
           created_at?: string
           updated_at?: string
         }
@@ -207,6 +210,94 @@ export interface Database {
           changed_by?: string
           memo?: string | null
           created_at?: string
+        }
+      }
+      products: {
+        Row: {
+          id: string
+          tenant_id: string
+          name: string
+          slug: string
+          description: string | null
+          category: string
+          base_price: number
+          images: Json
+          variants: Json
+          is_active: boolean
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          name: string
+          slug: string
+          description?: string | null
+          category?: string
+          base_price: number
+          images?: Json
+          variants?: Json
+          is_active?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          name?: string
+          slug?: string
+          description?: string | null
+          category?: string
+          base_price?: number
+          images?: Json
+          variants?: Json
+          is_active?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      product_customizable_areas: {
+        Row: {
+          id: string
+          product_id: string
+          view_name: string
+          display_name: string
+          zone_x: number
+          zone_y: number
+          zone_width: number
+          zone_height: number
+          image_url: string | null
+          is_enabled: boolean
+          sort_order: number
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          view_name: string
+          display_name: string
+          zone_x: number
+          zone_y: number
+          zone_width: number
+          zone_height: number
+          image_url?: string | null
+          is_enabled?: boolean
+          sort_order?: number
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          view_name?: string
+          display_name?: string
+          zone_x?: number
+          zone_y?: number
+          zone_width?: number
+          zone_height?: number
+          image_url?: string | null
+          is_enabled?: boolean
+          sort_order?: number
         }
       }
     }

@@ -1,25 +1,32 @@
 "use client"
 
-import React from "react"
+import React, { useMemo } from "react"
 import { HatCanvas } from "./HatCanvas"
 import { ProductSidebar } from "./ProductSidebar"
 import { DesignToolbar } from "./DesignToolbar"
 import { toast } from "sonner"
 import { useDesignStore, useCurrentColorLayers } from "@/lib/store/design-store"
-import { useStudioConfig } from "@/lib/store/studio-context"
+import { useStudioConfig, ProductColor, HatView } from "@/lib/store/studio-context"
 import { getDefaultLayerPosition } from "@/components/shared/HatDesignCanvas"
+import type { Product, ProductImage, ProductWithAreas, CustomizableArea } from "@/domain/product/types"
+
+interface StudioLayoutProps {
+  productId?: string
+  productName?: string
+  product?: ProductWithAreas // 상품 정보 (이미지 + 커스터마이즈 영역 포함)
+}
 
 /**
  * StudioLayout 컴포넌트
  * 모자 커스터마이징 스튜디오의 메인 레이아웃
  * Zustand 스토어를 사용하여 상태를 관리하고 로컬 스토리지에 자동 저장
- * 
+ *
  * 핵심 기능:
  * - 색상별 독립적인 디자인 저장
  * - 뷰(앞/뒤/좌/우/위)별 레이어 관리
  * - 로컬 스토리지 영속성
  */
-export function StudioLayout() {
+export function StudioLayout({ productId, productName, product }: StudioLayoutProps) {
   // Zustand 스토어에서 상태와 액션 가져오기
   const selectedColor = useDesignStore((state) => state.selectedColor)
   const currentView = useDesignStore((state) => state.currentView)
@@ -32,8 +39,74 @@ export function StudioLayout() {
   // 스튜디오 설정 (안전 영역 등)
   const { config } = useStudioConfig()
 
+  // 상품의 색상 정보를 studio-context 형식으로 변환
+  const productColors: ProductColor[] = useMemo(() => {
+    if (!product?.variants || !product?.images) {
+      return config.colors // 기본 색상 사용
+    }
+
+    return product.variants.map((variant) => {
+      // 해당 색상의 모든 뷰 이미지 찾기
+      const views: Record<HatView, string> = {
+        front: "",
+        back: "",
+        left: "",
+        right: "",
+        top: "",
+      }
+
+      product.images.forEach((img: ProductImage) => {
+        if (img.colorId === variant.id && views[img.view as HatView] !== undefined) {
+          views[img.view as HatView] = img.url
+        }
+      })
+
+      return {
+        id: variant.id,
+        label: variant.label,
+        hex: variant.hex,
+        views,
+      }
+    })
+  }, [product, config.colors])
+
   // 현재 색상의 모든 레이어 가져오기
   const currentColorLayers = useCurrentColorLayers()
+
+  // 상품의 커스터마이즈 영역을 safeZones 형식으로 변환
+  const productSafeZones = useMemo(() => {
+    if (!product?.customizableAreas || product.customizableAreas.length === 0) {
+      return config.safeZones // 기본 safeZones 사용
+    }
+
+    const zones: Record<HatView, { x: number; y: number; width: number; height: number }> = {
+      ...config.safeZones // 기본값으로 시작
+    }
+
+    product.customizableAreas.forEach((area: CustomizableArea) => {
+      if (area.isEnabled) {
+        zones[area.viewName as HatView] = {
+          x: area.zoneX,
+          y: area.zoneY,
+          width: area.zoneWidth,
+          height: area.zoneHeight,
+        }
+      }
+    })
+
+    return zones
+  }, [product, config.safeZones])
+
+  // 상품 기반 설정 오버라이드
+  const effectiveConfig = useMemo(() => {
+    if (!product) return config
+    return {
+      ...config,
+      basePrice: product.basePrice,
+      colors: productColors,
+      safeZones: productSafeZones,
+    }
+  }, [config, product, productColors, productSafeZones])
 
   /**
    * 파일 업로드 핸들러
@@ -46,7 +119,7 @@ export function StudioLayout() {
     const reader = new FileReader()
     reader.onload = (ev) => {
       // 공통 함수를 사용하여 기본 위치 계산
-      const defaultPos = getDefaultLayerPosition(currentView, config)
+      const defaultPos = getDefaultLayerPosition(currentView, effectiveConfig)
 
       addLayer({
         type: "image",
@@ -87,13 +160,15 @@ export function StudioLayout() {
        
        {/* Main Canvas Area */}
        <div className="flex-1 relative">
-            <HatCanvas 
-                hatColor={selectedColor} 
+            <HatCanvas
+                hatColor={selectedColor}
                 currentView={currentView}
                 onViewChange={setCurrentView}
                 layers={currentColorLayers}
                 onRemoveLayer={handleRemoveLayer}
                 onUpdateLayer={handleUpdateLayer}
+                productColors={product ? productColors : undefined}
+                productSafeZones={product ? productSafeZones : undefined}
             />
             
             {/* Floating Tool Bar */}
@@ -112,9 +187,12 @@ export function StudioLayout() {
        </div>
 
        {/* Right Sidebar: Product & Commerce */}
-       <ProductSidebar 
-            selectedColor={selectedColor} 
+       <ProductSidebar
+            selectedColor={selectedColor}
             onColorChange={setSelectedColor}
+            productColors={product ? productColors : undefined}
+            productBasePrice={product?.basePrice}
+            productName={product?.name || productName}
        />
     </div>
   )

@@ -2,7 +2,7 @@
 
 import React from "react"
 import { Box } from "lucide-react"
-import { HatView } from "@/lib/store/studio-context"
+import { HatView, ProductColor, Zone } from "@/lib/store/studio-context"
 import { HatDesignCanvas, DesignLayer } from "@/components/shared/HatDesignCanvas"
 
 // 하위 호환성을 위한 타입 내보내기
@@ -18,6 +18,8 @@ interface HatCanvasProps {
   onUpdateLayer?: (id: string, updates: Partial<DesignLayer>) => void
   selectedLayerId?: string | null
   onSelectLayer?: (id: string | null) => void
+  productColors?: ProductColor[]  // 상품별 색상/이미지 (제공되면 기본 config 대신 사용)
+  productSafeZones?: Record<HatView, Zone>  // 상품별 인쇄 영역
 }
 
 const VIEWS: { id: HatView; label: string }[] = [
@@ -42,6 +44,8 @@ export function HatCanvas({
   onUpdateLayer,
   selectedLayerId,
   onSelectLayer,
+  productColors,
+  productSafeZones,
 }: HatCanvasProps) {
   // 현재 뷰의 레이어
   const currentLayers = layers.filter((l) => l.view === currentView)
@@ -124,6 +128,8 @@ export function HatCanvas({
           showSafeZone={true}
           showViewLabel={true}
           className="w-full h-full rounded-xl shadow-xl"
+          productColors={productColors}
+          productSafeZones={productSafeZones}
         />
       </div>
     </div>

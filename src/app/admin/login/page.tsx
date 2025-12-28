@@ -7,22 +7,44 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { Lock } from "lucide-react"
+import { Lock, Loader2 } from "lucide-react"
 
 export default function AdminLoginPage() {
-  const [id, setId] = useState("")
-  const [pw, setPw] = useState("")
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (id === "runhouse" && pw === "runhouse") {
-      // Set secure cookie or simple localstorage for this MVP
-      document.cookie = "admin_auth=true; path=/"
-      toast.success("Welcome, Administrator")
-      router.push("/admin/dashboard")
-    } else {
-      toast.error("Invalid credentials")
+
+    if (!username || !password) {
+      toast.error("아이디와 비밀번호를 입력해주세요")
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      })
+
+      const data = await res.json()
+
+      if (data.success) {
+        toast.success(`환영합니다, ${data.data.displayName}님`)
+        router.push(`/admin/${data.data.tenantSlug}/dashboard`)
+      } else {
+        toast.error(data.error || "로그인에 실패했습니다")
+      }
+    } catch (error) {
+      console.error("Login error:", error)
+      toast.error("서버 오류가 발생했습니다")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -35,34 +57,47 @@ export default function AdminLoginPage() {
                 <Lock className="w-6 h-6 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl text-center">RunHouse Admin</CardTitle>
+          <CardTitle className="text-2xl text-center">Admin Login</CardTitle>
           <CardDescription className="text-center">
-            Enter your credentials to manage store settings
+            테넌트 관리자 계정으로 로그인하세요
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="id">Admin ID</Label>
-              <Input 
-                id="id" 
-                placeholder="ID"
-                value={id}
-                onChange={(e) => setId(e.target.value)}
+              <Label htmlFor="username">아이디</Label>
+              <Input
+                id="username"
+                placeholder="관리자 아이디"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                placeholder="Password"
-                value={pw}
-                onChange={(e) => setPw(e.target.value)}
+              <Label htmlFor="password">비밀번호</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="비밀번호"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="w-full bg-black hover:bg-gray-800">
-              Access Dashboard
+            <Button
+              type="submit"
+              className="w-full bg-black hover:bg-gray-800"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  로그인 중...
+                </>
+              ) : (
+                "로그인"
+              )}
             </Button>
           </form>
         </CardContent>

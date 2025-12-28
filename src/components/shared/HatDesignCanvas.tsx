@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react"
 import { Rnd } from "react-rnd"
 import { X } from "lucide-react"
-import { useStudioConfig, HatView } from "@/lib/store/studio-context"
+import { useStudioConfig, HatView, ProductColor, Zone } from "@/lib/store/studio-context"
 
 /**
  * 통합 좌표 시스템
@@ -50,6 +50,11 @@ interface HatDesignCanvasProps {
   className?: string
   showSafeZone?: boolean
   showViewLabel?: boolean
+
+  // 상품별 색상/이미지 (제공되면 기본 config 대신 사용)
+  productColors?: ProductColor[]
+  // 상품별 인쇄 영역 (제공되면 기본 safeZones 대신 사용)
+  productSafeZones?: Record<HatView, Zone>
 }
 
 /**
@@ -69,17 +74,25 @@ export function HatDesignCanvas({
   className = "",
   showSafeZone = true,
   showViewLabel = false,
+  productColors,
+  productSafeZones,
 }: HatDesignCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null)
   const [canvasSize, setCanvasSize] = useState(400)
 
   const { config } = useStudioConfig()
 
+  // 상품별 색상이 제공되면 사용, 아니면 기본 config 사용
+  const colors = productColors || config.colors
+
+  // 상품별 인쇄 영역이 제공되면 사용, 아니면 기본 safeZones 사용
+  const safeZones = productSafeZones || config.safeZones
+
   // 현재 색상과 뷰에 맞는 모자 이미지
-  const hatImage = config.colors.find(c => c.id === hatColor)?.views[currentView] || ""
+  const hatImage = colors.find(c => c.id === hatColor)?.views[currentView] || ""
 
   // 현재 뷰의 안전 영역
-  const zone = config.safeZones[currentView]
+  const zone = safeZones[currentView]
 
   // 현재 뷰의 레이어만 필터링
   const viewLayers = layers.filter(l => l.view === currentView)
@@ -168,7 +181,6 @@ export function HatDesignCanvas({
           alt={`${hatColor} hat ${currentView}`}
           className={`absolute inset-0 w-full h-full object-contain pointer-events-none select-none
             ${currentView === 'right' && hatColor !== 'black' ? 'scale-x-[-1]' : ''}
-            ${currentView === 'top' ? 'rotate-180' : ''}
           `}
           draggable={false}
         />

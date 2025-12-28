@@ -13,7 +13,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useStudioConfig } from "@/lib/store/studio-context";
+import { useStudioConfig, ProductColor } from "@/lib/store/studio-context";
 import { useLanguage } from "@/lib/i18n/language-context";
 import {
   useDesignStore,
@@ -26,6 +26,9 @@ import { OrderDialog } from "@/components/order/OrderDialog";
 interface ProductSidebarProps {
   selectedColor: string;
   onColorChange: (color: string) => void;
+  productColors?: ProductColor[];  // 상품별 색상 (제공되면 config.colors 대신 사용)
+  productBasePrice?: number;       // 상품별 가격
+  productName?: string;            // 상품명
 }
 
 const SIZES = ["S", "M", "L", "XL", "FREE"];
@@ -33,9 +36,17 @@ const SIZES = ["S", "M", "L", "XL", "FREE"];
 export function ProductSidebar({
   selectedColor,
   onColorChange,
+  productColors,
+  productBasePrice,
+  productName,
 }: ProductSidebarProps) {
   const { config } = useStudioConfig();
   const { t } = useLanguage();
+
+  // 상품별 색상이 제공되면 사용, 아니면 기본 config 사용
+  const colors = productColors || config.colors;
+  const basePrice = productBasePrice ?? config.basePrice;
+  const displayName = productName || t("product.name");
   const [selectedSize, setSelectedSize] = useState("FREE");
   const [quantity, setQuantity] = useState(1);
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
@@ -53,7 +64,7 @@ export function ProductSidebar({
   const updateItemQuantity = useCartStore((state) => state.updateItemQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
 
-  const selectedColorData = config.colors.find((c) => c.id === selectedColor);
+  const selectedColorData = colors.find((c) => c.id === selectedColor);
 
   // 현재 색상에 디자인이 있는지 확인
   const hasCurrentDesign = currentColorLayers.length > 0;
@@ -77,13 +88,13 @@ export function ProductSidebar({
 
     addToCart({
       productId: "custom-hat",
-      productName: t("product.name"),
+      productName: displayName,
       color: selectedColor,
       colorLabel: selectedColorData?.label || selectedColor,
       size: selectedSize,
       quantity: quantity,
       designLayers: [...currentColorLayers],
-      unitPrice: config.basePrice,
+      unitPrice: basePrice,
     });
 
     toast.success("장바구니에 추가되었습니다", {
@@ -141,7 +152,7 @@ export function ProductSidebar({
         <div className='space-y-1'>
           <div className='flex justify-between items-start'>
             <h2 className='text-xl font-bold text-gray-900'>
-              {t("product.name")}
+              {displayName}
             </h2>
             {totalCartItems > 0 && (
               <div className='relative'>
@@ -153,7 +164,7 @@ export function ProductSidebar({
             )}
           </div>
           <p className='text-lg font-bold'>
-            {config.basePrice.toLocaleString()} KRW
+            {basePrice.toLocaleString()} KRW
           </p>
         </div>
 
@@ -165,7 +176,7 @@ export function ProductSidebar({
             {t("common.color")} - {selectedColorData?.label}
           </Label>
           <div className='flex gap-2'>
-            {config.colors.map((c) => {
+            {colors.map((c) => {
               const hasDesign = colorsWithDesign.includes(c.id);
               return (
                 <div key={c.id} className='relative'>
@@ -325,7 +336,7 @@ export function ProductSidebar({
                         className='w-6 h-6 rounded-full border-2 shadow-sm flex-shrink-0'
                         style={{
                           backgroundColor:
-                            config.colors.find((c) => c.id === item.color)
+                            colors.find((c) => c.id === item.color)
                               ?.hex || "#000",
                         }}
                       />
