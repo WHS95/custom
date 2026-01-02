@@ -1,0 +1,2 @@
+  - 아이디: runhouse_admin
+  - 비밀번호: runrun123!

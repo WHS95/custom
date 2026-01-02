@@ -465,7 +465,7 @@ export default function AdminOrdersPage() {
                                   {order.trackingInfo.trackingNumber}
                                 </a>
                               </div>
-                            ) : order.status === "preparing" || order.status === "in_production" ? (
+                            ) : !["shipped", "delivered", "cancelled"].includes(order.status) ? (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -490,7 +490,12 @@ export default function AdminOrdersPage() {
                           </td>
                           <td className="p-4">
                             <div className="flex gap-2">
-                              <Button variant="ghost" size="sm" onClick={() => handleViewDetail(order)}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => router.push(`/order/${order.orderNumber}`)}
+                                title="주문 상세 페이지로 이동"
+                              >
                                 <Eye className="w-4 h-4" />
                               </Button>
                               <Button variant="ghost" size="sm" onClick={() => handleEditOrder(order)}>

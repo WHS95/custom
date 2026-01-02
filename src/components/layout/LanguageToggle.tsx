@@ -16,11 +16,11 @@ export function LanguageToggle() {
       >
         KR
       </Button>
-      <Button 
+      <Button
         variant="ghost"
         size="sm"
-        className={`h-7 px-2 text-xs font-medium rounded-sm ${language === 'en' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-900'}`}
-        onClick={() => setLanguage('en')}
+        className="h-7 px-2 text-xs font-medium rounded-sm text-gray-500 hover:text-gray-900"
+        onClick={() => alert('준비중입니다')}
       >
         EN
       </Button>

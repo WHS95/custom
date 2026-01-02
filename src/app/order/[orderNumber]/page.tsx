@@ -22,7 +22,10 @@ import {
   Lock,
   Unlock,
   Image as ImageIcon,
+  MessageSquare,
+  Download,
 } from "lucide-react"
+import Link from "next/link"
 import { toast } from "sonner"
 import { useStudioConfig, HatView } from "@/lib/store/studio-context"
 import { ORDER_STATUS_LABELS, type OrderStatus } from "@/domain/order"
@@ -244,6 +247,108 @@ export default function OrderDetailPage() {
     e.target.value = ""
   }
 
+  // 이미지 다운로드 함수
+  const handleDownloadImage = async (layer: DesignLayer, index: number) => {
+    try {
+      const content = layer.content
+      let blob: Blob
+
+      if (content.startsWith("data:")) {
+        // Base64 이미지 처리
+        const base64Data = content.split(",")[1]
+        const mimeType = content.split(";")[0].split(":")[1] || "image/png"
+        const byteCharacters = atob(base64Data)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        blob = new Blob([byteArray], { type: mimeType })
+      } else {
+        // URL 이미지 처리
+        const response = await fetch(content)
+        blob = await response.blob()
+      }
+
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      const ext = blob.type.split("/")[1] || "png"
+      a.download = `${order?.orderNumber}_${layer.view}_design_${index + 1}.${ext}`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      toast.success("이미지가 다운로드되었습니다")
+    } catch (error) {
+      console.error("다운로드 에러:", error)
+      toast.error("이미지 다운로드에 실패했습니다")
+    }
+  }
+
+  // 모든 디자인 이미지 다운로드
+  const handleDownloadAllImages = async () => {
+    if (!order) return
+
+    const imageLayers = order.items.flatMap((item, itemIdx) =>
+      (editedLayers[item.id] || item.designSnapshot || [])
+        .filter((layer) => layer.type === "image")
+        .map((layer, layerIdx) => ({
+          layer,
+          itemIndex: itemIdx,
+          layerIndex: layerIdx,
+          colorLabel: item.colorLabel,
+        }))
+    )
+
+    if (imageLayers.length === 0) {
+      toast.info("다운로드할 디자인 이미지가 없습니다")
+      return
+    }
+
+    toast.info(`${imageLayers.length}개 이미지 다운로드 중...`)
+
+    for (let i = 0; i < imageLayers.length; i++) {
+      const { layer, colorLabel, layerIndex } = imageLayers[i]
+      try {
+        const content = layer.content
+        let blob: Blob
+
+        if (content.startsWith("data:")) {
+          const base64Data = content.split(",")[1]
+          const mimeType = content.split(";")[0].split(":")[1] || "image/png"
+          const byteCharacters = atob(base64Data)
+          const byteNumbers = new Array(byteCharacters.length)
+          for (let j = 0; j < byteCharacters.length; j++) {
+            byteNumbers[j] = byteCharacters.charCodeAt(j)
+          }
+          const byteArray = new Uint8Array(byteNumbers)
+          blob = new Blob([byteArray], { type: mimeType })
+        } else {
+          const response = await fetch(content)
+          blob = await response.blob()
+        }
+
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        const ext = blob.type.split("/")[1] || "png"
+        a.download = `${order.orderNumber}_${colorLabel}_${layer.view}_${layerIndex + 1}.${ext}`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+
+        // 다운로드 간 딜레이
+        await new Promise((resolve) => setTimeout(resolve, 300))
+      } catch (error) {
+        console.error("다운로드 에러:", error)
+      }
+    }
+
+    toast.success("모든 이미지 다운로드 완료")
+  }
+
   // 디자인 저장
   const handleSave = async () => {
     if (!hasChanges || !order) return
@@ -412,6 +517,24 @@ export default function OrderDetailPage() {
               <span className="font-bold">{order.totalAmount.toLocaleString()}원</span>
             </div>
           </div>
+
+          {/* 후기 작성 버튼 (배송 완료 시) */}
+          {order.status === "delivered" && (
+            <>
+              <Separator />
+              <div className="p-4">
+                <Link href={`/gallery/write?order=${order.orderNumber}`}>
+                  <Button variant="outline" className="w-full">
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    후기 작성하기
+                  </Button>
+                </Link>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  상품에 대한 후기를 남겨주세요
+                </p>
+              </div>
+            </>
+          )}
         </div>
 
         {/* 중앙: 캔버스 */}
@@ -457,6 +580,16 @@ export default function OrderDetailPage() {
         {/* 우측: 도구 패널 */}
         <div className="w-72 bg-white border-l overflow-y-auto">
           <div className="p-4 space-y-4">
+            {/* 모든 이미지 다운로드 버튼 */}
+            <Button
+              onClick={handleDownloadAllImages}
+              variant="outline"
+              className="w-full"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              모든 디자인 이미지 다운로드
+            </Button>
+
             {/* 저장 버튼 */}
             {canEdit && (
               <Button
@@ -554,22 +687,36 @@ export default function OrderDetailPage() {
                   {viewLayers.map((layer, index) => (
                     <div
                       key={layer.id}
-                      onClick={() => canEdit && setSelectedLayerId(layer.id)}
-                      className={`p-2 rounded border text-sm cursor-pointer ${
+                      className={`p-2 rounded border text-sm ${
                         selectedLayerId === layer.id
                           ? "border-blue-500 bg-blue-50"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
-                      <div className="flex items-center gap-2">
+                      <div
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={() => canEdit && setSelectedLayerId(layer.id)}
+                      >
                         {layer.type === "image" ? (
                           <ImageIcon className="w-4 h-4 text-gray-400" />
                         ) : (
                           <span className="text-xs">Aa</span>
                         )}
-                        <span className="truncate">
+                        <span className="truncate flex-1">
                           {layer.type === "image" ? `이미지 ${index + 1}` : layer.content}
                         </span>
+                        {layer.type === "image" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDownloadImage(layer, index)
+                            }}
+                            className="p-1 hover:bg-gray-200 rounded"
+                            title="이미지 다운로드"
+                          >
+                            <Download className="w-3 h-3 text-gray-500" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

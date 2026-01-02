@@ -455,6 +455,77 @@ INSERT INTO tenant_admins (tenant_id, username, password_hash, display_name) VAL
 COMMENT ON TABLE tenant_admins IS '테넌트 관리자 계정';
 
 -- ============================================
+-- 테이블: 후기/갤러리
+-- ============================================
+
+-- 후기 상태 ENUM
+CREATE TYPE review_status AS ENUM (
+  'pending',    -- 승인 대기
+  'approved',   -- 승인됨
+  'rejected'    -- 거절됨
+);
+
+CREATE TABLE reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+
+  -- 작성자 정보
+  author_type VARCHAR(20) NOT NULL DEFAULT 'customer',  -- 'admin' 또는 'customer'
+  author_name VARCHAR(100) NOT NULL,
+  organization_name VARCHAR(200),  -- 단체명
+
+  -- 후기 내용
+  title VARCHAR(200),
+  content TEXT NOT NULL,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+
+  -- 이미지 (최대 5개)
+  images JSONB DEFAULT '[]'::jsonb,
+
+  -- 상태 (관리자 작성은 자동 승인, 고객 작성은 승인 대기)
+  status review_status NOT NULL DEFAULT 'pending',
+
+  -- 관리자 메모
+  admin_memo TEXT,
+
+  -- 메타
+  is_featured BOOLEAN NOT NULL DEFAULT false,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+
+  -- 타임스탬프
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  approved_at TIMESTAMPTZ
+);
+
+-- 인덱스
+CREATE INDEX idx_reviews_tenant_id ON reviews(tenant_id);
+CREATE INDEX idx_reviews_order_id ON reviews(order_id);
+CREATE INDEX idx_reviews_status ON reviews(status);
+CREATE INDEX idx_reviews_is_featured ON reviews(is_featured);
+CREATE INDEX idx_reviews_created_at ON reviews(created_at DESC);
+
+-- 트리거
+CREATE TRIGGER update_reviews_updated_at
+  BEFORE UPDATE ON reviews
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- RLS
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Service role has full access to reviews" ON reviews
+  FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Anonymous users can view approved reviews" ON reviews
+  FOR SELECT USING (status = 'approved');
+
+CREATE POLICY "Anonymous users can insert reviews" ON reviews
+  FOR INSERT WITH CHECK (true);
+
+COMMENT ON TABLE reviews IS '후기/갤러리';
+
+-- ============================================
 -- 뷰: 주문 목록 (관리자용)
 -- ============================================
 

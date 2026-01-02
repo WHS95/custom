@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { ExternalLink, RefreshCw, Loader2, Package, ClipboardList, ArrowRight, Cog, LogOut, Settings } from "lucide-react"
+import { ExternalLink, RefreshCw, Loader2, Package, ClipboardList, ArrowRight, Cog, LogOut, Settings, MessageSquare } from "lucide-react"
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -103,7 +103,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* 빠른 링크 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card
           className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-blue-200"
           onClick={() => router.push(`${basePath}/products`)}
@@ -166,6 +166,28 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="flex items-center text-purple-600 font-medium">
               테넌트 설정으로 이동 <ArrowRight className="ml-2 h-4 w-4" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card
+          className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-orange-200"
+          onClick={() => router.push(`${basePath}/reviews`)}
+        >
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <MessageSquare className="h-6 w-6 text-orange-600" />
+              </div>
+              후기 관리
+            </CardTitle>
+            <CardDescription>
+              고객 후기 승인/거절, 대표 후기 설정
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center text-orange-600 font-medium">
+              후기 관리로 이동 <ArrowRight className="ml-2 h-4 w-4" />
             </div>
           </CardContent>
         </Card>
