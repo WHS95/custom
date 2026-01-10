@@ -27,7 +27,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { useStudioConfig, HatView } from "@/lib/store/studio-context"
+import { useStudioConfig, HatView, ProductColor } from "@/lib/store/studio-context"
 import { ORDER_STATUS_LABELS, type OrderStatus } from "@/domain/order"
 import {
   HatDesignCanvas,
@@ -37,6 +37,7 @@ import {
 
 interface OrderItem {
   id: string
+  productId: string
   productName: string
   color: string
   colorLabel: string
@@ -97,6 +98,9 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
+  // 상품별 색상 이미지 (productId -> ProductColor[])
+  const [productColorsMap, setProductColorsMap] = useState<Record<string, ProductColor[]>>({})
+
   // 현재 선택된 아이템
   const [selectedItemIndex, setSelectedItemIndex] = useState(0)
 
@@ -139,6 +143,48 @@ export default function OrderDetailPage() {
           if (firstItem?.designSnapshot?.length > 0) {
             setCurrentView(firstItem.designSnapshot[0].view)
           }
+
+          // 상품별 색상 이미지 불러오기
+          const uniqueProductIds = [...new Set(data.order.items.map((item: OrderItem) => item.productId))]
+          const colorsMap: Record<string, ProductColor[]> = {}
+
+          for (const productId of uniqueProductIds) {
+            try {
+              const productRes = await fetch(`/api/products/${productId}`)
+              const productData = await productRes.json()
+
+              if (productData.success && productData.data) {
+                const product = productData.data
+                // ProductImage[] -> ProductColor[] 변환
+                const colors: ProductColor[] = (product.variants || []).map((variant: { id: string; label: string; hex: string }) => {
+                  const views: Record<HatView, string> = {
+                    front: "",
+                    back: "",
+                    left: "",
+                    right: "",
+                    top: "",
+                  }
+                  // 해당 색상의 이미지들 매핑
+                  ;(product.images || []).forEach((img: { colorId: string; view: string; url: string }) => {
+                    if (img.colorId === variant.id) {
+                      views[img.view as HatView] = img.url
+                    }
+                  })
+                  return {
+                    id: variant.id,
+                    label: variant.label,
+                    hex: variant.hex,
+                    views,
+                  }
+                })
+                colorsMap[productId as string] = colors
+              }
+            } catch (err) {
+              console.error(`상품 ${productId} 이미지 로드 실패:`, err)
+            }
+          }
+
+          setProductColorsMap(colorsMap)
         } else {
           toast.error("주문을 찾을 수 없습니다.")
           router.push("/dashboard")
@@ -572,6 +618,7 @@ export default function OrderDetailPage() {
                 selectedLayerId={selectedLayerId}
                 showSafeZone={true}
                 className="w-full rounded-xl shadow-lg bg-white"
+                productColors={currentItem?.productId ? productColorsMap[currentItem.productId] : undefined}
               />
             </div>
           </div>

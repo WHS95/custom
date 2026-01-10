@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { orderRepository } from '@/infrastructure/supabase/order-repository'
 import type { TrackingInfo, CarrierCode } from '@/domain/order/types'
+import { notifyShipped } from '@/lib/slack'
 
 interface Params {
   params: Promise<{ orderNumber: string }>
@@ -118,6 +119,15 @@ export async function POST(
       changedBy: 'admin',
       memo: `송장등록: ${carrier} ${trackingNumber}`,
     })
+
+    // 슬랙 알림 발송 (비동기, 실패해도 주문 처리에 영향 없음)
+    notifyShipped(
+      order.orderNumber,
+      order.customerName,
+      carrier,
+      trackingNumber,
+      order.shippingInfo?.organizationName
+    ).catch((err) => console.error('[Slack] 배송 출발 알림 실패:', err))
 
     return NextResponse.json({
       success: true,

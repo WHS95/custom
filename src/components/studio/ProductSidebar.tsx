@@ -24,21 +24,25 @@ import { toast } from "sonner";
 import { OrderDialog } from "@/components/order/OrderDialog";
 
 interface ProductSidebarProps {
+  productId?: string;              // 상품 ID (UUID)
   selectedColor: string;
   onColorChange: (color: string) => void;
   productColors?: ProductColor[];  // 상품별 색상 (제공되면 config.colors 대신 사용)
   productBasePrice?: number;       // 상품별 가격
   productName?: string;            // 상품명
+  productSizes?: string[];         // 상품별 사이즈 (제공되면 기본 SIZES 대신 사용)
 }
 
-const SIZES = ["S", "M", "L", "XL", "FREE"];
+const DEFAULT_SIZES = ["S", "M", "L", "XL", "FREE"];
 
 export function ProductSidebar({
+  productId,
   selectedColor,
   onColorChange,
   productColors,
   productBasePrice,
   productName,
+  productSizes,
 }: ProductSidebarProps) {
   const { config } = useStudioConfig();
   const { t } = useLanguage();
@@ -47,7 +51,10 @@ export function ProductSidebar({
   const colors = productColors || config.colors;
   const basePrice = productBasePrice ?? config.basePrice;
   const displayName = productName || t("product.name");
-  const [selectedSize, setSelectedSize] = useState("FREE");
+
+  // 상품별 사이즈가 있으면 사용, 없으면 기본값
+  const sizes = productSizes && productSizes.length > 0 ? productSizes : DEFAULT_SIZES;
+  const [selectedSize, setSelectedSize] = useState(sizes[0] || "FREE");
   const [quantity, setQuantity] = useState(1);
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
 
@@ -87,7 +94,7 @@ export function ProductSidebar({
     }
 
     addToCart({
-      productId: "custom-hat",
+      productId: productId || "custom-hat",
       productName: displayName,
       color: selectedColor,
       colorLabel: selectedColorData?.label || selectedColor,
@@ -217,8 +224,8 @@ export function ProductSidebar({
               {t("common.sizeGuide")}
             </span>
           </div>
-          <div className='grid grid-cols-5 gap-2'>
-            {SIZES.map((size) => (
+          <div className={`grid gap-2 ${sizes.length <= 3 ? 'grid-cols-3' : sizes.length === 4 ? 'grid-cols-4' : 'grid-cols-5'}`}>
+            {sizes.map((size) => (
               <button
                 key={size}
                 onClick={() => setSelectedSize(size)}

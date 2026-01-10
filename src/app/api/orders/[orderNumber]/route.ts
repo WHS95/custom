@@ -10,9 +10,11 @@ import {
   getOrderByNumber,
   updateOrderStatus,
   updateAdminMemo,
+  updateOrderInfo,
   getOrderStatusHistory,
 } from '@/application/order-service'
-import { ORDER_STATUS_LABELS, type OrderStatus } from '@/domain/order'
+import { ORDER_STATUS_LABELS, type OrderStatus, type ShippingInfo } from '@/domain/order'
+import { notifyStatusChange } from '@/lib/slack'
 
 interface RouteParams {
   params: Promise<{ orderNumber: string }>
@@ -47,6 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         shippingInfo: order.shippingInfo,
         items: order.items.map((item) => ({
           id: item.id,
+          productId: item.productId,
           productName: item.productName,
           color: item.color,
           colorLabel: item.colorLabel,
@@ -129,11 +132,46 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         body.changedBy || 'admin',
         body.statusMemo
       )
+
+      // 슬랙 알림 발송 (비동기, 실패해도 주문 처리에 영향 없음)
+      notifyStatusChange(
+        existingOrder.orderNumber,
+        existingOrder.customerName,
+        existingOrder.status,
+        body.status,
+        body.statusMemo,
+        existingOrder.shippingInfo?.organizationName
+      ).catch((err) => console.error('[Slack] 상태 변경 알림 실패:', err))
     }
 
     // 관리자 메모 업데이트
     if (body.adminMemo !== undefined) {
       updatedOrder = await updateAdminMemo(existingOrder.id, body.adminMemo)
+    }
+
+    // 고객정보/배송정보 업데이트
+    const orderInfoUpdates: {
+      customerName?: string
+      customerPhone?: string
+      customerEmail?: string
+      shippingInfo?: ShippingInfo
+    } = {}
+
+    if (body.customerName !== undefined) {
+      orderInfoUpdates.customerName = body.customerName
+    }
+    if (body.customerPhone !== undefined) {
+      orderInfoUpdates.customerPhone = body.customerPhone
+    }
+    if (body.customerEmail !== undefined) {
+      orderInfoUpdates.customerEmail = body.customerEmail
+    }
+    if (body.shippingInfo !== undefined) {
+      orderInfoUpdates.shippingInfo = body.shippingInfo as ShippingInfo
+    }
+
+    if (Object.keys(orderInfoUpdates).length > 0) {
+      updatedOrder = await updateOrderInfo(existingOrder.id, orderInfoUpdates)
     }
 
     return NextResponse.json({

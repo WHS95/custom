@@ -53,8 +53,8 @@ interface HatDesignCanvasProps {
 
   // 상품별 색상/이미지 (제공되면 기본 config 대신 사용)
   productColors?: ProductColor[]
-  // 상품별 인쇄 영역 (제공되면 기본 safeZones 대신 사용)
-  productSafeZones?: Record<HatView, Zone>
+  // 상품별 인쇄 영역 (제공되면 기본 safeZones 대신 사용, 비활성화된 뷰는 미포함)
+  productSafeZones?: Partial<Record<HatView, Zone>>
 }
 
 /**
@@ -321,7 +321,7 @@ export function HatDesignCanvas({
 /**
  * 새 레이어 생성 시 기본 좌표 (안전 영역 중앙)
  */
-export function getDefaultLayerPosition(view: HatView, config: { safeZones: Record<HatView, { x: number; y: number; width: number; height: number }> }) {
+export function getDefaultLayerPosition(view: HatView, config: { safeZones: Partial<Record<HatView, { x: number; y: number; width: number; height: number }>> }) {
   const zone = config.safeZones[view] || { x: 30, y: 30, width: 40, height: 30 }
 
   const layerSize = 15 // 15% 크기

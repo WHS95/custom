@@ -42,6 +42,13 @@ import {
   MapPin,
   ArrowLeft,
   Loader2,
+  User,
+  Mail,
+  CreditCard,
+  Save,
+  X,
+  History,
+  FileText,
 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -133,15 +140,32 @@ export default function AdminOrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [shippingDialogOpen, setShippingDialogOpen] = useState(false)
-  const [newStatus, setNewStatus] = useState<OrderStatus | "">("")
-  const [statusMemo, setStatusMemo] = useState("")
-  const [adminMemo, setAdminMemo] = useState("")
+  const [orderDetailOpen, setOrderDetailOpen] = useState(false)
+  const [editMode, setEditMode] = useState(false)
   const [updating, setUpdating] = useState(false)
-  const [shippingCarrier, setShippingCarrier] = useState<CarrierCode>("cj")
-  const [trackingNumber, setTrackingNumber] = useState("")
+
+  // 수정용 폼 상태
+  const [formData, setFormData] = useState({
+    // 고객 정보
+    customerName: "",
+    customerPhone: "",
+    customerEmail: "",
+    // 배송 정보
+    recipientName: "",
+    recipientPhone: "",
+    zipCode: "",
+    address: "",
+    addressDetail: "",
+    organizationName: "",
+    shippingMemo: "",
+    // 상태 정보
+    status: "" as OrderStatus | "",
+    statusMemo: "",
+    adminMemo: "",
+    // 배송 추적
+    carrier: "cj" as CarrierCode,
+    trackingNumber: "",
+  })
 
   const basePath = `/admin/${tenantSlugParam}`
 
@@ -183,83 +207,88 @@ export default function AdminOrdersPage() {
     }
   }
 
-  const handleViewDetail = (order: Order) => {
+  // 주문 상세 모달 열기
+  const handleOpenOrderDetail = (order: Order) => {
     setSelectedOrder(order)
-    setDetailDialogOpen(true)
+    setFormData({
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      customerEmail: order.customerEmail || "",
+      recipientName: order.shippingInfo.recipientName,
+      recipientPhone: order.shippingInfo.phone,
+      zipCode: order.shippingInfo.zipCode || "",
+      address: order.shippingInfo.address,
+      addressDetail: order.shippingInfo.addressDetail || "",
+      organizationName: order.shippingInfo.organizationName || "",
+      shippingMemo: order.shippingInfo.memo || "",
+      status: order.status,
+      statusMemo: "",
+      adminMemo: order.adminMemo || "",
+      carrier: order.trackingInfo?.carrier || "cj",
+      trackingNumber: order.trackingInfo?.trackingNumber || "",
+    })
+    setEditMode(false)
+    setOrderDetailOpen(true)
   }
 
-  const handleEditOrder = (order: Order) => {
-    setSelectedOrder(order)
-    setNewStatus(order.status)
-    setStatusMemo("")
-    setAdminMemo(order.adminMemo || "")
-    setEditDialogOpen(true)
-  }
-
-  const handleOpenShippingDialog = (order: Order) => {
-    setSelectedOrder(order)
-    setShippingCarrier(order.trackingInfo?.carrier || "cj")
-    setTrackingNumber(order.trackingInfo?.trackingNumber || "")
-    setShippingDialogOpen(true)
-  }
-
-  const handleRegisterShipping = async () => {
-    if (!selectedOrder) return
-    if (!trackingNumber.trim()) {
-      toast.error("송장번호를 입력해주세요.")
-      return
-    }
-
-    setUpdating(true)
-    try {
-      const response = await fetch(`/api/orders/${selectedOrder.orderNumber}/shipping`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          carrier: shippingCarrier,
-          trackingNumber: trackingNumber.trim(),
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        toast.success("송장이 등록되었습니다.")
-        setShippingDialogOpen(false)
-        fetchOrders()
-      } else {
-        throw new Error(data.error)
-      }
-    } catch (error) {
-      console.error("송장 등록 에러:", error)
-      toast.error("송장 등록에 실패했습니다.")
-    } finally {
-      setUpdating(false)
-    }
-  }
-
-  const handleUpdateOrder = async () => {
+  // 주문 정보 저장
+  const handleSaveOrder = async () => {
     if (!selectedOrder) return
 
     setUpdating(true)
     try {
-      const body: Record<string, string> = {}
+      const body: Record<string, unknown> = {}
 
-      if (newStatus && newStatus !== selectedOrder.status) {
-        body.status = newStatus
+      // 상태 변경
+      if (formData.status && formData.status !== selectedOrder.status) {
+        body.status = formData.status
         body.changedBy = "admin"
-        if (statusMemo) {
-          body.statusMemo = statusMemo
+        if (formData.statusMemo) {
+          body.statusMemo = formData.statusMemo
         }
       }
 
-      if (adminMemo !== selectedOrder.adminMemo) {
-        body.adminMemo = adminMemo
+      // 관리자 메모 변경
+      if (formData.adminMemo !== (selectedOrder.adminMemo || "")) {
+        body.adminMemo = formData.adminMemo
+      }
+
+      // 고객 정보 및 배송 정보 변경
+      const customerChanged =
+        formData.customerName !== selectedOrder.customerName ||
+        formData.customerPhone !== selectedOrder.customerPhone ||
+        formData.customerEmail !== (selectedOrder.customerEmail || "")
+
+      const shippingChanged =
+        formData.recipientName !== selectedOrder.shippingInfo.recipientName ||
+        formData.recipientPhone !== selectedOrder.shippingInfo.phone ||
+        formData.zipCode !== (selectedOrder.shippingInfo.zipCode || "") ||
+        formData.address !== selectedOrder.shippingInfo.address ||
+        formData.addressDetail !== (selectedOrder.shippingInfo.addressDetail || "") ||
+        formData.organizationName !== (selectedOrder.shippingInfo.organizationName || "") ||
+        formData.shippingMemo !== (selectedOrder.shippingInfo.memo || "")
+
+      if (customerChanged) {
+        body.customerName = formData.customerName
+        body.customerPhone = formData.customerPhone
+        body.customerEmail = formData.customerEmail
+      }
+
+      if (shippingChanged) {
+        body.shippingInfo = {
+          recipientName: formData.recipientName,
+          phone: formData.recipientPhone,
+          zipCode: formData.zipCode,
+          address: formData.address,
+          addressDetail: formData.addressDetail,
+          organizationName: formData.organizationName,
+          memo: formData.shippingMemo,
+        }
       }
 
       if (Object.keys(body).length === 0) {
         toast.info("변경사항이 없습니다.")
-        setEditDialogOpen(false)
+        setEditMode(false)
         return
       }
 
@@ -273,7 +302,8 @@ export default function AdminOrdersPage() {
 
       if (data.success) {
         toast.success("주문이 업데이트되었습니다.")
-        setEditDialogOpen(false)
+        setEditMode(false)
+        setOrderDetailOpen(false)
         fetchOrders()
       } else {
         throw new Error(data.error)
@@ -281,6 +311,42 @@ export default function AdminOrdersPage() {
     } catch (error) {
       console.error("주문 업데이트 에러:", error)
       toast.error("주문 업데이트에 실패했습니다.")
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  // 송장 등록
+  const handleRegisterShipping = async () => {
+    if (!selectedOrder) return
+    if (!formData.trackingNumber.trim()) {
+      toast.error("송장번호를 입력해주세요.")
+      return
+    }
+
+    setUpdating(true)
+    try {
+      const response = await fetch(`/api/orders/${selectedOrder.orderNumber}/shipping`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          carrier: formData.carrier,
+          trackingNumber: formData.trackingNumber.trim(),
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success("송장이 등록되었습니다.")
+        setOrderDetailOpen(false)
+        fetchOrders()
+      } else {
+        throw new Error(data.error)
+      }
+    } catch (error) {
+      console.error("송장 등록 에러:", error)
+      toast.error("송장 등록에 실패했습니다.")
     } finally {
       setUpdating(false)
     }
@@ -465,15 +531,6 @@ export default function AdminOrdersPage() {
                                   {order.trackingInfo.trackingNumber}
                                 </a>
                               </div>
-                            ) : !["shipped", "delivered", "cancelled"].includes(order.status) ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleOpenShippingDialog(order)}
-                              >
-                                <Truck className="w-3 h-3 mr-1" />
-                                송장등록
-                              </Button>
                             ) : (
                               <span className="text-gray-400 text-xs">-</span>
                             )}
@@ -489,19 +546,14 @@ export default function AdminOrdersPage() {
                             </p>
                           </td>
                           <td className="p-4">
-                            <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => router.push(`/order/${order.orderNumber}`)}
-                                title="주문 상세 페이지로 이동"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleEditOrder(order)}>
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenOrderDetail(order)}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              상세
+                            </Button>
                           </td>
                         </tr>
                       )
@@ -514,107 +566,283 @@ export default function AdminOrdersPage() {
         </Card>
       </div>
 
-      {/* 상세 보기 다이얼로그 */}
-      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      {/* 주문 상세/수정 통합 모달 */}
+      <Dialog open={orderDetailOpen} onOpenChange={setOrderDetailOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>주문 상세</DialogTitle>
-            <DialogDescription>{selectedOrder?.orderNumber}</DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-xl flex items-center gap-2">
+                  주문 상세
+                  {selectedOrder && (
+                    <Badge className={`${STATUS_COLORS[selectedOrder.status]} border ml-2`}>
+                      {ORDER_STATUS_LABELS[selectedOrder.status]}
+                    </Badge>
+                  )}
+                </DialogTitle>
+                <DialogDescription className="font-mono text-base mt-1">
+                  {selectedOrder?.orderNumber}
+                </DialogDescription>
+              </div>
+              <div className="flex gap-2">
+                {!editMode ? (
+                  <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
+                    <Edit className="w-4 h-4 mr-1" />
+                    수정
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => setEditMode(false)}>
+                      <X className="w-4 h-4 mr-1" />
+                      취소
+                    </Button>
+                    <Button size="sm" onClick={handleSaveOrder} disabled={updating}>
+                      <Save className="w-4 h-4 mr-1" />
+                      {updating ? "저장 중..." : "저장"}
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
           </DialogHeader>
 
           {selectedOrder && (
             <Tabs defaultValue="info" className="mt-4">
-              <TabsList className="grid grid-cols-3 w-full">
-                <TabsTrigger value="info">주문 정보</TabsTrigger>
-                <TabsTrigger value="items">상품 목록</TabsTrigger>
-                <TabsTrigger value="design">디자인</TabsTrigger>
+              <TabsList className="grid grid-cols-4 w-full">
+                <TabsTrigger value="info">기본 정보</TabsTrigger>
+                <TabsTrigger value="items">상품</TabsTrigger>
+                <TabsTrigger value="shipping">배송</TabsTrigger>
+                <TabsTrigger value="admin">관리</TabsTrigger>
               </TabsList>
 
+              {/* 기본 정보 탭 */}
               <TabsContent value="info" className="space-y-4 mt-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">주문자 정보</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-500 w-20">이름</span>
-                      <span className="font-medium">{selectedOrder.customerName}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-gray-400" />
-                      <span>{selectedOrder.customerPhone}</span>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* 주문자 정보 */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        주문자 정보
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {editMode ? (
+                        <>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-500">이름</Label>
+                            <Input
+                              value={formData.customerName}
+                              onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-500">연락처</Label>
+                            <Input
+                              value={formData.customerPhone}
+                              onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-500">이메일</Label>
+                            <Input
+                              value={formData.customerEmail}
+                              onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2 text-sm">
+                            <User className="w-4 h-4 text-gray-400" />
+                            <span className="font-medium">{selectedOrder.customerName}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Phone className="w-4 h-4 text-gray-400" />
+                            <span>{selectedOrder.customerPhone}</span>
+                          </div>
+                          {selectedOrder.customerEmail && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Mail className="w-4 h-4 text-gray-400" />
+                              <span>{selectedOrder.customerEmail}</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
 
+                  {/* 배송지 정보 */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        배송지 정보
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {editMode ? (
+                        <>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs text-gray-500">수령인</Label>
+                              <Input
+                                value={formData.recipientName}
+                                onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-gray-500">연락처</Label>
+                              <Input
+                                value={formData.recipientPhone}
+                                onChange={(e) => setFormData({ ...formData, recipientPhone: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-500">단체명</Label>
+                            <Input
+                              value={formData.organizationName}
+                              onChange={(e) => setFormData({ ...formData, organizationName: e.target.value })}
+                            />
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs text-gray-500">우편번호</Label>
+                              <Input
+                                value={formData.zipCode}
+                                onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                              />
+                            </div>
+                            <div className="col-span-2 space-y-1">
+                              <Label className="text-xs text-gray-500">주소</Label>
+                              <Input
+                                value={formData.address}
+                                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-500">상세주소</Label>
+                            <Input
+                              value={formData.addressDetail}
+                              onChange={(e) => setFormData({ ...formData, addressDetail: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-500">배송 메모</Label>
+                            <Input
+                              value={formData.shippingMemo}
+                              onChange={(e) => setFormData({ ...formData, shippingMemo: e.target.value })}
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="font-medium">{selectedOrder.shippingInfo.recipientName}</span>
+                            <span className="text-gray-400">|</span>
+                            <span>{selectedOrder.shippingInfo.phone}</span>
+                          </div>
+                          {selectedOrder.shippingInfo.organizationName && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Building className="w-4 h-4 text-gray-400" />
+                              <span>{selectedOrder.shippingInfo.organizationName}</span>
+                            </div>
+                          )}
+                          <div className="text-sm text-gray-600">
+                            {selectedOrder.shippingInfo.zipCode && (
+                              <span className="text-gray-400">[{selectedOrder.shippingInfo.zipCode}] </span>
+                            )}
+                            {selectedOrder.shippingInfo.address}
+                            {selectedOrder.shippingInfo.addressDetail && (
+                              <span> {selectedOrder.shippingInfo.addressDetail}</span>
+                            )}
+                          </div>
+                          {selectedOrder.shippingInfo.memo && (
+                            <div className="text-sm text-gray-500 bg-gray-50 p-2 rounded">
+                              배송메모: {selectedOrder.shippingInfo.memo}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* 결제 정보 */}
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">배송 정보</CardTitle>
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <CreditCard className="w-4 h-4" />
+                      결제 정보
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-500 w-20">수령인</span>
-                      <span className="font-medium">{selectedOrder.shippingInfo.recipientName}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-gray-400" />
-                      <span>{selectedOrder.shippingInfo.phone}</span>
-                    </div>
-                    {selectedOrder.shippingInfo.organizationName && (
-                      <div className="flex items-center gap-2">
-                        <Building className="w-4 h-4 text-gray-400" />
-                        <span>{selectedOrder.shippingInfo.organizationName}</span>
+                  <CardContent>
+                    <div className="flex justify-between items-center">
+                      <div className="space-y-1 text-sm">
+                        <div className="flex gap-4">
+                          <span className="text-gray-500">상품 합계</span>
+                          <span>{selectedOrder.subtotal.toLocaleString()}원</span>
+                        </div>
+                        <div className="flex gap-4">
+                          <span className="text-gray-500">배송비</span>
+                          <span>{selectedOrder.shippingCost === 0 ? "무료" : `${selectedOrder.shippingCost.toLocaleString()}원`}</span>
+                        </div>
                       </div>
-                    )}
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                      <span>
-                        {selectedOrder.shippingInfo.zipCode && (
-                          <span className="text-gray-500">[{selectedOrder.shippingInfo.zipCode}] </span>
-                        )}
-                        {selectedOrder.shippingInfo.address}
-                        {selectedOrder.shippingInfo.addressDetail && (
-                          <span> {selectedOrder.shippingInfo.addressDetail}</span>
-                        )}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">결제 정보</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">상품 합계</span>
-                      <span>{selectedOrder.subtotal.toLocaleString()}원</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">배송비</span>
-                      <span>{selectedOrder.shippingCost === 0 ? "무료" : `${selectedOrder.shippingCost.toLocaleString()}원`}</span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between font-bold">
-                      <span>총 결제금액</span>
-                      <span className="text-blue-600">{selectedOrder.totalAmount.toLocaleString()}원</span>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500">총 결제금액</p>
+                        <p className="text-2xl font-bold text-blue-600">{selectedOrder.totalAmount.toLocaleString()}원</p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              <TabsContent value="items" className="mt-4">
+              {/* 상품 탭 */}
+              <TabsContent value="items" className="mt-4 space-y-4">
+                {/* 디자인 확인 버튼 */}
+                <Card className="bg-blue-50 border-blue-200">
+                  <CardContent className="pt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Palette className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <p className="font-medium text-blue-900">디자인 상세 확인</p>
+                          <p className="text-sm text-blue-600">스튜디오 화면에서 디자인을 확인하세요</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                        onClick={() => {
+                          window.open(`/order/${selectedOrder.orderNumber}`, '_blank')
+                        }}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        디자인 보기
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 상품 목록 */}
                 <div className="space-y-3">
-                  {selectedOrder.items.map((item) => (
+                  {selectedOrder.items.map((item, idx) => (
                     <Card key={item.id}>
                       <CardContent className="pt-4">
                         <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium">{item.productName}</p>
-                            <p className="text-sm text-gray-500">{item.colorLabel} / {item.size}</p>
-                            <p className="text-sm">{item.unitPrice.toLocaleString()}원 × {item.quantity}개</p>
+                          <div className="flex gap-4">
+                            <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center text-gray-400 font-bold">
+                              {idx + 1}
+                            </div>
+                            <div>
+                              <p className="font-medium">{item.productName}</p>
+                              <p className="text-sm text-gray-500">{item.colorLabel} / {item.size}</p>
+                              <p className="text-sm">{item.unitPrice.toLocaleString()}원 × {item.quantity}개</p>
+                            </div>
                           </div>
-                          <p className="font-bold">{item.totalPrice.toLocaleString()}원</p>
+                          <p className="text-lg font-bold">{item.totalPrice.toLocaleString()}원</p>
                         </div>
                       </CardContent>
                     </Card>
@@ -622,154 +850,175 @@ export default function AdminOrdersPage() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="design" className="mt-4">
-                <div className="space-y-4">
-                  {selectedOrder.items.map((item) => (
-                    <Card key={item.id}>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">{item.colorLabel} - {item.size}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {item.designSnapshot.length === 0 ? (
-                          <p className="text-gray-500 text-sm">디자인 없음</p>
-                        ) : (
-                          <div className="grid grid-cols-2 gap-2">
-                            {item.designSnapshot.map((layer) => (
-                              <div key={layer.id} className="border rounded p-2">
-                                {layer.type === "image" ? (
-                                  <div className="aspect-square relative bg-gray-100 rounded overflow-hidden">
-                                    <img src={layer.content} alt="Design" className="object-contain w-full h-full" />
-                                  </div>
-                                ) : (
-                                  <div className="aspect-square flex items-center justify-center bg-gray-100 rounded">
-                                    <span className="text-sm">{layer.content}</span>
-                                  </div>
-                                )}
-                                <p className="text-xs text-gray-500 mt-1 text-center">{layer.view}</p>
+              {/* 배송 탭 */}
+              <TabsContent value="shipping" className="mt-4 space-y-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Truck className="w-4 h-4" />
+                      배송 추적
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {selectedOrder.trackingInfo ? (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="font-medium">{CARRIER_LABELS[selectedOrder.trackingInfo.carrier]}</p>
+                            <p className="text-lg font-mono">{selectedOrder.trackingInfo.trackingNumber}</p>
+                            <p className="text-sm text-gray-500">
+                              발송일: {new Date(selectedOrder.trackingInfo.shippedAt).toLocaleString("ko-KR")}
+                            </p>
+                          </div>
+                          <a
+                            href={CARRIER_TRACKING_URLS[selectedOrder.trackingInfo.carrier](selectedOrder.trackingInfo.trackingNumber)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                          >
+                            배송 조회
+                          </a>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                          <p className="text-yellow-700">아직 송장이 등록되지 않았습니다.</p>
+                        </div>
+
+                        {!["shipped", "delivered", "cancelled"].includes(selectedOrder.status) && (
+                          <div className="border rounded-lg p-4 space-y-3">
+                            <p className="font-medium">송장 등록</p>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <Label className="text-xs text-gray-500">택배사</Label>
+                                <Select
+                                  value={formData.carrier}
+                                  onValueChange={(value) => setFormData({ ...formData, carrier: value as CarrierCode })}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {(Object.keys(CARRIER_LABELS) as CarrierCode[]).map((code) => (
+                                      <SelectItem key={code} value={code}>
+                                        {CARRIER_LABELS[code]}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </div>
-                            ))}
+                              <div className="space-y-1">
+                                <Label className="text-xs text-gray-500">송장번호</Label>
+                                <Input
+                                  placeholder="송장번호 입력"
+                                  value={formData.trackingNumber}
+                                  onChange={(e) => setFormData({ ...formData, trackingNumber: e.target.value })}
+                                />
+                              </div>
+                            </div>
+                            <div className="bg-blue-50 p-3 rounded text-sm text-blue-700">
+                              송장 등록 시 주문 상태가 자동으로 &quot;배송 중&quot;으로 변경됩니다.
+                            </div>
+                            <Button
+                              onClick={handleRegisterShipping}
+                              disabled={updating || !formData.trackingNumber.trim()}
+                              className="w-full"
+                            >
+                              {updating ? "등록 중..." : "송장 등록"}
+                            </Button>
                           </div>
                         )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* 관리 탭 */}
+              <TabsContent value="admin" className="mt-4 space-y-4">
+                {/* 주문 상태 */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <History className="w-4 h-4" />
+                      주문 상태
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-gray-500">현재 상태</Label>
+                      <Select
+                        value={formData.status}
+                        onValueChange={(value) => setFormData({ ...formData, status: value as OrderStatus })}
+                        disabled={!editMode}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[...ORDER_STATUS_ORDER, "cancelled"].map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {ORDER_STATUS_LABELS[status as OrderStatus]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {editMode && formData.status !== selectedOrder.status && (
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">상태 변경 메모 (선택)</Label>
+                        <Input
+                          placeholder="고객에게 표시될 메모"
+                          value={formData.statusMemo}
+                          onChange={(e) => setFormData({ ...formData, statusMemo: e.target.value })}
+                        />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* 관리자 메모 */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      관리자 메모
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Textarea
+                      placeholder="내부용 메모 (고객에게 표시되지 않음)"
+                      value={formData.adminMemo}
+                      onChange={(e) => setFormData({ ...formData, adminMemo: e.target.value })}
+                      rows={4}
+                      disabled={!editMode}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* 주문 이력 */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      주문 이력
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">주문 생성</span>
+                      <span>{new Date(selectedOrder.createdAt).toLocaleString("ko-KR")}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">마지막 수정</span>
+                      <span>{new Date(selectedOrder.updatedAt).toLocaleString("ko-KR")}</span>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* 수정 다이얼로그 */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>주문 수정</DialogTitle>
-            <DialogDescription>{selectedOrder?.orderNumber}</DialogDescription>
-          </DialogHeader>
-
-          {selectedOrder && (
-            <div className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label>주문 상태</Label>
-                <Select value={newStatus} onValueChange={(value) => setNewStatus(value as OrderStatus)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="상태 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[...ORDER_STATUS_ORDER, "cancelled"].map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {ORDER_STATUS_LABELS[status as OrderStatus]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {newStatus && newStatus !== selectedOrder.status && (
-                <div className="space-y-2">
-                  <Label>상태 변경 메모 (선택)</Label>
-                  <Input
-                    placeholder="고객에게 표시될 메모"
-                    value={statusMemo}
-                    onChange={(e) => setStatusMemo(e.target.value)}
-                  />
-                </div>
-              )}
-
-              <Separator />
-
-              <div className="space-y-2">
-                <Label>관리자 메모</Label>
-                <Textarea
-                  placeholder="내부용 메모 (고객에게 표시되지 않음)"
-                  value={adminMemo}
-                  onChange={(e) => setAdminMemo(e.target.value)}
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button variant="outline" onClick={() => setEditDialogOpen(false)} className="flex-1">
-                  취소
-                </Button>
-                <Button onClick={handleUpdateOrder} disabled={updating} className="flex-1">
-                  {updating ? "저장 중..." : "저장"}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* 송장 등록 다이얼로그 */}
-      <Dialog open={shippingDialogOpen} onOpenChange={setShippingDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>송장 등록</DialogTitle>
-            <DialogDescription>{selectedOrder?.orderNumber}</DialogDescription>
-          </DialogHeader>
-
-          {selectedOrder && (
-            <div className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label>택배사</Label>
-                <Select value={shippingCarrier} onValueChange={(value) => setShippingCarrier(value as CarrierCode)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(CARRIER_LABELS) as CarrierCode[]).map((code) => (
-                      <SelectItem key={code} value={code}>
-                        {CARRIER_LABELS[code]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>송장번호</Label>
-                <Input
-                  placeholder="송장번호 입력"
-                  value={trackingNumber}
-                  onChange={(e) => setTrackingNumber(e.target.value)}
-                />
-              </div>
-
-              <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-700">
-                <p>송장 등록 시 주문 상태가 자동으로 &quot;배송 중&quot;으로 변경됩니다.</p>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button variant="outline" onClick={() => setShippingDialogOpen(false)} className="flex-1">
-                  취소
-                </Button>
-                <Button onClick={handleRegisterShipping} disabled={updating || !trackingNumber.trim()} className="flex-1">
-                  {updating ? "등록 중..." : "송장 등록"}
-                </Button>
-              </div>
-            </div>
           )}
         </DialogContent>
       </Dialog>

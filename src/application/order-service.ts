@@ -12,6 +12,7 @@ import type {
   UpdateOrderStatusDTO,
   OrderStatus,
   OrderStatusHistory,
+  ShippingInfo,
 } from '@/domain/order'
 
 // 런하우스 기본 테넌트 ID
@@ -84,6 +85,22 @@ export async function updateAdminMemo(
 ): Promise<Order> {
   const repo = orderRepository.useServerClient()
   return repo.updateAdminMemo(orderId, memo)
+}
+
+/**
+ * 주문 정보 업데이트 (고객정보 + 배송정보)
+ */
+export async function updateOrderInfo(
+  orderId: string,
+  updates: {
+    customerName?: string
+    customerPhone?: string
+    customerEmail?: string
+    shippingInfo?: ShippingInfo
+  }
+): Promise<Order> {
+  const repo = orderRepository.useServerClient()
+  return repo.updateOrderInfo(orderId, updates)
 }
 
 /**

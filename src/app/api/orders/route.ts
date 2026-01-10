@@ -13,6 +13,7 @@ import {
   DEFAULT_TENANT_ID,
 } from '@/application/order-service'
 import type { CreateOrderDTO, ShippingInfo } from '@/domain/order'
+import { notifyNewOrder } from '@/lib/slack'
 
 /**
  * POST - 주문 생성
@@ -48,6 +49,15 @@ export async function POST(request: NextRequest) {
     }
 
     const order = await createOrder(dto)
+
+    // 슬랙 알림 발송 (비동기, 실패해도 주문 처리에 영향 없음)
+    notifyNewOrder(
+      order.orderNumber,
+      order.customerName,
+      order.totalAmount,
+      order.items.length,
+      shippingInfo.organizationName
+    ).catch((err) => console.error('[Slack] 신규 주문 알림 실패:', err))
 
     return NextResponse.json({
       success: true,

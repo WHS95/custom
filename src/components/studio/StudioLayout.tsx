@@ -74,14 +74,14 @@ export function StudioLayout({ productId, productName, product }: StudioLayoutPr
   const currentColorLayers = useCurrentColorLayers()
 
   // 상품의 커스터마이즈 영역을 safeZones 형식으로 변환
+  // 비활성화된 영역은 제외하여 PRINT AREA가 표시되지 않도록 함
   const productSafeZones = useMemo(() => {
     if (!product?.customizableAreas || product.customizableAreas.length === 0) {
       return config.safeZones // 기본 safeZones 사용
     }
 
-    const zones: Record<HatView, { x: number; y: number; width: number; height: number }> = {
-      ...config.safeZones // 기본값으로 시작
-    }
+    // 빈 객체에서 시작 - 활성화된 영역만 추가
+    const zones: Partial<Record<HatView, { x: number; y: number; width: number; height: number }>> = {}
 
     product.customizableAreas.forEach((area: CustomizableArea) => {
       if (area.isEnabled) {
@@ -96,6 +96,16 @@ export function StudioLayout({ productId, productName, product }: StudioLayoutPr
 
     return zones
   }, [product, config.safeZones])
+
+  // 활성화된 뷰 목록 계산 (뷰 스위처에서 비활성화된 뷰 숨기기용)
+  const enabledViews = useMemo(() => {
+    if (!product?.customizableAreas || product.customizableAreas.length === 0) {
+      return ["front", "back", "left", "right", "top"] as HatView[]
+    }
+    return product.customizableAreas
+      .filter((area: CustomizableArea) => area.isEnabled)
+      .map((area: CustomizableArea) => area.viewName as HatView)
+  }, [product])
 
   // 상품 기반 설정 오버라이드
   const effectiveConfig = useMemo(() => {
@@ -169,6 +179,7 @@ export function StudioLayout({ productId, productName, product }: StudioLayoutPr
                 onUpdateLayer={handleUpdateLayer}
                 productColors={product ? productColors : undefined}
                 productSafeZones={product ? productSafeZones : undefined}
+                enabledViews={product ? enabledViews : undefined}
             />
             
             {/* Floating Tool Bar */}
@@ -188,11 +199,13 @@ export function StudioLayout({ productId, productName, product }: StudioLayoutPr
 
        {/* Right Sidebar: Product & Commerce */}
        <ProductSidebar
+            productId={productId}
             selectedColor={selectedColor}
             onColorChange={setSelectedColor}
             productColors={product ? productColors : undefined}
             productBasePrice={product?.basePrice}
             productName={product?.name || productName}
+            productSizes={product?.variants?.[0]?.sizes}
        />
     </div>
   )

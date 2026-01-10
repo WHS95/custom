@@ -303,6 +303,52 @@ export class SupabaseOrderRepository implements IOrderRepository {
   }
 
   /**
+   * 주문 정보 업데이트 (고객정보 + 배송정보)
+   */
+  async updateOrderInfo(
+    orderId: string,
+    updates: {
+      customerName?: string
+      customerPhone?: string
+      customerEmail?: string
+      shippingInfo?: ShippingInfo
+    }
+  ): Promise<Order> {
+    const client = this.getClient()
+
+    const updateData: Record<string, unknown> = {}
+
+    if (updates.customerName !== undefined) {
+      updateData.customer_name = updates.customerName
+    }
+    if (updates.customerPhone !== undefined) {
+      updateData.customer_phone = updates.customerPhone
+    }
+    if (updates.customerEmail !== undefined) {
+      updateData.customer_email = updates.customerEmail || null
+    }
+    if (updates.shippingInfo !== undefined) {
+      updateData.shipping_info = updates.shippingInfo as unknown as Record<string, unknown>
+    }
+
+    const { data, error } = await client
+      .from('orders')
+      .update(updateData)
+      .eq('id', orderId)
+      .select(`
+        *,
+        order_items (*)
+      `)
+      .single()
+
+    if (error) {
+      throw new Error(`주문 정보 업데이트 실패: ${error.message}`)
+    }
+
+    return this.mapToOrderWithItems(data)
+  }
+
+  /**
    * 배송 추적 정보 업데이트
    */
   async updateTrackingInfo(orderId: string, trackingInfo: TrackingInfo): Promise<Order> {

@@ -19,7 +19,8 @@ interface HatCanvasProps {
   selectedLayerId?: string | null
   onSelectLayer?: (id: string | null) => void
   productColors?: ProductColor[]  // 상품별 색상/이미지 (제공되면 기본 config 대신 사용)
-  productSafeZones?: Record<HatView, Zone>  // 상품별 인쇄 영역
+  productSafeZones?: Partial<Record<HatView, Zone>>  // 상품별 인쇄 영역 (비활성화된 뷰는 미포함)
+  enabledViews?: HatView[]  // 활성화된 뷰 목록 (제공되면 해당 뷰만 표시)
 }
 
 const VIEWS: { id: HatView; label: string }[] = [
@@ -46,9 +47,15 @@ export function HatCanvas({
   onSelectLayer,
   productColors,
   productSafeZones,
+  enabledViews,
 }: HatCanvasProps) {
   // 현재 뷰의 레이어
   const currentLayers = layers.filter((l) => l.view === currentView)
+
+  // 표시할 뷰 목록 (enabledViews가 있으면 해당 뷰만, 없으면 전체)
+  const visibleViews = enabledViews
+    ? VIEWS.filter((v) => enabledViews.includes(v.id))
+    : VIEWS
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
@@ -99,7 +106,7 @@ export function HatCanvas({
 
       {/* 하단 뷰 스위처 */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg border p-1 flex gap-1 z-20">
-        {VIEWS.map((v) => (
+        {visibleViews.map((v) => (
           <button
             key={v.id}
             onClick={() => onViewChange(v.id)}
