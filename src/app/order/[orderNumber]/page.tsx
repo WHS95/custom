@@ -101,6 +101,11 @@ export default function OrderDetailPage() {
   // 상품별 색상 이미지 (productId -> ProductColor[])
   const [productColorsMap, setProductColorsMap] = useState<Record<string, ProductColor[]>>({})
 
+  // 상품+색상별 인쇄 영역 (productId-colorId -> safeZones)
+  const [productSafeZonesMap, setProductSafeZonesMap] = useState<
+    Record<string, Partial<Record<HatView, { x: number; y: number; width: number; height: number }>>>
+  >({})
+
   // 현재 선택된 아이템
   const [selectedItemIndex, setSelectedItemIndex] = useState(0)
 
@@ -144,47 +149,96 @@ export default function OrderDetailPage() {
             setCurrentView(firstItem.designSnapshot[0].view)
           }
 
-          // 상품별 색상 이미지 불러오기
-          const uniqueProductIds = [...new Set(data.order.items.map((item: OrderItem) => item.productId))]
+          // 상품별 색상 이미지 및 인쇄 영역 불러오기
+          const uniqueProductColorPairs = data.order.items.map((item: OrderItem) => ({
+            productId: item.productId,
+            colorId: item.color,
+          }))
+          // 중복 제거
+          const uniquePairs = uniqueProductColorPairs.filter(
+            (pair: { productId: string; colorId: string }, index: number, self: { productId: string; colorId: string }[]) =>
+              index === self.findIndex((p) => p.productId === pair.productId && p.colorId === pair.colorId)
+          )
+
           const colorsMap: Record<string, ProductColor[]> = {}
+          const safeZonesMap: Record<string, Partial<Record<HatView, { x: number; y: number; width: number; height: number }>>> = {}
 
-          for (const productId of uniqueProductIds) {
+          for (const { productId, colorId } of uniquePairs) {
             try {
-              const productRes = await fetch(`/api/products/${productId}`)
-              const productData = await productRes.json()
+              // 상품 정보 불러오기 (이미지)
+              if (!colorsMap[productId]) {
+                const productRes = await fetch(`/api/products/${productId}`)
+                const productData = await productRes.json()
 
-              if (productData.success && productData.data) {
-                const product = productData.data
-                // ProductImage[] -> ProductColor[] 변환
-                const colors: ProductColor[] = (product.variants || []).map((variant: { id: string; label: string; hex: string }) => {
-                  const views: Record<HatView, string> = {
-                    front: "",
-                    back: "",
-                    left: "",
-                    right: "",
-                    top: "",
-                  }
-                  // 해당 색상의 이미지들 매핑
-                  ;(product.images || []).forEach((img: { colorId: string; view: string; url: string }) => {
-                    if (img.colorId === variant.id) {
-                      views[img.view as HatView] = img.url
+                if (productData.success && productData.data) {
+                  const product = productData.data
+                  // ProductImage[] -> ProductColor[] 변환
+                  const colors: ProductColor[] = (product.variants || []).map((variant: { id: string; label: string; hex: string }) => {
+                    const views: Record<HatView, string> = {
+                      front: "",
+                      back: "",
+                      left: "",
+                      right: "",
+                      top: "",
+                    }
+                    // 해당 색상의 이미지들 매핑
+                    ;(product.images || []).forEach((img: { colorId: string; view: string; url: string }) => {
+                      if (img.colorId === variant.id) {
+                        views[img.view as HatView] = img.url
+                      }
+                    })
+                    return {
+                      id: variant.id,
+                      label: variant.label,
+                      hex: variant.hex,
+                      views,
                     }
                   })
-                  return {
-                    id: variant.id,
-                    label: variant.label,
-                    hex: variant.hex,
-                    views,
+                  colorsMap[productId as string] = colors
+                }
+              }
+
+              // 색상별 인쇄 영역 불러오기
+              const areasRes = await fetch(`/api/products/${productId}/areas?colorId=${colorId}`)
+              const areasData = await areasRes.json()
+
+              if (areasData.success && areasData.data) {
+                const zones: Partial<Record<HatView, { x: number; y: number; width: number; height: number }>> = {}
+
+                // 먼저 공통 영역(colorId가 null) 추가
+                areasData.data.forEach((area: { viewName: string; colorId: string | null; zoneX: number; zoneY: number; zoneWidth: number; zoneHeight: number; isEnabled: boolean }) => {
+                  if (area.isEnabled && !area.colorId) {
+                    zones[area.viewName as HatView] = {
+                      x: area.zoneX,
+                      y: area.zoneY,
+                      width: area.zoneWidth,
+                      height: area.zoneHeight,
+                    }
                   }
                 })
-                colorsMap[productId as string] = colors
+
+                // 색상별 영역으로 덮어씀 (우선순위 높음)
+                areasData.data.forEach((area: { viewName: string; colorId: string | null; zoneX: number; zoneY: number; zoneWidth: number; zoneHeight: number; isEnabled: boolean }) => {
+                  if (area.isEnabled && area.colorId === colorId) {
+                    zones[area.viewName as HatView] = {
+                      x: area.zoneX,
+                      y: area.zoneY,
+                      width: area.zoneWidth,
+                      height: area.zoneHeight,
+                    }
+                  }
+                })
+
+                const mapKey = `${productId}-${colorId}`
+                safeZonesMap[mapKey] = zones
               }
             } catch (err) {
-              console.error(`상품 ${productId} 이미지 로드 실패:`, err)
+              console.error(`상품 ${productId} 정보 로드 실패:`, err)
             }
           }
 
           setProductColorsMap(colorsMap)
+          setProductSafeZonesMap(safeZonesMap)
         } else {
           toast.error("주문을 찾을 수 없습니다.")
           router.push("/dashboard")
@@ -619,6 +673,11 @@ export default function OrderDetailPage() {
                 showSafeZone={true}
                 className="w-full rounded-xl shadow-lg bg-white"
                 productColors={currentItem?.productId ? productColorsMap[currentItem.productId] : undefined}
+                productSafeZones={
+                  currentItem?.productId && currentItem?.color
+                    ? productSafeZonesMap[`${currentItem.productId}-${currentItem.color}`]
+                    : undefined
+                }
               />
             </div>
           </div>

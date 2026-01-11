@@ -75,6 +75,7 @@ export function StudioLayout({ productId, productName, product }: StudioLayoutPr
 
   // 상품의 커스터마이즈 영역을 safeZones 형식으로 변환
   // 비활성화된 영역은 제외하여 PRINT AREA가 표시되지 않도록 함
+  // 색상별 영역이 있으면 우선 사용, 없으면 공통(colorId=null) 영역 사용
   const productSafeZones = useMemo(() => {
     if (!product?.customizableAreas || product.customizableAreas.length === 0) {
       return config.safeZones // 기본 safeZones 사용
@@ -83,8 +84,21 @@ export function StudioLayout({ productId, productName, product }: StudioLayoutPr
     // 빈 객체에서 시작 - 활성화된 영역만 추가
     const zones: Partial<Record<HatView, { x: number; y: number; width: number; height: number }>> = {}
 
+    // 먼저 공통 영역(colorId가 null/undefined)을 추가
     product.customizableAreas.forEach((area: CustomizableArea) => {
-      if (area.isEnabled) {
+      if (area.isEnabled && !area.colorId) {
+        zones[area.viewName as HatView] = {
+          x: area.zoneX,
+          y: area.zoneY,
+          width: area.zoneWidth,
+          height: area.zoneHeight,
+        }
+      }
+    })
+
+    // 그 다음 현재 선택된 색상의 영역으로 덮어씀 (우선순위 높음)
+    product.customizableAreas.forEach((area: CustomizableArea) => {
+      if (area.isEnabled && area.colorId === selectedColor) {
         zones[area.viewName as HatView] = {
           x: area.zoneX,
           y: area.zoneY,
@@ -95,17 +109,34 @@ export function StudioLayout({ productId, productName, product }: StudioLayoutPr
     })
 
     return zones
-  }, [product, config.safeZones])
+  }, [product, config.safeZones, selectedColor])
 
   // 활성화된 뷰 목록 계산 (뷰 스위처에서 비활성화된 뷰 숨기기용)
+  // 현재 색상의 활성화된 영역 + 공통 영역 기준으로 계산
   const enabledViews = useMemo(() => {
     if (!product?.customizableAreas || product.customizableAreas.length === 0) {
       return ["front", "back", "left", "right", "top"] as HatView[]
     }
-    return product.customizableAreas
-      .filter((area: CustomizableArea) => area.isEnabled)
-      .map((area: CustomizableArea) => area.viewName as HatView)
-  }, [product])
+
+    const enabledViewSet = new Set<HatView>()
+
+    // 공통 영역(colorId가 null/undefined)에서 활성화된 뷰 추가
+    product.customizableAreas
+      .filter((area: CustomizableArea) => area.isEnabled && !area.colorId)
+      .forEach((area: CustomizableArea) => enabledViewSet.add(area.viewName as HatView))
+
+    // 현재 색상의 활성화된 뷰 추가
+    product.customizableAreas
+      .filter((area: CustomizableArea) => area.isEnabled && area.colorId === selectedColor)
+      .forEach((area: CustomizableArea) => enabledViewSet.add(area.viewName as HatView))
+
+    // Set이 비어있으면 모든 뷰 활성화
+    if (enabledViewSet.size === 0) {
+      return ["front", "back", "left", "right", "top"] as HatView[]
+    }
+
+    return Array.from(enabledViewSet)
+  }, [product, selectedColor])
 
   // 상품 기반 설정 오버라이드
   const effectiveConfig = useMemo(() => {

@@ -31,6 +31,7 @@ export interface ProductImage {
 export interface CustomizableArea {
   id: string
   productId: string
+  colorId?: string | null  // 색상 ID (null이면 모든 색상 공통)
   viewName: ViewName
   displayName: string
   zoneX: number       // 인쇄 영역 X (%)
@@ -55,6 +56,7 @@ export interface Product {
   basePrice: number
   images: ProductImage[]
   variants: ProductVariant[]
+  detailImageUrl?: string  // 제품 상세 이미지 URL (스튜디오 페이지 하단 표시)
   isActive: boolean
   sortOrder: number
   createdAt: Date
@@ -94,6 +96,7 @@ export interface UpdateProductDTO {
   basePrice?: number
   images?: ProductImage[]
   variants?: ProductVariant[]
+  detailImageUrl?: string | null  // 제품 상세 이미지 URL (null이면 삭제)
   isActive?: boolean
   sortOrder?: number
 }
@@ -102,6 +105,7 @@ export interface UpdateProductDTO {
  * 커스터마이즈 영역 생성/수정 DTO
  */
 export interface UpsertCustomizableAreaDTO {
+  colorId?: string | null  // 색상 ID (null이면 모든 색상 공통)
   viewName: ViewName
   displayName: string
   zoneX: number

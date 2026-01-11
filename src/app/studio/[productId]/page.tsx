@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { StudioLayout } from "@/components/studio/StudioLayout"
-import { Loader2 } from "lucide-react"
+import { Loader2, ChevronDown } from "lucide-react"
 import type { ProductWithAreas } from "@/domain/product/types"
 
 export default function StudioPage() {
@@ -69,14 +69,49 @@ export default function StudioPage() {
     )
   }
 
+  // 스크롤 힌트 클릭 핸들러
+  const scrollToDetail = () => {
+    const detailSection = document.getElementById('product-detail-section')
+    if (detailSection) {
+      detailSection.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
   // 상품 정보를 StudioLayout에 전달하여 동적 이미지/색상 사용
   return (
     <div className="w-full">
-      <StudioLayout
-        productId={product.id}
-        productName={product.name}
-        product={product}
-      />
+      {/* 커스터마이징 스튜디오 */}
+      <div className="relative">
+        <StudioLayout
+          productId={product.id}
+          productName={product.name}
+          product={product}
+        />
+
+        {/* 스크롤 힌트 - 제품 상세가 있을 때만 표시 */}
+        {product.detailImageUrl && (
+          <button
+            onClick={scrollToDetail}
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 animate-bounce cursor-pointer group"
+          >
+            <div className="flex flex-col items-center bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg group-hover:bg-white transition-colors">
+              <span className="text-sm font-medium text-gray-600">제품 상세 보기</span>
+              <ChevronDown className="w-5 h-5 text-gray-500" />
+            </div>
+          </button>
+        )}
+      </div>
+
+      {/* 제품 상세 이미지 */}
+      {product.detailImageUrl && (
+        <div id="product-detail-section" className="bg-white">
+          <img
+            src={product.detailImageUrl}
+            alt={`${product.name} 상세 정보`}
+            className="w-full max-w-3xl mx-auto"
+          />
+        </div>
+      )}
     </div>
   )
 }

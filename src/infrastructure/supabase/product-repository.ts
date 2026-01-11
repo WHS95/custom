@@ -197,6 +197,7 @@ export class SupabaseProductRepository implements IProductRepository {
     if (dto.basePrice !== undefined) updateData.base_price = dto.basePrice
     if (dto.images !== undefined) updateData.images = dto.images
     if (dto.variants !== undefined) updateData.variants = dto.variants
+    if (dto.detailImageUrl !== undefined) updateData.detail_image_url = dto.detailImageUrl
     if (dto.isActive !== undefined) updateData.is_active = dto.isActive
     if (dto.sortOrder !== undefined) updateData.sort_order = dto.sortOrder
 
@@ -232,15 +233,24 @@ export class SupabaseProductRepository implements IProductRepository {
 
   /**
    * 커스터마이즈 영역 조회
+   * @param productId 상품 ID
+   * @param colorId 색상 ID (선택사항, 지정하면 해당 색상 + 공통(null) 영역 반환)
    */
-  async findCustomizableAreas(productId: string): Promise<CustomizableArea[]> {
+  async findCustomizableAreas(productId: string, colorId?: string): Promise<CustomizableArea[]> {
     const client = this.getClient()
 
-    const { data, error } = await client
+    let query = client
       .from('product_customizable_areas')
       .select('*')
       .eq('product_id', productId)
       .order('sort_order', { ascending: true })
+
+    // colorId가 지정되면 해당 색상 또는 공통(null) 영역만 필터링
+    if (colorId !== undefined) {
+      query = query.or(`color_id.eq.${colorId},color_id.is.null`)
+    }
+
+    const { data, error } = await query
 
     if (error || !data) return []
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -261,6 +271,7 @@ export class SupabaseProductRepository implements IProductRepository {
       .upsert(
         {
           product_id: productId,
+          color_id: dto.colorId ?? null,
           view_name: dto.viewName,
           display_name: dto.displayName,
           zone_x: dto.zoneX,
@@ -271,7 +282,7 @@ export class SupabaseProductRepository implements IProductRepository {
           is_enabled: dto.isEnabled ?? true,
           sort_order: dto.sortOrder ?? 0,
         },
-        { onConflict: 'product_id,view_name' }
+        { onConflict: 'product_id,view_name,color_id' }
       )
       .select()
       .single()
@@ -314,6 +325,7 @@ export class SupabaseProductRepository implements IProductRepository {
       basePrice: row.base_price as number,
       images: row.images as ProductImage[],
       variants: row.variants as ProductVariant[],
+      detailImageUrl: row.detail_image_url as string | undefined,
       isActive: row.is_active as boolean,
       sortOrder: row.sort_order as number,
       createdAt: new Date(row.created_at as string),
@@ -325,6 +337,7 @@ export class SupabaseProductRepository implements IProductRepository {
     return {
       id: row.id as string,
       productId: row.product_id as string,
+      colorId: row.color_id as string | null | undefined,
       viewName: row.view_name as ViewName,
       displayName: row.display_name as string,
       zoneX: Number(row.zone_x),

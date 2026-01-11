@@ -72,9 +72,11 @@ export async function deleteProduct(productId: string): Promise<void> {
 
 /**
  * 커스터마이즈 영역 목록 조회
+ * @param productId 상품 ID
+ * @param colorId 색상 ID (선택사항, 지정하면 해당 색상 + 공통(null) 영역 반환)
  */
-export async function getCustomizableAreas(productId: string): Promise<CustomizableArea[]> {
-  return productRepository.useServerClient().findCustomizableAreas(productId)
+export async function getCustomizableAreas(productId: string, colorId?: string): Promise<CustomizableArea[]> {
+  return productRepository.useServerClient().findCustomizableAreas(productId, colorId)
 }
 
 /**

@@ -20,6 +20,8 @@ interface Params {
 /**
  * GET /api/products/[productId]/areas
  * 커스터마이즈 영역 목록 조회
+ * Query params:
+ *   - colorId: 색상 ID (선택사항, 지정하면 해당 색상 + 공통 영역만 반환)
  */
 export async function GET(
   request: NextRequest,
@@ -27,7 +29,10 @@ export async function GET(
 ) {
   try {
     const { productId } = await params
-    const areas = await getCustomizableAreas(productId)
+    const { searchParams } = new URL(request.url)
+    const colorId = searchParams.get('colorId') || undefined
+
+    const areas = await getCustomizableAreas(productId, colorId)
 
     return NextResponse.json({
       success: true,
@@ -45,6 +50,9 @@ export async function GET(
 /**
  * PUT /api/products/[productId]/areas
  * 커스터마이즈 영역 저장 (upsert)
+ * Body:
+ *   - colorId: 색상 ID (선택사항, null이면 모든 색상에 공통 적용)
+ *   - viewName, displayName, zoneX, zoneY, zoneWidth, zoneHeight, etc.
  */
 export async function PUT(
   request: NextRequest,
@@ -63,6 +71,7 @@ export async function PUT(
     const body = await request.json()
 
     const dto: UpsertCustomizableAreaDTO = {
+      colorId: body.colorId ?? null,  // 색상 ID 추가
       viewName: body.viewName,
       displayName: body.displayName,
       zoneX: body.zoneX,

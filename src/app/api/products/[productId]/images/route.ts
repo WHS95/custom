@@ -21,6 +21,7 @@ interface Params {
  * POST /api/products/[productId]/images
  * 상품 이미지 업로드
  * Body: { colorId, view, imageData (base64) }
+ * 또는 { type: 'detail', imageData (base64) } - 제품 상세 이미지
  */
 export async function POST(
   request: NextRequest,
@@ -37,6 +38,51 @@ export async function POST(
 
     const { productId } = await params
     const body = await request.json()
+
+    // 상품 존재 확인
+    const product = await getProductById(productId)
+    if (!product) {
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      )
+    }
+
+    // 제품 상세 이미지 업로드 (type === 'detail')
+    if (body.type === 'detail') {
+      const { imageData } = body as { type: string; imageData: string }
+
+      if (!imageData) {
+        return NextResponse.json(
+          { error: 'imageData is required' },
+          { status: 400 }
+        )
+      }
+
+      // 제품 상세 이미지 업로드
+      const path = `products/${productId}/detail`
+      const publicUrl = await uploadProductImage(imageData, path, true)
+
+      if (!publicUrl) {
+        return NextResponse.json(
+          { error: 'Failed to upload image' },
+          { status: 500 }
+        )
+      }
+
+      // 상품의 detailImageUrl 업데이트
+      await updateProduct(productId, { detailImageUrl: publicUrl })
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          url: publicUrl,
+          type: 'detail',
+        },
+      })
+    }
+
+    // 일반 상품 이미지 업로드 (colorId + view)
     const { colorId, view, imageData } = body as {
       colorId: string
       view: string
@@ -47,15 +93,6 @@ export async function POST(
       return NextResponse.json(
         { error: 'colorId, view, imageData are required' },
         { status: 400 }
-      )
-    }
-
-    // 상품 존재 확인
-    const product = await getProductById(productId)
-    if (!product) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
       )
     }
 
@@ -112,7 +149,7 @@ export async function POST(
 /**
  * DELETE /api/products/[productId]/images
  * 상품 이미지 삭제
- * Query: colorId, view
+ * Query: colorId, view 또는 type=detail
  */
 export async function DELETE(
   request: NextRequest,
@@ -129,15 +166,7 @@ export async function DELETE(
 
     const { productId } = await params
     const { searchParams } = new URL(request.url)
-    const colorId = searchParams.get('colorId')
-    const view = searchParams.get('view')
-
-    if (!colorId || !view) {
-      return NextResponse.json(
-        { error: 'colorId and view are required' },
-        { status: 400 }
-      )
-    }
+    const type = searchParams.get('type')
 
     // 상품 확인
     const product = await getProductById(productId)
@@ -145,6 +174,32 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
+      )
+    }
+
+    // 제품 상세 이미지 삭제
+    if (type === 'detail') {
+      // 스토리지에서 삭제
+      const path = `products/${productId}/detail`
+      await deleteProductImage(path, true)
+
+      // 상품의 detailImageUrl 제거
+      await updateProduct(productId, { detailImageUrl: null })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Detail image deleted',
+      })
+    }
+
+    // 일반 상품 이미지 삭제
+    const colorId = searchParams.get('colorId')
+    const view = searchParams.get('view')
+
+    if (!colorId || !view) {
+      return NextResponse.json(
+        { error: 'colorId and view are required' },
+        { status: 400 }
       )
     }
 
