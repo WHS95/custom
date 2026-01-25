@@ -64,7 +64,8 @@ interface DesignState {
     // 색상별 디자인 관리
     clearColorDesign: (color: string) => void   // 특정 색상의 디자인만 초기화
     copyDesignToColor: (fromColor: string, toColor: string) => void  // 디자인 복사
-    
+    setLayersForColor: (color: string, layers: DesignLayer[]) => void  // 특정 색상에 레이어 설정 (장바구니에서 수정 시 사용)
+
     // 세션 관리
     clearDesign: () => void
     newSession: () => void
@@ -234,18 +235,29 @@ export const useDesignStore = create<DesignState>()(
 
             copyDesignToColor: (fromColor, toColor) => {
                 const sourceLayers = get().layersByColor[fromColor] || []
-                
+
                 // 레이어 복사 (새 ID 부여)
                 const copiedLayers = sourceLayers.map(layer => ({
                     ...layer,
                     id: generateId()
                 }))
-                
+
                 set((state) => ({
                     layersByColor: {
                         ...state.layersByColor,
                         [toColor]: copiedLayers
                     },
+                    lastUpdated: Date.now()
+                }))
+            },
+
+            setLayersForColor: (color, layers) => {
+                set((state) => ({
+                    layersByColor: {
+                        ...state.layersByColor,
+                        [color]: layers
+                    },
+                    selectedColor: color,
                     lastUpdated: Date.now()
                 }))
             },

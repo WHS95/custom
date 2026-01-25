@@ -57,6 +57,7 @@ export interface Product {
   images: ProductImage[]
   variants: ProductVariant[]
   detailImageUrl?: string  // 제품 상세 이미지 URL (스튜디오 페이지 하단 표시)
+  adminMessage?: string    // 주문 전 고객 확인 메시지
   isActive: boolean
   sortOrder: number
   createdAt: Date
@@ -97,6 +98,7 @@ export interface UpdateProductDTO {
   images?: ProductImage[]
   variants?: ProductVariant[]
   detailImageUrl?: string | null  // 제품 상세 이미지 URL (null이면 삭제)
+  adminMessage?: string | null    // 주문 전 고객 확인 메시지 (null이면 삭제)
   isActive?: boolean
   sortOrder?: number
 }

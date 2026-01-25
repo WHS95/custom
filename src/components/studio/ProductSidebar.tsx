@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -21,16 +22,15 @@ import {
 } from "@/lib/store/design-store";
 import { useCartStore, CartItem } from "@/lib/store/cart-store";
 import { toast } from "sonner";
-import { OrderDialog } from "@/components/order/OrderDialog";
 
 interface ProductSidebarProps {
-  productId?: string;              // 상품 ID (UUID)
+  productId?: string; // 상품 ID (UUID)
   selectedColor: string;
   onColorChange: (color: string) => void;
-  productColors?: ProductColor[];  // 상품별 색상 (제공되면 config.colors 대신 사용)
-  productBasePrice?: number;       // 상품별 가격
-  productName?: string;            // 상품명
-  productSizes?: string[];         // 상품별 사이즈 (제공되면 기본 SIZES 대신 사용)
+  productColors?: ProductColor[]; // 상품별 색상 (제공되면 config.colors 대신 사용)
+  productBasePrice?: number; // 상품별 가격
+  productName?: string; // 상품명
+  productSizes?: string[]; // 상품별 사이즈 (제공되면 기본 SIZES 대신 사용)
 }
 
 const DEFAULT_SIZES = ["S", "M", "L", "XL", "FREE"];
@@ -46,6 +46,7 @@ export function ProductSidebar({
 }: ProductSidebarProps) {
   const { config } = useStudioConfig();
   const { t } = useLanguage();
+  const router = useRouter();
 
   // 상품별 색상이 제공되면 사용, 아니면 기본 config 사용
   const colors = productColors || config.colors;
@@ -53,10 +54,10 @@ export function ProductSidebar({
   const displayName = productName || t("product.name");
 
   // 상품별 사이즈가 있으면 사용, 없으면 기본값
-  const sizes = productSizes && productSizes.length > 0 ? productSizes : DEFAULT_SIZES;
+  const sizes =
+    productSizes && productSizes.length > 0 ? productSizes : DEFAULT_SIZES;
   const [selectedSize, setSelectedSize] = useState(sizes[0] || "FREE");
   const [quantity, setQuantity] = useState(1);
-  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
 
   // 디자인 스토어에서 색상별 디자인 정보 가져오기
   const layersByColor = useDesignStore((state) => state.layersByColor);
@@ -158,9 +159,7 @@ export function ProductSidebar({
         {/* Header */}
         <div className='space-y-1'>
           <div className='flex justify-between items-start'>
-            <h2 className='text-xl font-bold text-gray-900'>
-              {displayName}
-            </h2>
+            <h2 className='text-xl font-bold text-gray-900'>{displayName}</h2>
             {totalCartItems > 0 && (
               <div className='relative'>
                 <ShoppingCart className='h-5 w-5 text-gray-600' />
@@ -170,9 +169,6 @@ export function ProductSidebar({
               </div>
             )}
           </div>
-          <p className='text-lg font-bold'>
-            {basePrice.toLocaleString()} KRW
-          </p>
         </div>
 
         <Separator />
@@ -224,7 +220,15 @@ export function ProductSidebar({
               {t("common.sizeGuide")}
             </span>
           </div>
-          <div className={`grid gap-2 ${sizes.length <= 3 ? 'grid-cols-3' : sizes.length === 4 ? 'grid-cols-4' : 'grid-cols-5'}`}>
+          <div
+            className={`grid gap-2 ${
+              sizes.length <= 3
+                ? "grid-cols-3"
+                : sizes.length === 4
+                ? "grid-cols-4"
+                : "grid-cols-5"
+            }`}
+          >
             {sizes.map((size) => (
               <button
                 key={size}
@@ -343,8 +347,8 @@ export function ProductSidebar({
                         className='w-6 h-6 rounded-full border-2 shadow-sm flex-shrink-0'
                         style={{
                           backgroundColor:
-                            colors.find((c) => c.id === item.color)
-                              ?.hex || "#000",
+                            colors.find((c) => c.id === item.color)?.hex ||
+                            "#000",
                         }}
                       />
                       <div className='flex-1 min-w-0'>
@@ -425,19 +429,13 @@ export function ProductSidebar({
             </span>
           </div>
           <Button
-            onClick={() => setOrderDialogOpen(true)}
+            onClick={() => router.push("/cart")}
             className='w-full h-11 bg-blue-600 hover:bg-blue-700 rounded'
           >
-            주문하기 ({totalCartItems}개)
+            장바구니로 이동 ({totalCartItems}개)
           </Button>
         </div>
       )}
-
-      {/* 주문 다이얼로그 */}
-      <OrderDialog
-        open={orderDialogOpen}
-        onOpenChange={setOrderDialogOpen}
-      />
     </div>
   );
 }

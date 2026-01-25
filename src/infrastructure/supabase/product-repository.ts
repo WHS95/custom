@@ -198,6 +198,7 @@ export class SupabaseProductRepository implements IProductRepository {
     if (dto.images !== undefined) updateData.images = dto.images
     if (dto.variants !== undefined) updateData.variants = dto.variants
     if (dto.detailImageUrl !== undefined) updateData.detail_image_url = dto.detailImageUrl
+    if (dto.adminMessage !== undefined) updateData.admin_message = dto.adminMessage
     if (dto.isActive !== undefined) updateData.is_active = dto.isActive
     if (dto.sortOrder !== undefined) updateData.sort_order = dto.sortOrder
 
@@ -326,6 +327,7 @@ export class SupabaseProductRepository implements IProductRepository {
       images: row.images as ProductImage[],
       variants: row.variants as ProductVariant[],
       detailImageUrl: row.detail_image_url as string | undefined,
+      adminMessage: row.admin_message as string | undefined,
       isActive: row.is_active as boolean,
       sortOrder: row.sort_order as number,
       createdAt: new Date(row.created_at as string),

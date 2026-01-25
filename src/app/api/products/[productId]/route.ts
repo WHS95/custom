@@ -94,6 +94,7 @@ export async function PATCH(
     if (body.basePrice !== undefined) dto.basePrice = body.basePrice
     if (body.images !== undefined) dto.images = body.images
     if (body.variants !== undefined) dto.variants = body.variants
+    if (body.adminMessage !== undefined) dto.adminMessage = body.adminMessage
     if (body.isActive !== undefined) dto.isActive = body.isActive
     if (body.sortOrder !== undefined) dto.sortOrder = body.sortOrder
 

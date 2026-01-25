@@ -24,6 +24,10 @@ import {
   Image as ImageIcon,
   MessageSquare,
   Download,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  Layers,
 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -108,6 +112,9 @@ export default function OrderDetailPage() {
 
   // 현재 선택된 아이템
   const [selectedItemIndex, setSelectedItemIndex] = useState(0)
+
+  // 펼쳐진 아이템 (디자인 상세 보기)
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
 
   // 디자인 편집 상태
   const [editedLayers, setEditedLayers] = useState<Record<string, DesignLayer[]>>({})
@@ -547,56 +554,198 @@ export default function OrderDetailPage() {
       </div>
 
       <div className="flex h-[calc(100vh-64px)]">
-        {/* 좌측: 주문 아이템 목록 */}
-        <div className="w-64 bg-white border-r overflow-y-auto">
+        {/* 좌측: 주문 아이템 목록 (색상별 커스텀 내역) */}
+        <div className="w-80 bg-white border-r overflow-y-auto">
           <div className="p-4">
-            <h3 className="font-semibold text-sm text-gray-500 mb-3">
-              주문 상품 ({order.items.length})
-            </h3>
-            <div className="space-y-2">
+            <div className="flex items-center gap-2 mb-4">
+              <Eye className="w-5 h-5 text-blue-600" />
+              <h3 className="font-bold text-base">커스텀 내역 확인</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              각 색상을 클릭하여 디자인 상세를 확인하세요
+            </p>
+            <div className="space-y-3">
               {order.items.map((item, index) => {
                 const itemLayers = editedLayers[item.id] || item.designSnapshot || []
                 const hasDesign = itemLayers.length > 0
                 const isEdited = !!editedLayers[item.id]
+                const isExpanded = expandedItems.has(item.id)
+                const isSelected = selectedItemIndex === index
+
+                // 뷰별 레이어 그룹화
+                const layersByView = itemLayers.reduce((acc, layer) => {
+                  if (!acc[layer.view]) acc[layer.view] = []
+                  acc[layer.view].push(layer)
+                  return acc
+                }, {} as Record<string, DesignLayer[]>)
+
+                const viewLabels: Record<string, string> = {
+                  front: "앞면",
+                  back: "뒷면",
+                  left: "좌측",
+                  right: "우측",
+                  top: "상단",
+                }
 
                 return (
-                  <button
+                  <div
                     key={item.id}
-                    onClick={() => setSelectedItemIndex(index)}
-                    className={`w-full p-3 rounded-lg text-left transition-all ${
-                      selectedItemIndex === index
-                        ? "bg-blue-50 border-2 border-blue-500"
-                        : "bg-gray-50 border-2 border-transparent hover:border-gray-200"
+                    className={`rounded-xl border-2 overflow-hidden transition-all ${
+                      isSelected
+                        ? "border-blue-500 shadow-md"
+                        : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-6 h-6 rounded-full border-2"
-                        style={{
-                          backgroundColor:
-                            config.colors.find((c) => c.id === item.color)?.hex || "#000",
-                        }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{item.colorLabel}</p>
-                        <p className="text-xs text-gray-500">
-                          {item.size} · {item.quantity}개
-                        </p>
+                    {/* 아이템 헤더 */}
+                    <div
+                      className={`p-3 cursor-pointer ${isSelected ? "bg-blue-50" : "bg-gray-50"}`}
+                      onClick={() => setSelectedItemIndex(index)}
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* 디자인 썸네일 */}
+                        <div className="w-14 h-14 bg-white rounded-lg border overflow-hidden flex-shrink-0">
+                          {hasDesign ? (
+                            <div className="w-full h-full relative">
+                              {itemLayers
+                                .filter((l) => l.view === "front")
+                                .slice(0, 1)
+                                .map((layer) => (
+                                  <img
+                                    key={layer.id}
+                                    src={layer.content}
+                                    alt="Design"
+                                    className="w-full h-full object-contain"
+                                  />
+                                ))}
+                              {!itemLayers.some((l) => l.view === "front") && itemLayers[0] && (
+                                <img
+                                  src={itemLayers[0].content}
+                                  alt="Design"
+                                  className="w-full h-full object-contain"
+                                />
+                              )}
+                            </div>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Layers className="w-6 h-6 text-gray-300" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 정보 */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-4 h-4 rounded-full border shadow-sm flex-shrink-0"
+                              style={{
+                                backgroundColor:
+                                  config.colors.find((c) => c.id === item.color)?.hex || "#000",
+                              }}
+                            />
+                            <span className="font-bold text-sm">{item.colorLabel}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            사이즈: {item.size} · 수량: {item.quantity}개
+                          </p>
+                          <div className="flex items-center gap-1 mt-1">
+                            {hasDesign && (
+                              <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                                {itemLayers.length}개 레이어
+                              </span>
+                            )}
+                            {isEdited && (
+                              <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
+                                수정됨
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 펼침/접힘 버튼 */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setExpandedItems((prev) => {
+                              const next = new Set(prev)
+                              if (next.has(item.id)) {
+                                next.delete(item.id)
+                              } else {
+                                next.add(item.id)
+                              }
+                              return next
+                            })
+                          }}
+                          className="p-1.5 hover:bg-white rounded-lg transition-colors"
+                        >
+                          {isExpanded ? (
+                            <ChevronUp className="w-5 h-5 text-gray-400" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5 text-gray-400" />
+                          )}
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      {hasDesign && (
-                        <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">
-                          {itemLayers.length}개 디자인
-                        </span>
-                      )}
-                      {isEdited && (
-                        <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded">
-                          수정됨
-                        </span>
-                      )}
+
+                    {/* 펼쳐진 상세 정보 */}
+                    <div
+                      className={`grid transition-all duration-300 ease-out ${
+                        isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                      }`}
+                    >
+                      <div className="overflow-hidden">
+                        <div className="p-3 pt-0 space-y-3">
+                          <Separator />
+
+                          {/* 뷰별 디자인 정보 */}
+                          {hasDesign ? (
+                            <div className="space-y-2">
+                              <p className="text-xs font-medium text-gray-500">디자인 위치:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {Object.entries(layersByView).map(([view, layers]) => (
+                                  <span
+                                    key={view}
+                                    className="text-xs bg-gray-100 px-2 py-1 rounded flex items-center gap-1"
+                                  >
+                                    <span>{viewLabels[view] || view}</span>
+                                    <span className="text-blue-600 font-medium">{layers.length}개</span>
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-400 text-center py-2">
+                              디자인이 없습니다
+                            </p>
+                          )}
+
+                          {/* 가격 정보 */}
+                          <div className="bg-gray-50 rounded-lg p-2">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-500">단가</span>
+                              <span>{item.unitPrice.toLocaleString()}원</span>
+                            </div>
+                            <div className="flex justify-between text-sm font-bold mt-1">
+                              <span>소계</span>
+                              <span className="text-blue-600">
+                                {item.totalPrice.toLocaleString()}원
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* 캔버스에서 보기 버튼 */}
+                          <Button
+                            size="sm"
+                            variant={isSelected ? "default" : "outline"}
+                            className="w-full"
+                            onClick={() => setSelectedItemIndex(index)}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            {isSelected ? "현재 보는 중" : "캔버스에서 보기"}
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  </button>
+                  </div>
                 )
               })}
             </div>

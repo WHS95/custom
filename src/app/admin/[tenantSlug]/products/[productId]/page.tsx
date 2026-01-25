@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
-import { ArrowLeft, Upload, Loader2, Trash2, Image as ImageIcon, Save, Target, FileText } from "lucide-react"
+import { ArrowLeft, Upload, Loader2, Trash2, Image as ImageIcon, Save, Target, FileText, MessageSquare } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
 import type { Product, ProductImage, ViewName, CustomizableArea } from "@/domain/product/types"
 
 const VIEW_LABELS: Record<ViewName, string> = {
@@ -292,9 +293,11 @@ export default function ProductDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [uploadingImage, setUploadingImage] = useState<string | null>(null)
   const [savingArea, setSavingArea] = useState<string | null>(null)  // "colorId-view" 형식
-  const [activeTab, setActiveTab] = useState<"images" | "areas" | "detail">("images")
+  const [activeTab, setActiveTab] = useState<"images" | "areas" | "detail" | "message">("images")
   const [uploadingDetailImage, setUploadingDetailImage] = useState(false)
   const [selectedAreaColor, setSelectedAreaColor] = useState<string>("")  // 현재 선택된 색상
+  const [adminMessage, setAdminMessage] = useState<string>("")
+  const [savingAdminMessage, setSavingAdminMessage] = useState(false)
 
   const basePath = `/admin/${tenantSlugParam}`
 
@@ -334,6 +337,8 @@ export default function ProductDetailPage() {
 
       if (productJson.success) {
         setProduct(productJson.data)
+        // 관리자 메시지 로드
+        setAdminMessage(productJson.data.adminMessage || "")
         // 첫 번째 색상을 기본 선택
         if (productJson.data.variants?.length > 0) {
           const firstColorId = productJson.data.variants[0].id
@@ -496,6 +501,33 @@ export default function ProductDetailPage() {
     }
   }
 
+  // 관리자 메시지 저장
+  const handleSaveAdminMessage = async () => {
+    setSavingAdminMessage(true)
+    try {
+      const res = await fetch(`/api/products/${productId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminMessage: adminMessage.trim() || null,
+        }),
+      })
+      const json = await res.json()
+
+      if (json.success) {
+        toast.success("주문 안내 메시지가 저장되었습니다")
+        setProduct(json.data)
+      } else {
+        toast.error(json.error || "저장 실패")
+      }
+    } catch (err) {
+      console.error("Save admin message error:", err)
+      toast.error("주문 안내 메시지 저장 중 오류가 발생했습니다")
+    } finally {
+      setSavingAdminMessage(false)
+    }
+  }
+
   // 인쇄 영역 저장
   const handleSaveArea = async (colorId: string, view: ViewName, areaData: Partial<CustomizableArea>) => {
     const savingKey = `${colorId}-${view}`
@@ -584,8 +616,8 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* 메인 탭: 이미지 / 인쇄 영역 / 제품 상세 */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "images" | "areas" | "detail")}>
+      {/* 메인 탭: 이미지 / 인쇄 영역 / 제품 상세 / 주문 안내 */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "images" | "areas" | "detail" | "message")}>
         <TabsList className="mb-6">
           <TabsTrigger value="images" className="flex items-center gap-2">
             <ImageIcon className="h-4 w-4" />
@@ -598,6 +630,10 @@ export default function ProductDetailPage() {
           <TabsTrigger value="detail" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             제품 상세
+          </TabsTrigger>
+          <TabsTrigger value="message" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            주문 안내
           </TabsTrigger>
         </TabsList>
 
@@ -851,6 +887,70 @@ export default function ProductDetailPage() {
                   <li>• 고객이 자연스럽게 스크롤하여 확인할 수 있도록 스크롤 힌트가 표시됩니다</li>
                 </ul>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* 주문 안내 메시지 탭 */}
+        <TabsContent value="message">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                주문 전 안내 메시지
+              </CardTitle>
+              <CardDescription>
+                이 메시지는 장바구니에서 고객이 주문 전 반드시 확인해야 합니다.
+                고객은 체크박스를 선택해야 주문을 진행할 수 있습니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="adminMessage">안내 메시지</Label>
+                <Textarea
+                  id="adminMessage"
+                  value={adminMessage}
+                  onChange={(e) => setAdminMessage(e.target.value)}
+                  placeholder="예: 해당 상품은 주문 후 제작이 들어가는 상품으로, 배송까지 7~10일 정도 소요됩니다.
+
+* 자세한 안내사항은 별도 연락을 드리겠습니다
+* 제작이 들어가는 상품으로, 주문 후 취소 및 변경이 불가합니다."
+                  rows={6}
+                  className="resize-none"
+                />
+              </div>
+
+              <Button
+                onClick={handleSaveAdminMessage}
+                disabled={savingAdminMessage}
+                className="w-full sm:w-auto"
+              >
+                {savingAdminMessage ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                저장
+              </Button>
+
+              <div className="mt-6 bg-orange-50 p-4 rounded-lg">
+                <h4 className="font-medium text-orange-800 mb-2">안내 메시지 사용법</h4>
+                <ul className="text-sm text-orange-700 space-y-1">
+                  <li>• 고객이 장바구니에서 주문하기 전에 이 메시지를 확인합니다</li>
+                  <li>• 고객은 &quot;위 내용을 확인했습니다&quot; 체크박스를 선택해야 주문을 진행할 수 있습니다</li>
+                  <li>• 메시지를 비우면 해당 상품에 대한 안내 메시지가 표시되지 않습니다</li>
+                  <li>• 줄바꿈을 사용하여 여러 항목을 구분할 수 있습니다</li>
+                </ul>
+              </div>
+
+              {adminMessage && (
+                <div className="mt-4">
+                  <h4 className="font-medium text-gray-700 mb-2">미리보기</h4>
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{adminMessage}</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
