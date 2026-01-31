@@ -5,6 +5,7 @@ import { StepIndicator, OrderStep } from "./StepIndicator"
 import { AdminMessageStep } from "./steps/AdminMessageStep"
 import { CustomerInfoStep } from "./steps/CustomerInfoStep"
 import { ShippingInfoStep } from "./steps/ShippingInfoStep"
+import { AttachmentStep } from "./steps/AttachmentStep"
 import { ConfirmationStep } from "./steps/ConfirmationStep"
 
 export interface OrderFormData {
@@ -28,7 +29,7 @@ interface AdminMessage {
 
 interface StepOrderFormProps {
   adminMessages: AdminMessage[]
-  onSubmit: (formData: OrderFormData) => Promise<void>
+  onSubmit: (formData: OrderFormData, attachmentFiles: File[]) => Promise<void>
   totalAmount: number
   isSubmitting: boolean
 }
@@ -41,10 +42,10 @@ export function StepOrderForm({
 }: StepOrderFormProps) {
   const hasAdminMessage = adminMessages.length > 0
 
-  // 단계 순서 정의
+  // 단계 순서 정의 (파일 첨부 단계 추가)
   const stepOrder: OrderStep[] = hasAdminMessage
-    ? ["adminConfirm", "customerInfo", "shippingInfo", "confirmation"]
-    : ["customerInfo", "shippingInfo", "confirmation"]
+    ? ["adminConfirm", "customerInfo", "shippingInfo", "attachment", "confirmation"]
+    : ["customerInfo", "shippingInfo", "attachment", "confirmation"]
 
   const initialStep: OrderStep = stepOrder[0]
 
@@ -62,6 +63,9 @@ export function StepOrderForm({
     organizationName: "",
     memo: "",
   })
+  
+  // 첨부파일 상태
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([])
 
   // 현재 단계 인덱스
   const currentStepIndex = stepOrder.indexOf(currentStep)
@@ -89,7 +93,7 @@ export function StepOrderForm({
 
   // 주문 제출
   const handleSubmit = async () => {
-    await onSubmit(formData)
+    await onSubmit(formData, attachmentFiles)
   }
 
   return (
@@ -158,9 +162,22 @@ export function StepOrderForm({
                   customerPhone: formData.customerPhone,
                 }}
                 onChange={handleChange}
-                onNext={() => goToStep("confirmation")}
+                onNext={() => goToStep("attachment")}
                 onBack={goToPreviousStep}
                 isActive={currentStep === "shippingInfo"}
+              />
+            </div>
+          </div>
+
+          {/* 파일 첨부 단계 */}
+          <div className="w-full flex-shrink-0 h-full overflow-y-auto">
+            <div className="p-4">
+              <AttachmentStep
+                files={attachmentFiles}
+                onFilesChange={setAttachmentFiles}
+                onNext={() => goToStep("confirmation")}
+                onBack={goToPreviousStep}
+                isActive={currentStep === "attachment"}
               />
             </div>
           </div>

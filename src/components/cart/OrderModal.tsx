@@ -19,7 +19,7 @@ interface OrderModalProps {
   onOpenChange: (open: boolean) => void
   adminMessages: AdminMessage[]
   totalAmount: number
-  onSubmit: (formData: OrderFormData) => Promise<void>
+  onSubmit: (formData: OrderFormData, attachmentFiles: File[]) => Promise<void>
   isSubmitting: boolean
 }
 

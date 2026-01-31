@@ -1,9 +1,9 @@
 "use client"
 
-import { AlertTriangle, User, Truck, CheckCircle } from "lucide-react"
+import { AlertTriangle, User, Truck, Paperclip, CheckCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export type OrderStep = "adminConfirm" | "customerInfo" | "shippingInfo" | "confirmation"
+export type OrderStep = "adminConfirm" | "customerInfo" | "shippingInfo" | "attachment" | "confirmation"
 
 interface StepIndicatorProps {
   currentStep: OrderStep
@@ -14,6 +14,7 @@ const STEPS = [
   { id: "adminConfirm" as const, label: "확인사항", icon: AlertTriangle },
   { id: "customerInfo" as const, label: "주문자", icon: User },
   { id: "shippingInfo" as const, label: "배송정보", icon: Truck },
+  { id: "attachment" as const, label: "파일첨부", icon: Paperclip },
   { id: "confirmation" as const, label: "주문확인", icon: CheckCircle },
 ]
 

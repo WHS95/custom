@@ -122,9 +122,10 @@ export default function CartPage() {
     }
   }
 
-  const handleOrder = async (formData: OrderFormData) => {
+  const handleOrder = async (formData: OrderFormData, attachmentFiles: File[]) => {
     setIsOrdering(true)
     try {
+      // 1. 주문 생성
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -156,13 +157,37 @@ export default function CartPage() {
 
       const data = await response.json()
 
-      if (data.success) {
-        clearCart()
-        toast.success("주문이 완료되었습니다!")
-        router.push(`/order/${data.order.orderNumber}`)
-      } else {
+      if (!data.success) {
         throw new Error(data.error)
       }
+
+      const orderNumber = data.order.orderNumber
+
+      // 2. 첨부파일이 있으면 업로드
+      if (attachmentFiles.length > 0) {
+        const uploadFormData = new FormData()
+        attachmentFiles.forEach((file) => {
+          uploadFormData.append("files", file)
+        })
+
+        const uploadResponse = await fetch(`/api/orders/${orderNumber}/attachments`, {
+          method: "POST",
+          body: uploadFormData,
+        })
+
+        const uploadData = await uploadResponse.json()
+        
+        if (!uploadData.success) {
+          console.error("첨부파일 업로드 실패:", uploadData.error)
+          toast.warning("주문은 완료되었으나 첨부파일 업로드에 실패했습니다.")
+        } else {
+          toast.success(`${uploadData.files.length}개 파일이 첨부되었습니다.`)
+        }
+      }
+
+      clearCart()
+      toast.success("주문이 완료되었습니다!")
+      router.push(`/order/${orderNumber}`)
     } catch (error) {
       console.error("주문 에러:", error)
       toast.error("주문 처리 중 오류가 발생했습니다")

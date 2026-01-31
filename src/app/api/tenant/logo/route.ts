@@ -76,8 +76,11 @@ export async function POST(request: NextRequest) {
 
     const logoUrl = urlData.publicUrl
 
-    // 테넌트 테이블 업데이트
-    const { error: updateError } = await (supabase as any)
+    // 테넌트 테이블 업데이트 (Supabase 스키마 타입 제한으로 any 사용)
+    const { error: updateError } = await (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      supabase as any
+    )
       .schema('runhousecustom')
       .from('tenants')
       .update({ logo_url: logoUrl })
@@ -127,8 +130,11 @@ export async function DELETE(request: NextRequest) {
     const path = `tenants/${tenantId}/logo.png`
     await supabase.storage.from(BUCKET_NAME).remove([path])
 
-    // 테넌트 테이블 업데이트
-    await (supabase as any)
+    // 테넌트 테이블 업데이트 (Supabase 스키마 타입 제한으로 any 사용)
+    await (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      supabase as any
+    )
       .schema('runhousecustom')
       .from('tenants')
       .update({ logo_url: null })

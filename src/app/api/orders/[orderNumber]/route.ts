@@ -75,6 +75,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           memo: h.memo,
           createdAt: h.createdAt,
         })),
+        attachmentFiles: order.attachmentFiles || [],
         createdAt: order.createdAt,
         updatedAt: order.updatedAt,
       },

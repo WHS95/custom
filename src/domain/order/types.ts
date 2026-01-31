@@ -142,6 +142,17 @@ export interface TrackingInfo {
 }
 
 /**
+ * 첨부파일 정보 (값 객체)
+ * 주문 시 첨부한 .ai 파일 등
+ */
+export interface AttachmentFile {
+  name: string               // 파일명
+  url: string                // Storage URL
+  size: number               // 파일 크기 (bytes)
+  uploadedAt: string         // 업로드 일시 (ISO 8601)
+}
+
+/**
  * 디자인 스냅샷 (주문 시점의 디자인 저장)
  */
 export interface DesignSnapshot {
@@ -216,6 +227,9 @@ export interface Order {
 
   // 배송 추적 정보
   trackingInfo?: TrackingInfo
+
+  // 첨부파일
+  attachmentFiles?: AttachmentFile[]
 
   // 타임스탬프
   createdAt: Date

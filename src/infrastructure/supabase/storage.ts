@@ -1,11 +1,13 @@
 /**
  * Supabase Storage 유틸리티
  * 상품 이미지 업로드/삭제 기능
+ * 주문 첨부파일 업로드/다운로드 기능
  */
 
 import { createServerSupabaseClient, getSupabaseClient } from "./client";
 
 const BUCKET_NAME = "product-images";
+const ORDER_ATTACHMENTS_BUCKET = "order-attachments";
 
 /**
  * 파일을 Supabase Storage에 업로드
@@ -133,4 +135,125 @@ export async function deleteAllProductImages(
   }
 
   return true;
+}
+
+// ============================================
+// 주문 첨부파일 관련 함수
+// ============================================
+
+/**
+ * 주문 첨부파일 업로드
+ * @param file File 객체
+ * @param orderNumber 주문번호
+ * @param fileName 파일명
+ * @param isServer 서버 사이드 여부
+ */
+export async function uploadOrderAttachment(
+  file: File | Blob,
+  orderNumber: string,
+  fileName: string,
+  isServer = false
+): Promise<{ url: string; size: number } | null> {
+  const supabase = isServer
+    ? createServerSupabaseClient()
+    : getSupabaseClient();
+
+  const path = getOrderAttachmentPath(orderNumber, fileName);
+
+  const { data, error } = await supabase.storage
+    .from(ORDER_ATTACHMENTS_BUCKET)
+    .upload(path, file, {
+      upsert: true,
+      contentType: file.type || "application/octet-stream",
+    });
+
+  if (error) {
+    console.error("Order attachment upload error:", error);
+    return null;
+  }
+
+  // Public URL 반환
+  const { data: urlData } = supabase.storage
+    .from(ORDER_ATTACHMENTS_BUCKET)
+    .getPublicUrl(data.path);
+
+  return {
+    url: urlData.publicUrl,
+    size: file.size,
+  };
+}
+
+/**
+ * 주문 첨부파일 경로 생성
+ */
+export function getOrderAttachmentPath(
+  orderNumber: string,
+  fileName: string
+): string {
+  // 파일명에서 특수문자 제거 (URL 안전)
+  const safeFileName = fileName.replace(/[^a-zA-Z0-9가-힣._-]/g, "_");
+  return `orders/${orderNumber}/${safeFileName}`;
+}
+
+/**
+ * 주문 첨부파일 삭제
+ */
+export async function deleteOrderAttachment(
+  orderNumber: string,
+  fileName: string,
+  isServer = false
+): Promise<boolean> {
+  const supabase = isServer
+    ? createServerSupabaseClient()
+    : getSupabaseClient();
+
+  const path = getOrderAttachmentPath(orderNumber, fileName);
+
+  const { error } = await supabase.storage
+    .from(ORDER_ATTACHMENTS_BUCKET)
+    .remove([path]);
+
+  if (error) {
+    console.error("Delete order attachment error:", error);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * 주문의 모든 첨부파일 목록 조회
+ */
+export async function listOrderAttachments(
+  orderNumber: string,
+  isServer = false
+): Promise<{ name: string; url: string; size: number }[]> {
+  const supabase = isServer
+    ? createServerSupabaseClient()
+    : getSupabaseClient();
+
+  const { data: files, error } = await supabase.storage
+    .from(ORDER_ATTACHMENTS_BUCKET)
+    .list(`orders/${orderNumber}`, { limit: 10 });
+
+  if (error) {
+    console.error("List order attachments error:", error);
+    return [];
+  }
+
+  if (!files || files.length === 0) {
+    return [];
+  }
+
+  return files.map((file) => {
+    const { data: urlData } = supabase.storage
+      .from(ORDER_ATTACHMENTS_BUCKET)
+      .getPublicUrl(`orders/${orderNumber}/${file.name}`);
+
+    return {
+      name: file.name,
+      url: urlData.publicUrl,
+      size: file.metadata?.size || 0,
+    };
+  });
 }

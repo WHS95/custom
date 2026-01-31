@@ -28,11 +28,12 @@ import {
   ChevronUp,
   Eye,
   Layers,
+  Paperclip,
 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { useStudioConfig, HatView, ProductColor } from "@/lib/store/studio-context"
-import { ORDER_STATUS_LABELS, type OrderStatus } from "@/domain/order"
+import { ORDER_STATUS_LABELS, type OrderStatus, type AttachmentFile } from "@/domain/order"
 import {
   HatDesignCanvas,
   DesignLayer,
@@ -69,6 +70,7 @@ interface OrderDetail {
   shippingCost: number
   totalAmount: number
   status: OrderStatus
+  attachmentFiles?: AttachmentFile[]
   createdAt: string
 }
 
@@ -454,6 +456,40 @@ export default function OrderDetailPage() {
     }
 
     toast.success("모든 이미지 다운로드 완료")
+  }
+
+  // 주문자 첨부파일 다운로드
+  const handleDownloadAttachments = async () => {
+    if (!order?.attachmentFiles || order.attachmentFiles.length === 0) {
+      toast.info("다운로드할 첨부파일이 없습니다")
+      return
+    }
+
+    toast.info(`${order.attachmentFiles.length}개 첨부파일 다운로드 중...`)
+
+    for (const file of order.attachmentFiles) {
+      try {
+        const response = await fetch(file.url)
+        const blob = await response.blob()
+
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = file.name
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+
+        // 다운로드 간 딜레이
+        await new Promise((resolve) => setTimeout(resolve, 300))
+      } catch (error) {
+        console.error("첨부파일 다운로드 에러:", error)
+        toast.error(`${file.name} 다운로드 실패`)
+      }
+    }
+
+    toast.success("첨부파일 다운로드 완료")
   }
 
   // 디자인 저장
@@ -844,6 +880,18 @@ export default function OrderDetailPage() {
               <Download className="w-4 h-4 mr-2" />
               모든 디자인 이미지 다운로드
             </Button>
+
+            {/* 주문자 첨부파일 다운로드 버튼 */}
+            {order?.attachmentFiles && order.attachmentFiles.length > 0 && (
+              <Button
+                onClick={handleDownloadAttachments}
+                variant="outline"
+                className="w-full bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100"
+              >
+                <Paperclip className="w-4 h-4 mr-2" />
+                주문자 첨부파일 ({order.attachmentFiles.length}개)
+              </Button>
+            )}
 
             {/* 저장 버튼 */}
             {canEdit && (

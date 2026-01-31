@@ -15,6 +15,7 @@ import type {
   DesignLayerSnapshot,
   OrderStatus,
   TrackingInfo,
+  AttachmentFile,
 } from '@/domain/order/types'
 
 /**
@@ -431,6 +432,7 @@ export class SupabaseOrderRepository implements IOrderRepository {
       statusHistory: [],
       adminMemo: row.admin_memo as string | undefined,
       trackingInfo: row.tracking_info as TrackingInfo | undefined,
+      attachmentFiles: (row.attachment_files as AttachmentFile[]) || [],
       createdAt: new Date(row.created_at as string),
       updatedAt: new Date(row.updated_at as string),
     }
