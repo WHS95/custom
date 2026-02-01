@@ -39,7 +39,7 @@ function UploadButton({ onClick }: { onClick: () => void }) {
           </li>
           <li className="flex items-start gap-1.5">
             <span className="text-blue-400 mt-0.5">•</span>
-            <span>이미지 크기 2500px 이상</span>
+            <span>이미지 크기 mipx 이상</span>
           </li>
           <li className="flex items-start gap-1.5">
             <span className="text-yellow-400 mt-0.5">•</span>

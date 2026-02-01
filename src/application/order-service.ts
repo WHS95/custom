@@ -45,6 +45,17 @@ export async function getOrdersByPhone(
 }
 
 /**
+ * 로그인 사용자 ID로 주문 목록 조회
+ */
+export async function getOrdersByUserId(
+  userId: string,
+  tenantId: string = DEFAULT_TENANT_ID
+): Promise<Order[]> {
+  const repo = orderRepository.useServerClient()
+  return repo.findByUserId(tenantId, userId)
+}
+
+/**
  * 관리자용 주문 목록 조회
  */
 export async function getOrdersForAdmin(

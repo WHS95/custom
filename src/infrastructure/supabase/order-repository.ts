@@ -88,6 +88,7 @@ export class SupabaseOrderRepository implements IOrderRepository {
       .insert({
         order_number: orderNumber,
         tenant_id: dto.tenantId,
+        user_id: dto.userId || null,
         customer_name: dto.customerName,
         customer_phone: dto.customerPhone,
         customer_email: dto.customerEmail || null,
@@ -190,6 +191,27 @@ export class SupabaseOrderRepository implements IOrderRepository {
       `)
       .eq('tenant_id', tenantId)
       .eq('customer_phone', phone)
+      .order('created_at', { ascending: false })
+
+    if (error || !data) return []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return data.map((order: any) => this.mapToOrderWithItems(order))
+  }
+
+  /**
+   * 사용자 ID로 주문 목록 조회 (로그인 회원)
+   */
+  async findByUserId(tenantId: string, userId: string): Promise<Order[]> {
+    const client = this.getClient()
+
+    const { data, error } = await client
+      .from('orders')
+      .select(`
+        *,
+        order_items (*)
+      `)
+      .eq('tenant_id', tenantId)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
     if (error || !data) return []

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useCartStore } from "@/lib/store/cart-store"
+import { useAuth } from "@/lib/auth/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -20,6 +21,8 @@ import {
   Eye,
   Pencil,
   Layers,
+  LogIn,
+  User,
 } from "lucide-react"
 import { useDesignStore } from "@/lib/store/design-store"
 import { OrderFormData } from "@/components/cart/StepOrderForm"
@@ -34,6 +37,7 @@ interface AdminMessage {
 
 export default function CartPage() {
   const router = useRouter()
+  const { user, profile, isLoading: authLoading, isAuthenticated } = useAuth()
   const items = useCartStore((state) => state.items)
   const removeItem = useCartStore((state) => state.removeItem)
   const updateItemQuantity = useCartStore((state) => state.updateItemQuantity)
@@ -123,16 +127,24 @@ export default function CartPage() {
   }
 
   const handleOrder = async (formData: OrderFormData, attachmentFiles: File[]) => {
+    // 로그인 체크
+    if (!isAuthenticated || !user) {
+      toast.error("로그인이 필요합니다.")
+      router.push("/login?redirect=/cart")
+      return
+    }
+
     setIsOrdering(true)
     try {
-      // 1. 주문 생성
+      // 1. 주문 생성 (user_id 포함)
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          userId: user.id,
           customerName: formData.customerName,
           customerPhone: formData.customerPhone,
-          customerEmail: formData.customerEmail || undefined,
+          customerEmail: formData.customerEmail || user.email,
           shippingInfo: {
             recipientName: formData.recipientName,
             phone: formData.recipientPhone,
@@ -454,21 +466,57 @@ export default function CartPage() {
                   </span>
                 </div>
 
-                <Button
-                  className="w-full"
-                  size="lg"
-                  onClick={() => setOrderModalOpen(true)}
-                  disabled={isLoadingMessages}
-                >
-                  {isLoadingMessages ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      로딩 중...
-                    </>
-                  ) : (
-                    "주문하기"
-                  )}
-                </Button>
+                {/* 로그인 상태에 따른 UI */}
+                {authLoading ? (
+                  <Button className="w-full" size="lg" disabled>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    로딩 중...
+                  </Button>
+                ) : isAuthenticated ? (
+                  <>
+                    {/* 로그인 사용자 정보 */}
+                    <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg text-sm">
+                      <User className="w-4 h-4 text-blue-600" />
+                      <span className="text-blue-700">
+                        <span className="font-medium">{profile?.name}</span>님으로 주문
+                      </span>
+                    </div>
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      onClick={() => setOrderModalOpen(true)}
+                      disabled={isLoadingMessages}
+                    >
+                      {isLoadingMessages ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          로딩 중...
+                        </>
+                      ) : (
+                        "주문하기"
+                      )}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    {/* 비로그인 시 로그인 유도 */}
+                    <div className="p-4 bg-gray-100 rounded-lg text-center">
+                      <LogIn className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600 mb-3">
+                        주문하려면 로그인이 필요합니다
+                      </p>
+                      <Link href="/login?redirect=/cart">
+                        <Button className="w-full">로그인하기</Button>
+                      </Link>
+                      <p className="text-xs text-gray-500 mt-2">
+                        아직 회원이 아니신가요?{" "}
+                        <Link href="/signup" className="text-blue-600 hover:underline">
+                          회원가입
+                        </Link>
+                      </p>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 

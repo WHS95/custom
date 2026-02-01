@@ -258,6 +258,7 @@ export interface OrderStatusHistory {
  */
 export interface CreateOrderDTO {
   tenantId: string
+  userId?: string           // 로그인한 사용자 ID (회원 주문인 경우)
   customerName: string
   customerPhone: string
   customerEmail?: string
