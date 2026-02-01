@@ -89,6 +89,7 @@ export interface Database {
           order_number: string
           tenant_id: string
           customer_id: string | null
+          user_id: string | null
           customer_name: string
           customer_phone: string
           customer_email: string | null
@@ -107,6 +108,7 @@ export interface Database {
           order_number: string
           tenant_id: string
           customer_id?: string | null
+          user_id?: string | null
           customer_name: string
           customer_phone: string
           customer_email?: string | null
@@ -125,6 +127,7 @@ export interface Database {
           order_number?: string
           tenant_id?: string
           customer_id?: string | null
+          user_id?: string | null
           customer_name?: string
           customer_phone?: string
           customer_email?: string | null
@@ -300,6 +303,97 @@ export interface Database {
           sort_order?: number
         }
       }
+      user_profiles: {
+        Row: {
+          id: string
+          user_id: string
+          tenant_id: string
+          name: string
+          phone: string
+          user_type: 'individual' | 'crew_staff'
+          crew_name: string | null
+          default_address: Json | null
+          marketing_agreed: boolean
+          marketing_agreed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          tenant_id?: string
+          name: string
+          phone: string
+          user_type?: 'individual' | 'crew_staff'
+          crew_name?: string | null
+          default_address?: Json | null
+          marketing_agreed?: boolean
+          marketing_agreed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          tenant_id?: string
+          name?: string
+          phone?: string
+          user_type?: 'individual' | 'crew_staff'
+          crew_name?: string | null
+          default_address?: Json | null
+          marketing_agreed?: boolean
+          marketing_agreed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      user_carts: {
+        Row: {
+          id: string
+          user_id: string
+          tenant_id: string
+          product_id: string
+          product_name: string
+          color: string
+          color_label: string
+          size: string
+          quantity: number
+          unit_price: number
+          design_layers: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          tenant_id?: string
+          product_id: string
+          product_name: string
+          color: string
+          color_label: string
+          size: string
+          quantity?: number
+          unit_price: number
+          design_layers?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          tenant_id?: string
+          product_id?: string
+          product_name?: string
+          color?: string
+          color_label?: string
+          size?: string
+          quantity?: number
+          unit_price?: number
+          design_layers?: Json
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -319,6 +413,9 @@ export interface Database {
         | 'shipped'
         | 'delivered'
         | 'cancelled'
+      user_type:
+        | 'individual'
+        | 'crew_staff'
     }
   }
 }

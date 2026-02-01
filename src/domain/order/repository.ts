@@ -26,6 +26,7 @@ export interface IOrderRepository {
   findById(id: string): Promise<Order | null>
   findByOrderNumber(orderNumber: string): Promise<Order | null>
   findByCustomerPhone(tenantId: string, phone: string): Promise<Order[]>
+  findByUserId(tenantId: string, userId: string): Promise<Order[]>
   findAll(filter: OrderFilter): Promise<Order[]>
 
   // 업데이트

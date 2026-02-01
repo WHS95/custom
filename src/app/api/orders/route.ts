@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import {
   createOrder,
   getOrdersByPhone,
+  getOrdersByUserId,
   getOrdersForAdmin,
   DEFAULT_TENANT_ID,
 } from '@/application/order-service'
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
 
     const dto: CreateOrderDTO = {
       tenantId: body.tenantId || DEFAULT_TENANT_ID,
+      userId: body.userId,
       customerName: body.customerName,
       customerPhone: body.customerPhone,
       customerEmail: body.customerEmail,
@@ -83,15 +85,19 @@ export async function POST(request: NextRequest) {
  *
  * Query params:
  * - phone: 고객 전화번호 (고객용)
+ * - userId: 로그인 사용자 ID (회원용)
  * - admin: true (관리자용 전체 조회)
  * - status: 주문 상태 필터
+ * - detail: true (아이템 상세 포함)
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const phone = searchParams.get('phone')
+    const userId = searchParams.get('userId')
     const isAdmin = searchParams.get('admin') === 'true'
     const status = searchParams.get('status')
+    const detail = searchParams.get('detail') === 'true'
 
     if (isAdmin) {
       // 관리자용 전체 조회
@@ -119,6 +125,31 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // 로그인 회원용 조회
+    if (userId) {
+      const orders = await getOrdersByUserId(userId)
+
+      return NextResponse.json({
+        success: true,
+        orders: orders.map((order) => ({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          status: order.status,
+          totalAmount: order.totalAmount,
+          itemCount: order.items.length,
+          createdAt: order.createdAt,
+          ...(detail && {
+            items: order.items.map((item) => ({
+              productName: item.productName,
+              colorLabel: item.colorLabel,
+              size: item.size,
+              quantity: item.quantity,
+            })),
+          }),
+        })),
+      })
+    }
+
     if (phone) {
       // 고객용 전화번호 조회
       const orders = await getOrdersByPhone(phone)
@@ -137,7 +168,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: '전화번호를 입력해주세요.' },
+      { error: '전화번호 또는 사용자 ID를 입력해주세요.' },
       { status: 400 }
     )
   } catch (error) {

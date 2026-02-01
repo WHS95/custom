@@ -3,6 +3,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { DesignLayer } from './design-store'
+import { getSupabaseBrowserClient } from '@/infrastructure/supabase/client'
 
 /**
  * 장바구니 아이템 인터페이스
@@ -27,6 +28,8 @@ export interface CartItem {
 interface CartState {
     // === 상태 ===
     items: CartItem[]
+    userId: string | null       // 로그인한 사용자 ID
+    isSyncing: boolean          // DB 동기화 중 여부
     
     // === 계산된 값 ===
     getTotalItems: () => number
@@ -42,6 +45,11 @@ interface CartState {
     
     // 같은 색상+사이즈 조합이 있는지 확인
     findExistingItem: (color: string, size: string, designLayers: DesignLayer[]) => CartItem | undefined
+    
+    // === DB 동기화 ===
+    setUserId: (userId: string | null) => void
+    syncFromDB: () => Promise<void>
+    syncToDB: () => Promise<void>
 }
 
 // ID 생성기
@@ -66,12 +74,16 @@ const areDesignsEqual = (layers1: DesignLayer[], layers2: DesignLayer[]): boolea
 
 /**
  * 장바구니 스토어
+ * - 로그인 시 DB와 동기화
+ * - 비로그인 시 localStorage 사용
  */
 export const useCartStore = create<CartState>()(
     persist(
         (set, get) => ({
             // === 초기 상태 ===
             items: [],
+            userId: null,
+            isSyncing: false,
             
             // === 계산된 값 ===
             getTotalItems: () => {
@@ -119,6 +131,11 @@ export const useCartStore = create<CartState>()(
                     
                     return { items: [...state.items, newItem] }
                 })
+                
+                // DB 동기화 (로그인 상태인 경우)
+                if (get().userId) {
+                    get().syncToDB()
+                }
             },
             
             updateItemQuantity: (id, quantity) => {
@@ -132,16 +149,31 @@ export const useCartStore = create<CartState>()(
                         item.id === id ? { ...item, quantity } : item
                     )
                 }))
+                
+                // DB 동기화
+                if (get().userId) {
+                    get().syncToDB()
+                }
             },
             
             removeItem: (id) => {
                 set((state) => ({
                     items: state.items.filter(item => item.id !== id)
                 }))
+                
+                // DB 동기화
+                if (get().userId) {
+                    get().syncToDB()
+                }
             },
             
             clearCart: () => {
                 set({ items: [] })
+                
+                // DB 동기화 (장바구니 비우기)
+                if (get().userId) {
+                    get().syncToDB()
+                }
             },
             
             findExistingItem: (color, size, designLayers) => {
@@ -151,10 +183,136 @@ export const useCartStore = create<CartState>()(
                     areDesignsEqual(item.designLayers, designLayers)
                 )
             },
+            
+            // === DB 동기화 ===
+            setUserId: (userId) => {
+                const previousUserId = get().userId
+                set({ userId })
+                
+                // 로그인 상태가 변경되면 DB 동기화
+                if (userId && !previousUserId) {
+                    // 로그인 시: DB에서 장바구니 불러오기
+                    get().syncFromDB()
+                } else if (!userId && previousUserId) {
+                    // 로그아웃 시: 장바구니 초기화
+                    set({ items: [] })
+                }
+            },
+            
+            syncFromDB: async () => {
+                const { userId } = get()
+                if (!userId) return
+                
+                set({ isSyncing: true })
+                
+                try {
+                    const supabase = getSupabaseBrowserClient()
+                    const { data, error } = await supabase
+                        .schema('runhousecustom')
+                        .from('user_carts')
+                        .select('*')
+                        .eq('user_id', userId)
+                        .order('created_at', { ascending: true })
+                    
+                    if (error) {
+                        console.error('장바구니 불러오기 에러:', error)
+                        return
+                    }
+                    
+                    if (data && data.length > 0) {
+                        // DB의 장바구니 데이터를 CartItem 형식으로 변환
+                        const dbItems: CartItem[] = data.map(item => ({
+                            id: item.id,
+                            productId: item.product_id,
+                            productName: item.product_name,
+                            color: item.color,
+                            colorLabel: item.color_label,
+                            size: item.size,
+                            quantity: item.quantity,
+                            designLayers: item.design_layers as DesignLayer[],
+                            unitPrice: item.unit_price,
+                            createdAt: new Date(item.created_at).getTime(),
+                        }))
+                        
+                        // 로컬 장바구니와 병합 (DB 우선)
+                        const localItems = get().items
+                        const mergedItems = [...dbItems]
+                        
+                        // 로컬에만 있는 아이템 추가
+                        localItems.forEach(localItem => {
+                            const existsInDB = dbItems.some(dbItem => 
+                                dbItem.color === localItem.color &&
+                                dbItem.size === localItem.size &&
+                                areDesignsEqual(dbItem.designLayers, localItem.designLayers)
+                            )
+                            if (!existsInDB) {
+                                mergedItems.push(localItem)
+                            }
+                        })
+                        
+                        set({ items: mergedItems })
+                        
+                        // 병합된 장바구니를 다시 DB에 저장
+                        if (localItems.length > 0) {
+                            await get().syncToDB()
+                        }
+                    }
+                } catch (error) {
+                    console.error('장바구니 동기화 에러:', error)
+                } finally {
+                    set({ isSyncing: false })
+                }
+            },
+            
+            syncToDB: async () => {
+                const { userId, items } = get()
+                if (!userId) return
+                
+                try {
+                    const supabase = getSupabaseBrowserClient()
+                    
+                    // 기존 장바구니 삭제
+                    await supabase
+                        .schema('runhousecustom')
+                        .from('user_carts')
+                        .delete()
+                        .eq('user_id', userId)
+                    
+                    // 현재 장바구니 저장
+                    if (items.length > 0) {
+                        const cartData = items.map(item => ({
+                            user_id: userId,
+                            product_id: item.productId,
+                            product_name: item.productName,
+                            color: item.color,
+                            color_label: item.colorLabel,
+                            size: item.size,
+                            quantity: item.quantity,
+                            unit_price: item.unitPrice,
+                            design_layers: item.designLayers,
+                        }))
+                        
+                        const { error } = await supabase
+                            .schema('runhousecustom')
+                            .from('user_carts')
+                            .insert(cartData)
+                        
+                        if (error) {
+                            console.error('장바구니 저장 에러:', error)
+                        }
+                    }
+                } catch (error) {
+                    console.error('장바구니 DB 동기화 에러:', error)
+                }
+            },
         }),
         {
             name: 'runhouse-cart-storage',
             storage: createJSONStorage(() => localStorage),
+            partialize: (state) => ({
+                items: state.items,
+                // userId는 localStorage에 저장하지 않음
+            }),
         }
     )
 )
@@ -175,4 +333,3 @@ export const useCartItemsByColor = () => {
     
     return grouped
 }
-

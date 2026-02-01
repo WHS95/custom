@@ -212,7 +212,7 @@ export function StudioLayout({
       const img = new window.Image();
       img.onload = () => {
         // 최소 2500px 이상인지 확인 (가로 또는 세로)
-        if (img.width < 2500 && img.height < 2500) {
+        if (img.width < 100 && img.height < 100) {
           showAlert({
             type: "error",
             title: "이미지 크기가 너무 작습니다",
