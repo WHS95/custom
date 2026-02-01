@@ -39,7 +39,7 @@ export default function Home() {
             <h1 className='text-xl font-bold'>상품 목록</h1>
             <p className='text-sm text-gray-500'></p>
           </div>
-          <div className='flex gap-2'>
+          {/* <div className='flex gap-2'>
             <Link href='/cart'>
               <Button variant='outline' className='relative'>
                 <ShoppingCart className='h-4 w-4 mr-2' />
@@ -51,7 +51,7 @@ export default function Home() {
                 )}
               </Button>
             </Link>
-          </div>
+          </div> */}
         </div>
       </header>
 

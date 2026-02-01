@@ -10,7 +10,7 @@ import { ShoppingCart, User, LogIn, LogOut, Loader2, Users } from "lucide-react"
 
 export function Navbar() {
   const { t } = useLanguage();
-  const { user, profile, isLoading, isAuthenticated, signOut } = useAuth();
+  const { profile, isLoading, isAuthenticated, signOut } = useAuth();
   const cartItems = useCartStore((state) => state.items);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -42,44 +42,46 @@ export function Navbar() {
         </nav>
 
         <div className='flex items-center gap-3'>
-          <LanguageToggle />
+          {/* <LanguageToggle /> */}
 
           {/* 장바구니 */}
-          <Link href='/cart'>
-            <Button variant='ghost' size='icon' className='relative'>
+          <Button asChild variant='ghost' size='icon' className='relative'>
+            <Link href='/cart'>
               <ShoppingCart className='w-5 h-5' />
               {cartCount > 0 && (
                 <span className='absolute -top-1 -right-1 w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center'>
                   {cartCount > 99 ? '99+' : cartCount}
                 </span>
               )}
-            </Button>
-          </Link>
+            </Link>
+          </Button>
 
           {/* 인증 상태에 따른 UI */}
           {isLoading ? (
             <div className='w-8 h-8 flex items-center justify-center'>
               <Loader2 className='w-4 h-4 animate-spin text-gray-400' />
             </div>
-          ) : isAuthenticated && profile ? (
+          ) : isAuthenticated ? (
             <div className='flex items-center gap-2'>
               {/* 사용자 메뉴 */}
               <Link href='/mypage'>
                 <Button variant='ghost' size='sm' className='gap-2'>
-                  {profile.user_type === 'crew_staff' ? (
+                  {profile?.user_type === 'crew_staff' ? (
                     <Users className='w-4 h-4 text-blue-600' />
                   ) : (
                     <User className='w-4 h-4' />
                   )}
                   <span className='hidden sm:inline max-w-[100px] truncate'>
-                    {profile.name}
+                    {profile?.name ?? "내 계정"}
                   </span>
                 </Button>
               </Link>
               <Button
                 variant='ghost'
                 size='icon'
-                onClick={() => signOut()}
+                onClick={async () => {
+                  await signOut();
+                }}
                 title='로그아웃'
               >
                 <LogOut className='w-4 h-4 text-gray-500' />
@@ -87,17 +89,15 @@ export function Navbar() {
             </div>
           ) : (
             <div className='flex items-center gap-2'>
-              <Link href='/login'>
-                <Button variant='ghost' size='sm' className='gap-1'>
+              <Button asChild variant='ghost' size='sm' className='gap-1'>
+                <Link href='/login'>
                   <LogIn className='w-4 h-4' />
                   <span className='hidden sm:inline'>로그인</span>
-                </Button>
-              </Link>
-              <Link href='/signup'>
-                <Button size='sm' className='hidden sm:inline-flex'>
-                  회원가입
-                </Button>
-              </Link>
+                </Link>
+              </Button>
+              <Button asChild size='sm' className='hidden sm:inline-flex'>
+                <Link href='/signup'>회원가입</Link>
+              </Button>
             </div>
           )}
         </div>

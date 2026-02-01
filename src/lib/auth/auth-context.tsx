@@ -64,10 +64,8 @@ export interface SignUpParams {
   email: string;
   password: string;
   name: string;
-  phone: string;
   userType: "individual" | "crew_staff";
   crewName?: string;
-  marketingAgreed?: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -92,17 +90,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (userId: string) => {
       try {
         const { data, error } = await supabase
+          .schema("runhousecustom")
           .from("user_profiles")
           .select("*")
           .eq("user_id", userId)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error("프로필 조회 에러:", error);
           return null;
         }
 
-        return data as UserProfile;
+        return data as UserProfile | null;
       } catch (error) {
         console.error("프로필 조회 에러:", error);
         return null;
@@ -151,13 +150,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 인증 상태 변경 리스너
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
+      console.log("Auth state changed:", event);
+      
       setSession(newSession);
       setUser(newSession?.user ?? null);
 
       if (newSession?.user) {
-        const profileData = await fetchProfile(newSession.user.id);
-        setProfile(profileData);
+        // 비동기 작업을 별도로 실행하여 이벤트 핸들러 블로킹 방지
+        fetchProfile(newSession.user.id).then((profileData) => {
+          setProfile(profileData);
+        });
       } else {
         setProfile(null);
       }
@@ -175,8 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * 회원가입
    */
   const signUp = async (params: SignUpParams) => {
-    const { email, password, name, phone, userType, crewName, marketingAgreed } =
-      params;
+    const { email, password, name, userType, crewName } = params;
 
     try {
       // 1. Supabase Auth에 사용자 생성
@@ -186,7 +188,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         options: {
           data: {
             name,
-            phone,
             user_type: userType,
             crew_name: crewName,
           },
@@ -199,23 +200,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!authData.user) {
         return { error: new Error("사용자 생성에 실패했습니다.") };
-      }
-
-      // 2. user_profiles 테이블에 프로필 생성
-      const { error: profileError } = await supabase.from("user_profiles").insert({
-        user_id: authData.user.id,
-        name,
-        phone,
-        user_type: userType,
-        crew_name: userType === "crew_staff" ? crewName : null,
-        marketing_agreed: marketingAgreed ?? false,
-        marketing_agreed_at: marketingAgreed ? new Date().toISOString() : null,
-      });
-
-      if (profileError) {
-        console.error("프로필 생성 에러:", profileError);
-        // 프로필 생성 실패 시 사용자 삭제는 하지 않음 (관리자가 처리)
-        return { error: new Error("프로필 생성에 실패했습니다.") };
       }
 
       return { error: null };
@@ -241,11 +225,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * 로그아웃
    */
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    setSession(null);
-    router.push("/");
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      router.refresh();
+      router.push("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   /**
@@ -263,8 +252,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * 비밀번호 변경
    */
   const updatePassword = async (password: string) => {
-    const { error } = await supabase.auth.updateUser({ password });
-    return { error };
+    try {
+      console.log("Attempting to update password...");
+
+      // 세션 확인
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!currentSession) {
+        console.error("No active session found");
+        return { error: { message: "로그인이 필요합니다.", name: "AuthError", status: 401 } as AuthError };
+      }
+      console.log("Session found for user:", currentSession.user.id);
+
+      // updateUser 호출 with timeout
+      const timeoutPromise = new Promise<{ error: AuthError; data: null }>((_, reject) => 
+        setTimeout(() => reject(new Error("Request timeout")), 30000)
+      );
+
+      const updatePromise = supabase.auth.updateUser({ password });
+      
+      console.log("Calling updateUser...");
+      const result = await Promise.race([updatePromise, timeoutPromise]);
+      console.log("updateUser completed:", result);
+
+      if (result.error) {
+        console.error("Password update failed:", result.error);
+      } else {
+        console.log("Password update success:", result.data);
+      }
+      
+      return { error: result.error };
+    } catch (err) {
+      console.error("비밀번호 변경 예외:", err);
+      return { error: err as AuthError };
+    }
   };
 
   const value: AuthContextType = {

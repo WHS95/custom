@@ -14,7 +14,6 @@ import {
   Mail,
   Lock,
   User,
-  Phone,
   ArrowLeft,
   Users,
   Building,
@@ -32,15 +31,13 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
   const [userType, setUserType] = useState<UserType>("individual");
   const [crewName, setCrewName] = useState("");
-  const [marketingAgreed, setMarketingAgreed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // 유효성 검사
   const validateForm = () => {
-    if (!email || !password || !passwordConfirm || !name || !phone) {
+    if (!email || !password || !passwordConfirm || !name) {
       toast.error("모든 필수 항목을 입력해주세요.");
       return false;
     }
@@ -57,11 +54,6 @@ export default function SignupPage() {
 
     if (password !== passwordConfirm) {
       toast.error("비밀번호가 일치하지 않습니다.");
-      return false;
-    }
-
-    if (!/^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$/.test(phone.replace(/-/g, ""))) {
-      toast.error("올바른 전화번호 형식이 아닙니다.");
       return false;
     }
 
@@ -85,10 +77,8 @@ export default function SignupPage() {
         email,
         password,
         name,
-        phone: phone.replace(/-/g, ""),
         userType,
         crewName: userType === "crew_staff" ? crewName : undefined,
-        marketingAgreed,
       };
 
       const { error } = await signUp(params);
@@ -110,15 +100,6 @@ export default function SignupPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // 전화번호 포맷팅
-  const formatPhone = (value: string) => {
-    const numbers = value.replace(/[^0-9]/g, "");
-    if (numbers.length <= 3) return numbers;
-    if (numbers.length <= 7)
-      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
-    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
   };
 
   if (authLoading) {
@@ -243,26 +224,6 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              {/* 전화번호 */}
-              <div className="space-y-2">
-                <Label htmlFor="phone">
-                  전화번호 <span className="text-red-500">*</span>
-                </Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="010-1234-5678"
-                    value={phone}
-                    onChange={(e) => setPhone(formatPhone(e.target.value))}
-                    className="pl-10"
-                    autoComplete="tel"
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
               {/* 회원 유형 선택 */}
               <div className="space-y-3">
                 <Label>
@@ -340,21 +301,6 @@ export default function SignupPage() {
                   </p>
                 </div>
               )}
-
-              {/* 마케팅 동의 */}
-              <div className="flex items-start gap-2 py-2">
-                <input
-                  type="checkbox"
-                  id="marketing"
-                  checked={marketingAgreed}
-                  onChange={(e) => setMarketingAgreed(e.target.checked)}
-                  className="mt-1"
-                  disabled={isLoading}
-                />
-                <label htmlFor="marketing" className="text-sm text-gray-600">
-                  이벤트, 프로모션 등 마케팅 정보 수신에 동의합니다 (선택)
-                </label>
-              </div>
 
               {/* 회원가입 버튼 */}
               <Button type="submit" className="w-full" disabled={isLoading}>

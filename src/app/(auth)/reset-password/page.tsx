@@ -22,6 +22,9 @@ export default function ResetPasswordPage() {
 
   // 세션이 없으면 (유효하지 않은 링크) 안내
   useEffect(() => {
+    // 로딩 중이거나 성공 상태라면 리다이렉트 하지 않음
+    if (isLoading || isSuccess) return;
+
     // Supabase가 URL 해시에서 세션을 복구할 시간을 줌
     const timer = setTimeout(() => {
       if (!session) {
@@ -31,7 +34,7 @@ export default function ResetPasswordPage() {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [session, router]);
+  }, [session, router, isLoading, isSuccess]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,8 +57,9 @@ export default function ResetPasswordPage() {
     setIsLoading(true);
 
     try {
-      const { error } = await updatePassword(password);
+      const { error} = await updatePassword(password);
 
+      console.log("error", error);
       if (error) {
         toast.error(error.message);
         return;

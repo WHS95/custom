@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
-import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
+import { getSupabaseClient } from "@/infrastructure/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,6 @@ import {
   Loader2,
   ArrowLeft,
   User,
-  Phone,
   MapPin,
   Lock,
   Users,
@@ -24,11 +23,10 @@ import {
 
 export default function ProfilePage() {
   const { user, profile, isLoading: authLoading, refreshProfile, updatePassword } = useAuth();
-  const supabase = getSupabaseBrowserClient();
+  const supabase = getSupabaseClient();
 
   // 폼 상태
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
   const [crewName, setCrewName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -43,7 +41,6 @@ export default function ProfilePage() {
   });
 
   // 비밀번호 변경 상태
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -52,7 +49,6 @@ export default function ProfilePage() {
   useEffect(() => {
     if (profile) {
       setName(profile.name);
-      setPhone(formatPhone(profile.phone));
       setCrewName(profile.crew_name || "");
       if (profile.default_address) {
         setAddress({
@@ -85,19 +81,14 @@ export default function ProfilePage() {
       return;
     }
 
-    if (!phone.trim()) {
-      toast.error("전화번호를 입력해주세요.");
-      return;
-    }
-
     setIsSaving(true);
 
     try {
       const { error } = await supabase
+        .schema("runhousecustom")
         .from("user_profiles")
         .update({
           name: name.trim(),
-          phone: phone.replace(/-/g, ""),
           crew_name: profile.user_type === "crew_staff" ? crewName.trim() : null,
           default_address: address.recipientName
             ? {
@@ -149,12 +140,16 @@ export default function ProfilePage() {
       const { error } = await updatePassword(newPassword);
 
       if (error) {
-        toast.error(error.message);
+        if (error.message.includes("different from the old password")) {
+          toast.error("새 비밀번호는 현재 비밀번호와 달라야 합니다.");
+        } else {
+          toast.error(error.message);
+        }
+        setIsChangingPassword(false);
         return;
       }
 
       toast.success("비밀번호가 변경되었습니다.");
-      setCurrentPassword("");
       setNewPassword("");
       setNewPasswordConfirm("");
     } catch (error) {
@@ -218,21 +213,6 @@ export default function ProfilePage() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="이름 입력"
                 />
-              </div>
-
-              {/* 전화번호 */}
-              <div className="space-y-2">
-                <Label htmlFor="phone">전화번호</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
-                    id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(formatPhone(e.target.value))}
-                    placeholder="010-1234-5678"
-                    className="pl-10"
-                  />
-                </div>
               </div>
 
               {/* 회원 유형 */}
@@ -426,6 +406,7 @@ export default function ProfilePage() {
               </div>
 
               <Button
+                type="button"
                 onClick={handleChangePassword}
                 disabled={isChangingPassword}
                 variant="outline"

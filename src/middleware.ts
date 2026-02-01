@@ -8,11 +8,10 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // 인증이 필요한 경로 패턴
-// 주의: /cart는 제외 - 장바구니는 비로그인도 볼 수 있고, 주문 시에만 로그인 체크
-const PROTECTED_ROUTES = ["/mypage"];
+const PROTECTED_ROUTES = ["/mypage", "/cart"];
 
-// 인증된 사용자가 접근하면 안 되는 경로 (로그인 페이지 등)
-const AUTH_ROUTES = ["/login", "/signup"];
+// 인증된 사용자가 접근하면 안 되는 경로 (회원가입 등)
+const AUTH_ROUTES = ["/signup"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -29,7 +28,13 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(
+          cookiesToSet: {
+            name: string;
+            value: string;
+            options?: CookieOptions;
+          }[]
+        ) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );

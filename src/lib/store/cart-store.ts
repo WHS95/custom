@@ -208,6 +208,7 @@ export const useCartStore = create<CartState>()(
                 try {
                     const supabase = getSupabaseBrowserClient()
                     const { data, error } = await supabase
+                        .schema('runhousecustom')
                         .from('user_carts')
                         .select('*')
                         .eq('user_id', userId)
@@ -272,6 +273,7 @@ export const useCartStore = create<CartState>()(
                     
                     // 기존 장바구니 삭제
                     await supabase
+                        .schema('runhousecustom')
                         .from('user_carts')
                         .delete()
                         .eq('user_id', userId)
@@ -291,6 +293,7 @@ export const useCartStore = create<CartState>()(
                         }))
                         
                         const { error } = await supabase
+                            .schema('runhousecustom')
                             .from('user_carts')
                             .insert(cartData)
                         

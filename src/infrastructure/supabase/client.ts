@@ -5,7 +5,7 @@
  */
 
 import { createBrowserClient } from "@supabase/ssr";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -20,7 +20,9 @@ export const SCHEMA_NAME = "runhousecustom";
  * 브라우저용 Supabase 클라이언트 (싱글톤)
  * Auth 세션을 자동으로 관리
  */
-let browserClient: ReturnType<typeof createBrowserClient<Database>> | null = null;
+let browserClient: ReturnType<
+  typeof createBrowserClient<Database, "runhousecustom">
+> | null = null;
 
 export function getSupabaseBrowserClient() {
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -28,11 +30,15 @@ export function getSupabaseBrowserClient() {
   }
 
   if (!browserClient) {
-    browserClient = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, {
-      db: {
-        schema: SCHEMA_NAME,
-      },
-    });
+    browserClient = createBrowserClient<Database, "runhousecustom">(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        db: {
+          schema: SCHEMA_NAME,
+        },
+      }
+    );
   }
 
   return browserClient;
@@ -41,19 +47,27 @@ export function getSupabaseBrowserClient() {
 /**
  * 레거시: 기존 클라이언트 (하위 호환성)
  */
-let supabaseInstance: SupabaseClient<Database> | null = null;
+type SupabaseClientWithSchema = ReturnType<
+  typeof createClient<Database, "runhousecustom">
+>;
 
-export function getSupabaseClient(): SupabaseClient<Database> {
+let supabaseInstance: SupabaseClientWithSchema | null = null;
+
+export function getSupabaseClient(): SupabaseClientWithSchema {
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error("Supabase 환경 변수가 설정되지 않았습니다.");
   }
 
   if (!supabaseInstance) {
-    supabaseInstance = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    supabaseInstance = createClient<Database, "runhousecustom">(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
       db: {
         schema: SCHEMA_NAME,
       },
-    });
+      }
+    );
   }
 
   return supabaseInstance;
@@ -63,9 +77,9 @@ export function getSupabaseClient(): SupabaseClient<Database> {
  * 서버 사이드용 Service Role 클라이언트
  * RLS를 우회하여 관리자 작업 수행
  */
-let serverSupabaseInstance: SupabaseClient<Database> | null = null;
+let serverSupabaseInstance: SupabaseClientWithSchema | null = null;
 
-export function createServerSupabaseClient(): SupabaseClient<Database> {
+export function createServerSupabaseClient(): SupabaseClientWithSchema {
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl) {
@@ -81,7 +95,7 @@ export function createServerSupabaseClient(): SupabaseClient<Database> {
   }
 
   if (!serverSupabaseInstance) {
-    serverSupabaseInstance = createClient<Database>(
+    serverSupabaseInstance = createClient<Database, "runhousecustom">(
       supabaseUrl,
       supabaseServiceRoleKey,
       {

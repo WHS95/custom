@@ -20,8 +20,9 @@ export default function AdminDashboard() {
   const { config, isLoading, isSaving, error, updateConfig, refreshConfig } = useStudioConfig()
 
   // Local form states
-  const [localShippingCost, setLocalShippingCost] = useState(config.shippingCost)
-  const [localShippingFreeThreshold, setLocalShippingFreeThreshold] = useState(config.shippingFreeThreshold)
+  const [localShippingCost, setLocalShippingCost] = useState<number | null>(null)
+  const [localShippingFreeThreshold, setLocalShippingFreeThreshold] = useState<number | null>(null)
+  const [isShippingDirty, setIsShippingDirty] = useState(false)
 
   // Auth check - 로그인 여부 및 테넌트 권한 확인
   useEffect(() => {
@@ -35,11 +36,12 @@ export default function AdminDashboard() {
     }
   }, [authLoading, isAuthenticated, tenantSlug, tenantSlugParam, router])
 
-  // Sync local state with config
-  useEffect(() => {
-    setLocalShippingCost(config.shippingCost)
-    setLocalShippingFreeThreshold(config.shippingFreeThreshold)
-  }, [config.shippingCost, config.shippingFreeThreshold])
+  const shippingCostValue = isShippingDirty
+    ? (localShippingCost ?? config.shippingCost)
+    : config.shippingCost
+  const shippingFreeThresholdValue = isShippingDirty
+    ? (localShippingFreeThreshold ?? config.shippingFreeThreshold)
+    : config.shippingFreeThreshold
 
   // Show error toast
   useEffect(() => {
@@ -50,14 +52,20 @@ export default function AdminDashboard() {
 
   const handleShippingSave = async () => {
     await updateConfig({
-      shippingCost: localShippingCost,
-      shippingFreeThreshold: localShippingFreeThreshold,
+      shippingCost: shippingCostValue,
+      shippingFreeThreshold: shippingFreeThresholdValue,
     })
+    setIsShippingDirty(false)
+    setLocalShippingCost(null)
+    setLocalShippingFreeThreshold(null)
     toast.success("배송비 설정이 저장되었습니다")
   }
 
   const handleRefresh = async () => {
     await refreshConfig()
+    setIsShippingDirty(false)
+    setLocalShippingCost(null)
+    setLocalShippingFreeThreshold(null)
     toast.success("설정을 다시 불러왔습니다")
   }
 
@@ -210,8 +218,11 @@ export default function AdminDashboard() {
               <Label>배송비 (KRW)</Label>
               <Input
                 type="number"
-                value={localShippingCost}
-                onChange={(e) => setLocalShippingCost(Number(e.target.value))}
+                value={shippingCostValue}
+                onChange={(e) => {
+                  setIsShippingDirty(true)
+                  setLocalShippingCost(Number(e.target.value))
+                }}
               />
               <p className="text-xs text-gray-500">무료배송 기준 미달 시 적용되는 배송비</p>
             </div>
@@ -219,8 +230,11 @@ export default function AdminDashboard() {
               <Label>무료배송 기준금액 (KRW)</Label>
               <Input
                 type="number"
-                value={localShippingFreeThreshold}
-                onChange={(e) => setLocalShippingFreeThreshold(Number(e.target.value))}
+                value={shippingFreeThresholdValue}
+                onChange={(e) => {
+                  setIsShippingDirty(true)
+                  setLocalShippingFreeThreshold(Number(e.target.value))
+                }}
               />
               <p className="text-xs text-gray-500">이 금액 이상 주문 시 배송비 무료</p>
             </div>

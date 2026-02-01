@@ -28,7 +28,13 @@ export async function getSupabaseServerClient() {
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(
+        cookiesToSet: {
+          name: string;
+          value: string;
+          options?: CookieOptions;
+        }[]
+      ) {
         try {
           cookiesToSet.forEach(({ name, value, options }) =>
             cookieStore.set(name, value, options)
@@ -57,7 +63,13 @@ export async function getSupabaseRouteClient() {
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(
+        cookiesToSet: {
+          name: string;
+          value: string;
+          options?: CookieOptions;
+        }[]
+      ) {
         cookiesToSet.forEach(({ name, value, options }) =>
           cookieStore.set(name, value, options)
         );
