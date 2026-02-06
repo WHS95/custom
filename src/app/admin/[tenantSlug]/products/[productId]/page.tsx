@@ -56,9 +56,11 @@ function PrintAreaEditor({ view, colorId, imageUrl, area, onSave, isSaving }: Pr
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [prevArea, setPrevArea] = useState(area)
 
-  // 영역이 변경되면 로컬 상태 업데이트
-  useEffect(() => {
+  // 영역이 변경되면 로컬 상태 업데이트 (렌더 시점에 동기화)
+  if (area !== prevArea) {
+    setPrevArea(area)
     if (area) {
       setZone({
         x: area.zoneX,
@@ -68,7 +70,7 @@ function PrintAreaEditor({ view, colorId, imageUrl, area, onSave, isSaving }: Pr
       })
       setIsEnabled(area.isEnabled)
     }
-  }, [area])
+  }
 
   const handleMouseDown = (e: React.MouseEvent, type: 'drag' | 'resize') => {
     e.preventDefault()
