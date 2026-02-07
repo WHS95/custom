@@ -47,5 +47,10 @@ next-env.d.ts
 .vscode
 .env.*
 
+<<<<<<< HEAD
 /migration
 /supabase
+=======
+*.md
+*.webp
+>>>>>>> 857d679 (깃 이그노어 정리)
