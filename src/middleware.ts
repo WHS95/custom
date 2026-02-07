@@ -33,10 +33,10 @@ export async function middleware(request: NextRequest) {
             name: string;
             value: string;
             options?: CookieOptions;
-          }[]
+          }[],
         ) {
           cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
+            request.cookies.set(name, value),
           );
           response = NextResponse.next({
             request: {
@@ -44,11 +44,11 @@ export async function middleware(request: NextRequest) {
             },
           });
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, options),
           );
         },
       },
-    }
+    },
   );
 
   // 세션 갱신 (중요!)
@@ -60,7 +60,7 @@ export async function middleware(request: NextRequest) {
 
   // 보호된 라우트 체크
   const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
-    pathname.startsWith(route)
+    pathname.startsWith(route),
   );
 
   // 인증 라우트 체크
