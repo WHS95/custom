@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import { HatCanvas } from "./HatCanvas";
 import { ProductSidebar } from "./ProductSidebar";
 import { DesignToolbar } from "./DesignToolbar";
@@ -92,6 +92,19 @@ export function StudioLayout({
     });
   }, [product, config.colors]);
 
+  // 상품 색상이 로드되면, 현재 selectedColor가 유효한지 확인하고
+  // 유효하지 않으면 첫 번째 색상으로 자동 설정
+  useEffect(() => {
+    if (productColors.length > 0) {
+      const isCurrentColorValid = productColors.some(
+        (c) => c.id === selectedColor,
+      );
+      if (!isCurrentColorValid) {
+        setSelectedColor(productColors[0].id);
+      }
+    }
+  }, [productColors, selectedColor, setSelectedColor]);
+
   // 현재 색상의 모든 레이어 가져오기
   const currentColorLayers = useCurrentColorLayers();
 
@@ -148,17 +161,17 @@ export function StudioLayout({
     product.customizableAreas
       .filter((area: CustomizableArea) => area.isEnabled && !area.colorId)
       .forEach((area: CustomizableArea) =>
-        enabledViewSet.add(area.viewName as HatView)
+        enabledViewSet.add(area.viewName as HatView),
       );
 
     // 현재 색상의 활성화된 뷰 추가
     product.customizableAreas
       .filter(
         (area: CustomizableArea) =>
-          area.isEnabled && area.colorId === selectedColor
+          area.isEnabled && area.colorId === selectedColor,
       )
       .forEach((area: CustomizableArea) =>
-        enabledViewSet.add(area.viewName as HatView)
+        enabledViewSet.add(area.viewName as HatView),
       );
 
     // Set이 비어있으면 모든 뷰 활성화
@@ -225,7 +238,7 @@ export function StudioLayout({
         // 공통 함수를 사용하여 기본 위치 계산
         const defaultPos = getDefaultLayerPosition(
           currentView,
-          effectiveConfig
+          effectiveConfig,
         );
 
         addLayer({
@@ -262,7 +275,7 @@ export function StudioLayout({
    */
   const handleUpdateLayer = (
     id: string,
-    updates: Partial<(typeof currentColorLayers)[0]>
+    updates: Partial<(typeof currentColorLayers)[0]>,
   ) => {
     updateLayer(id, updates);
   };
@@ -312,6 +325,7 @@ export function StudioLayout({
         productBasePrice={product?.basePrice}
         productName={product?.name || productName}
         productSizes={product?.variants?.[0]?.sizes}
+        priceTiers={product?.priceTiers}
       />
     </div>
   );

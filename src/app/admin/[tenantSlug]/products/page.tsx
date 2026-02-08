@@ -37,11 +37,13 @@ import {
   ArrowLeft,
   Loader2,
   Image as ImageIcon,
+  Tag,
 } from "lucide-react";
 import type {
   Product,
   ProductVariant,
   ProductCategory,
+  PriceTier,
 } from "@/domain/product/types";
 
 interface ProductFormData {
@@ -50,6 +52,7 @@ interface ProductFormData {
   description: string;
   category: ProductCategory;
   basePrice: number;
+  priceTiers: PriceTier[];
   variants: ProductVariant[];
   isActive: boolean;
 }
@@ -66,6 +69,7 @@ const DEFAULT_FORM: ProductFormData = {
   description: "",
   category: "hat",
   basePrice: 35000,
+  priceTiers: [],
   variants: [{ id: "black", label: "Black", hex: "#000000", sizes: ["FREE"] }],
   isActive: true,
 };
@@ -137,6 +141,7 @@ export default function AdminProductsPage() {
       description: product.description || "",
       category: product.category,
       basePrice: product.basePrice,
+      priceTiers: product.priceTiers || [],
       variants: product.variants,
       isActive: product.isActive,
     });
@@ -153,11 +158,16 @@ export default function AdminProductsPage() {
       setIsSaving(true);
 
       if (editingProduct) {
-        // Update
+        // Update - priceTiers가 비어있으면 null로 전송 (삭제)
+        const payload = {
+          ...formData,
+          priceTiers:
+            formData.priceTiers.length > 0 ? formData.priceTiers : null,
+        };
         const res = await fetch(`/api/products/${editingProduct.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         });
         const json = await res.json();
         if (json.success) {
@@ -168,11 +178,16 @@ export default function AdminProductsPage() {
           toast.error(json.error || "수정 실패");
         }
       } else {
-        // Create
+        // Create - priceTiers가 비어있으면 null
+        const payload = {
+          ...formData,
+          priceTiers:
+            formData.priceTiers.length > 0 ? formData.priceTiers : null,
+        };
         const res = await fetch("/api/products", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         });
         const json = await res.json();
         if (json.success) {
@@ -223,7 +238,7 @@ export default function AdminProductsPage() {
         toast.success(
           product.isActive
             ? "상품이 비활성화되었습니다"
-            : "상품이 활성화되었습니다"
+            : "상품이 활성화되었습니다",
         );
         fetchProducts();
       }
@@ -246,7 +261,7 @@ export default function AdminProductsPage() {
   const handleUpdateVariant = (
     index: number,
     field: keyof ProductVariant,
-    value: string | string[]
+    value: string | string[],
   ) => {
     const newVariants = [...formData.variants];
     newVariants[index] = { ...newVariants[index], [field]: value };
@@ -257,6 +272,39 @@ export default function AdminProductsPage() {
     setFormData({
       ...formData,
       variants: formData.variants.filter((_, i) => i !== index),
+    });
+  };
+
+  // Price tier management
+  const handleAddPriceTier = () => {
+    const lastTier = formData.priceTiers[formData.priceTiers.length - 1];
+    const newMinQty = lastTier ? lastTier.minQuantity + 10 : 1;
+    const newPrice = lastTier
+      ? Math.round(lastTier.unitPrice * 0.95)
+      : formData.basePrice;
+    setFormData({
+      ...formData,
+      priceTiers: [
+        ...formData.priceTiers,
+        { minQuantity: newMinQty, unitPrice: newPrice },
+      ],
+    });
+  };
+
+  const handleUpdatePriceTier = (
+    index: number,
+    field: keyof PriceTier,
+    value: number,
+  ) => {
+    const newTiers = [...formData.priceTiers];
+    newTiers[index] = { ...newTiers[index], [field]: value };
+    setFormData({ ...formData, priceTiers: newTiers });
+  };
+
+  const handleRemovePriceTier = (index: number) => {
+    setFormData({
+      ...formData,
+      priceTiers: formData.priceTiers.filter((_, i) => i !== index),
     });
   };
 
@@ -312,8 +360,22 @@ export default function AdminProductsPage() {
           {products.map((product) => (
             <Card
               key={product.id}
-              className={!product.isActive ? "opacity-60" : ""}
+              className={`overflow-hidden ${!product.isActive ? "opacity-60" : ""}`}
             >
+              {/* 대표 이미지 미리보기 */}
+              {product.images?.[0]?.url ? (
+                <div className='aspect-video bg-gray-100 overflow-hidden'>
+                  <img
+                    src={product.images[0].url}
+                    alt={product.name}
+                    className='w-full h-full object-contain'
+                  />
+                </div>
+              ) : (
+                <div className='aspect-video bg-gray-100 flex items-center justify-center'>
+                  <Package className='h-8 w-8 text-gray-300' />
+                </div>
+              )}
               <CardHeader>
                 <div className='flex justify-between items-start'>
                   <div>
@@ -339,6 +401,11 @@ export default function AdminProductsPage() {
                 <div className='flex items-center gap-2 text-sm text-gray-600'>
                   <span className='font-medium'>기본 가격:</span>
                   <span>{product.basePrice.toLocaleString()}원</span>
+                  {product.priceTiers && product.priceTiers.length > 0 && (
+                    <span className='text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded'>
+                      할인 {product.priceTiers.length}구간
+                    </span>
+                  )}
                 </div>
                 <div className='flex items-center gap-2'>
                   <span className='text-sm font-medium text-gray-600'>
@@ -538,7 +605,7 @@ export default function AdminProductsPage() {
                           handleUpdateVariant(
                             idx,
                             "sizes",
-                            e.target.value.split(",").map((s) => s.trim())
+                            e.target.value.split(",").map((s) => s.trim()),
                           )
                         }
                         placeholder='S, M, L, XL, FREE'
@@ -558,6 +625,114 @@ export default function AdminProductsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Price Tiers (할인 가격표) */}
+            <div className='space-y-4'>
+              <div className='flex justify-between items-center'>
+                <div className='flex items-center gap-2'>
+                  <Tag className='h-4 w-4 text-orange-500' />
+                  <Label>대량 구매 할인 가격표</Label>
+                </div>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  onClick={handleAddPriceTier}
+                >
+                  <Plus className='mr-1 h-3 w-3' /> 구간 추가
+                </Button>
+              </div>
+              {formData.priceTiers.length === 0 ? (
+                <div className='border border-dashed rounded-lg p-4 text-center text-sm text-gray-400'>
+                  할인 가격표가 없습니다. &quot;구간 추가&quot; 버튼을 눌러
+                  수량별 할인가를 설정하세요.
+                </div>
+              ) : (
+                <div className='space-y-2'>
+                  <div className='grid grid-cols-[1fr_1fr_auto] gap-3 px-1'>
+                    <Label className='text-xs text-gray-500'>
+                      최소 수량 (개)
+                    </Label>
+                    <Label className='text-xs text-gray-500'>
+                      개당 가격 (원)
+                    </Label>
+                    <div className='w-8' />
+                  </div>
+                  {formData.priceTiers
+                    .slice()
+                    .sort((a, b) => a.minQuantity - b.minQuantity)
+                    .map((tier, idx) => {
+                      const discountRate =
+                        formData.basePrice > 0
+                          ? Math.round(
+                              ((formData.basePrice - tier.unitPrice) /
+                                formData.basePrice) *
+                                100,
+                            )
+                          : 0;
+                      // Find the actual index in unsorted array
+                      const actualIdx = formData.priceTiers.findIndex(
+                        (t) =>
+                          t.minQuantity === tier.minQuantity &&
+                          t.unitPrice === tier.unitPrice,
+                      );
+                      return (
+                        <div
+                          key={idx}
+                          className='grid grid-cols-[1fr_1fr_auto] gap-3 items-center border rounded-lg p-3'
+                        >
+                          <Input
+                            type='number'
+                            min={1}
+                            value={tier.minQuantity}
+                            onChange={(e) =>
+                              handleUpdatePriceTier(
+                                actualIdx,
+                                "minQuantity",
+                                Number(e.target.value),
+                              )
+                            }
+                            placeholder='5'
+                          />
+                          <div className='relative'>
+                            <Input
+                              type='number'
+                              min={0}
+                              value={tier.unitPrice}
+                              onChange={(e) =>
+                                handleUpdatePriceTier(
+                                  actualIdx,
+                                  "unitPrice",
+                                  Number(e.target.value),
+                                )
+                              }
+                              placeholder='35000'
+                            />
+                            {discountRate > 0 && (
+                              <span className='absolute right-2 top-1/2 -translate-y-1/2 text-xs text-red-500 font-medium pointer-events-none'>
+                                -{discountRate}%
+                              </span>
+                            )}
+                          </div>
+                          <Button
+                            type='button'
+                            variant='ghost'
+                            size='sm'
+                            className='text-red-500 h-9 w-9 p-0'
+                            onClick={() => handleRemovePriceTier(actualIdx)}
+                          >
+                            <Trash2 className='h-4 w-4' />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  <p className='text-xs text-gray-400 mt-1'>
+                    주문 수량이 최소 수량 이상일 때 해당 구간의 개당 가격이
+                    적용됩니다.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>

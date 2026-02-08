@@ -1,23 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth, SignUpParams } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { toast } from "sonner";
 import {
   Loader2,
   Mail,
   Lock,
   User,
-  ArrowLeft,
   Users,
   Building,
   Check,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 
 type UserType = "individual" | "crew_staff";
@@ -35,6 +42,72 @@ export default function SignupPage() {
   const [crewName, setCrewName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // 이메일 중복 체크 상태
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [emailCheckResult, setEmailCheckResult] = useState<{
+    checked: boolean;
+    available: boolean;
+    message: string;
+  } | null>(null);
+
+  // 이메일 중복 체크 API 호출
+  const checkEmailAvailability = useCallback(async (emailToCheck: string) => {
+    if (!emailToCheck || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToCheck)) {
+      setEmailCheckResult(null);
+      return;
+    }
+
+    setIsCheckingEmail(true);
+    setEmailCheckResult(null);
+
+    try {
+      const response = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailToCheck }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setEmailCheckResult({
+          checked: true,
+          available: false,
+          message: data.error || "이메일 확인 중 오류가 발생했습니다.",
+        });
+        return;
+      }
+
+      setEmailCheckResult({
+        checked: true,
+        available: data.available,
+        message: data.available
+          ? "사용 가능한 이메일입니다."
+          : "이미 사용 중인 이메일입니다.",
+      });
+    } catch (error) {
+      console.error("이메일 체크 에러:", error);
+      setEmailCheckResult({
+        checked: true,
+        available: false,
+        message: "이메일 확인 중 오류가 발생했습니다.",
+      });
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  }, []);
+
+  // 이메일 입력 디바운스 (500ms)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (email) {
+        checkEmailAvailability(email);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [email, checkEmailAvailability]);
+
   // 유효성 검사
   const validateForm = () => {
     if (!email || !password || !passwordConfirm || !name) {
@@ -44,6 +117,12 @@ export default function SignupPage() {
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast.error("올바른 이메일 형식이 아닙니다.");
+      return false;
+    }
+
+    // 이메일 중복 체크 결과 확인
+    if (emailCheckResult && !emailCheckResult.available) {
+      toast.error("이미 사용 중인 이메일입니다.");
       return false;
     }
 
@@ -104,88 +183,110 @@ export default function SignupPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      <div className='min-h-screen flex items-center justify-center'>
+        <Loader2 className='w-8 h-8 animate-spin text-gray-400' />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-      <div className="w-full max-w-md">
-        {/* 뒤로가기 */}
-        <Link
-          href="/"
-          className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          홈으로 돌아가기
-        </Link>
-
+    <div className='min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8'>
+      <div className='w-full max-w-md'>
         <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">회원가입</CardTitle>
-            <CardDescription>
-              RunHouse Custom 멤버가 되어보세요
-            </CardDescription>
+          <CardHeader className='text-center'>
+            <CardTitle className='text-2xl font-bold'>회원가입</CardTitle>
+            <CardDescription>RunHouse Custom 멤버가 되어보세요</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className='space-y-4'>
               {/* 이메일 */}
-              <div className="space-y-2">
-                <Label htmlFor="email">
-                  이메일 <span className="text-red-500">*</span>
+              <div className='space-y-2'>
+                <Label htmlFor='email'>
+                  이메일 <span className='text-red-500'>*</span>
                 </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <div className='relative'>
+                  <Mail className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400' />
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="example@email.com"
+                    id='email'
+                    type='email'
+                    placeholder='example@email.com'
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    autoComplete="email"
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setEmailCheckResult(null);
+                    }}
+                    className={`pl-10 pr-10 ${
+                      emailCheckResult
+                        ? emailCheckResult.available
+                          ? "border-green-500 focus-visible:ring-green-500"
+                          : "border-red-500 focus-visible:ring-red-500"
+                        : ""
+                    }`}
+                    autoComplete='email'
                     disabled={isLoading}
                   />
+                  {/* 로딩 또는 체크 결과 아이콘 */}
+                  <div className='absolute right-3 top-1/2 -translate-y-1/2'>
+                    {isCheckingEmail ? (
+                      <Loader2 className='w-4 h-4 animate-spin text-gray-400' />
+                    ) : emailCheckResult ? (
+                      emailCheckResult.available ? (
+                        <CheckCircle2 className='w-4 h-4 text-green-500' />
+                      ) : (
+                        <AlertCircle className='w-4 h-4 text-red-500' />
+                      )
+                    ) : null}
+                  </div>
                 </div>
+                {/* 이메일 체크 결과 메시지 */}
+                {emailCheckResult && (
+                  <p
+                    className={`text-xs flex items-center gap-1 ${
+                      emailCheckResult.available
+                        ? "text-green-600"
+                        : "text-red-500"
+                    }`}
+                  >
+                    {emailCheckResult.message}
+                  </p>
+                )}
               </div>
 
               {/* 비밀번호 */}
-              <div className="space-y-2">
-                <Label htmlFor="password">
-                  비밀번호 <span className="text-red-500">*</span>
+              <div className='space-y-2'>
+                <Label htmlFor='password'>
+                  비밀번호 <span className='text-red-500'>*</span>
                 </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <div className='relative'>
+                  <Lock className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400' />
                   <Input
-                    id="password"
-                    type="password"
-                    placeholder="6자 이상"
+                    id='password'
+                    type='password'
+                    placeholder='6자 이상'
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                    autoComplete="new-password"
+                    className='pl-10'
+                    autoComplete='new-password'
                     disabled={isLoading}
                   />
                 </div>
               </div>
 
               {/* 비밀번호 확인 */}
-              <div className="space-y-2">
-                <Label htmlFor="passwordConfirm">
-                  비밀번호 확인 <span className="text-red-500">*</span>
+              <div className='space-y-2'>
+                <Label htmlFor='passwordConfirm'>
+                  비밀번호 확인 <span className='text-red-500'>*</span>
                 </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <div className='relative'>
+                  <Lock className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400' />
                   <Input
-                    id="passwordConfirm"
-                    type="password"
-                    placeholder="비밀번호 다시 입력"
+                    id='passwordConfirm'
+                    type='password'
+                    placeholder='비밀번호 다시 입력'
                     value={passwordConfirm}
                     onChange={(e) => setPasswordConfirm(e.target.value)}
-                    className="pl-10"
-                    autoComplete="new-password"
+                    className='pl-10'
+                    autoComplete='new-password'
                     disabled={isLoading}
                   />
                 </div>
@@ -205,34 +306,34 @@ export default function SignupPage() {
               </div>
 
               {/* 이름 */}
-              <div className="space-y-2">
-                <Label htmlFor="name">
-                  이름 <span className="text-red-500">*</span>
+              <div className='space-y-2'>
+                <Label htmlFor='name'>
+                  이름 <span className='text-red-500'>*</span>
                 </Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <div className='relative'>
+                  <User className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400' />
                   <Input
-                    id="name"
-                    type="text"
-                    placeholder="홍길동"
+                    id='name'
+                    type='text'
+                    placeholder='홍길동'
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="pl-10"
-                    autoComplete="name"
+                    className='pl-10'
+                    autoComplete='name'
                     disabled={isLoading}
                   />
                 </div>
               </div>
 
               {/* 회원 유형 선택 */}
-              <div className="space-y-3">
+              <div className='space-y-3'>
                 <Label>
-                  회원 유형 <span className="text-red-500">*</span>
+                  회원 유형 <span className='text-red-500'>*</span>
                 </Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className='grid grid-cols-2 gap-3'>
                   {/* 일반 개인 */}
                   <button
-                    type="button"
+                    type='button'
                     onClick={() => setUserType("individual")}
                     disabled={isLoading}
                     className={`relative p-4 rounded-lg border-2 text-left transition-all ${
@@ -242,20 +343,20 @@ export default function SignupPage() {
                     }`}
                   >
                     {userType === "individual" && (
-                      <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                        <Check className="w-3 h-3 text-white" />
+                      <div className='absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center'>
+                        <Check className='w-3 h-3 text-white' />
                       </div>
                     )}
-                    <User className="w-6 h-6 mb-2 text-gray-600" />
-                    <p className="font-medium text-sm">일반 개인</p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <User className='w-6 h-6 mb-2 text-gray-600' />
+                    <p className='font-medium text-sm'>일반 개인</p>
+                    <p className='text-xs text-gray-500 mt-1'>
                       개인 고객으로 가입
                     </p>
                   </button>
 
                   {/* 러닝크루 운영진 */}
                   <button
-                    type="button"
+                    type='button'
                     onClick={() => setUserType("crew_staff")}
                     disabled={isLoading}
                     className={`relative p-4 rounded-lg border-2 text-left transition-all ${
@@ -265,13 +366,13 @@ export default function SignupPage() {
                     }`}
                   >
                     {userType === "crew_staff" && (
-                      <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                        <Check className="w-3 h-3 text-white" />
+                      <div className='absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center'>
+                        <Check className='w-3 h-3 text-white' />
                       </div>
                     )}
-                    <Users className="w-6 h-6 mb-2 text-gray-600" />
-                    <p className="font-medium text-sm">러닝크루 운영진</p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <Users className='w-6 h-6 mb-2 text-gray-600' />
+                    <p className='font-medium text-sm'>러닝크루 운영진</p>
+                    <p className='text-xs text-gray-500 mt-1'>
                       크루 대표/운영진으로 가입
                     </p>
                   </button>
@@ -280,33 +381,33 @@ export default function SignupPage() {
 
               {/* 크루 이름 (운영진 선택 시) */}
               {userType === "crew_staff" && (
-                <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
-                  <Label htmlFor="crewName">
-                    러닝크루 이름 <span className="text-red-500">*</span>
+                <div className='space-y-2 animate-in slide-in-from-top-2 duration-200'>
+                  <Label htmlFor='crewName'>
+                    러닝크루 이름 <span className='text-red-500'>*</span>
                   </Label>
-                  <div className="relative">
-                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <div className='relative'>
+                    <Building className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400' />
                     <Input
-                      id="crewName"
-                      type="text"
-                      placeholder="예: 런하우스 러닝크루"
+                      id='crewName'
+                      type='text'
+                      placeholder='예: 런하우스 러닝크루'
                       value={crewName}
                       onChange={(e) => setCrewName(e.target.value)}
-                      className="pl-10"
+                      className='pl-10'
                       disabled={isLoading}
                     />
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className='text-xs text-gray-500'>
                     소속된 러닝크루 이름을 입력해주세요
                   </p>
                 </div>
               )}
 
               {/* 회원가입 버튼 */}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type='submit' className='w-full' disabled={isLoading}>
                 {isLoading ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className='w-4 h-4 mr-2 animate-spin' />
                     가입 중...
                   </>
                 ) : (
@@ -316,9 +417,12 @@ export default function SignupPage() {
             </form>
 
             {/* 로그인 링크 */}
-            <div className="mt-6 text-center text-sm text-gray-600">
+            <div className='mt-6 text-center text-sm text-gray-600'>
               이미 계정이 있으신가요?{" "}
-              <Link href="/login" className="text-blue-600 hover:underline font-medium">
+              <Link
+                href='/login'
+                className='text-blue-600 hover:underline font-medium'
+              >
                 로그인
               </Link>
             </div>

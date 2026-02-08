@@ -13,6 +13,7 @@ import {
   Minus,
   Plus,
   Trash2,
+  Tag,
 } from "lucide-react";
 import { useStudioConfig, ProductColor } from "@/lib/store/studio-context";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -22,6 +23,9 @@ import {
 } from "@/lib/store/design-store";
 import { useCartStore, CartItem } from "@/lib/store/cart-store";
 import { toast } from "sonner";
+import type { PriceTier } from "@/domain/product/types";
+import { getUnitPrice, getDiscountRate } from "@/lib/pricing/price-calculator";
+import { PricingTableModal } from "./PricingTableModal";
 
 interface ProductSidebarProps {
   productId?: string; // 상품 ID (UUID)
@@ -31,6 +35,7 @@ interface ProductSidebarProps {
   productBasePrice?: number; // 상품별 가격
   productName?: string; // 상품명
   productSizes?: string[]; // 상품별 사이즈 (제공되면 기본 SIZES 대신 사용)
+  priceTiers?: PriceTier[]; // 수량 구간별 할인 가격표
 }
 
 const DEFAULT_SIZES = ["S", "M", "L", "XL", "FREE"];
@@ -43,6 +48,7 @@ export function ProductSidebar({
   productBasePrice,
   productName,
   productSizes,
+  priceTiers,
 }: ProductSidebarProps) {
   const { config } = useStudioConfig();
   const { t } = useLanguage();
@@ -58,6 +64,13 @@ export function ProductSidebar({
     productSizes && productSizes.length > 0 ? productSizes : DEFAULT_SIZES;
   const [selectedSize, setSelectedSize] = useState(sizes[0] || "FREE");
   const [quantity, setQuantity] = useState(1);
+  const [pricingModalOpen, setPricingModalOpen] = useState(false);
+
+  // 수량 기반 할인가 계산
+  const currentUnitPrice = getUnitPrice(basePrice, quantity, priceTiers);
+  const discountRate = getDiscountRate(basePrice, quantity, priceTiers);
+  const isDiscounted = currentUnitPrice < basePrice;
+  const hasPriceTiers = priceTiers && priceTiers.length > 0;
 
   // 디자인 스토어에서 색상별 디자인 정보 가져오기
   const layersByColor = useDesignStore((state) => state.layersByColor);
@@ -79,7 +92,7 @@ export function ProductSidebar({
 
   // 디자인이 있는 색상들
   const colorsWithDesign = Object.keys(layersByColor).filter(
-    (color) => layersByColor[color] && layersByColor[color].length > 0
+    (color) => layersByColor[color] && layersByColor[color].length > 0,
   );
 
   /**
@@ -102,7 +115,9 @@ export function ProductSidebar({
       size: selectedSize,
       quantity: quantity,
       designLayers: [...currentColorLayers],
-      unitPrice: basePrice,
+      unitPrice: currentUnitPrice,
+      basePrice: basePrice,
+      priceTiers: priceTiers || undefined,
     });
 
     toast.success("장바구니에 추가되었습니다", {
@@ -130,7 +145,7 @@ export function ProductSidebar({
   const handleQuantityChange = (
     itemId: string,
     newQuantity: number,
-    e: React.MouseEvent
+    e: React.MouseEvent,
   ) => {
     e.stopPropagation();
     if (newQuantity <= 0) {
@@ -155,15 +170,15 @@ export function ProductSidebar({
 
   return (
     <div className='w-[380px] bg-white border-l h-[calc(100vh-64px)] overflow-y-auto flex flex-col'>
-      <div className='p-6 space-y-5 flex-1'>
+      <div className='p-4 space-y-3 flex-1'>
         {/* Header */}
-        <div className='space-y-1'>
+        <div className='space-y-0.5'>
           <div className='flex justify-between items-start'>
-            <h2 className='text-xl font-bold text-gray-900'>{displayName}</h2>
+            <h2 className='text-lg font-bold text-gray-900'>{displayName}</h2>
             {totalCartItems > 0 && (
               <div className='relative'>
-                <ShoppingCart className='h-5 w-5 text-gray-600' />
-                <span className='absolute -top-1 -right-1 bg-black text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center'>
+                <ShoppingCart className='h-4 w-4 text-gray-600' />
+                <span className='absolute -top-1 -right-1 bg-black text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center'>
                   {totalCartItems}
                 </span>
               </div>
@@ -174,28 +189,28 @@ export function ProductSidebar({
         <Separator />
 
         {/* Color Selection */}
-        <div className='space-y-3'>
-          <Label className='text-xs text-gray-500 font-bold uppercase'>
+        <div className='space-y-2'>
+          <Label className='text-[10px] text-gray-500 font-bold uppercase'>
             {t("common.color")} - {selectedColorData?.label}
           </Label>
-          <div className='flex gap-2'>
+          <div className='flex flex-wrap gap-1.5'>
             {colors.map((c) => {
               const hasDesign = colorsWithDesign.includes(c.id);
               return (
                 <div key={c.id} className='relative'>
                   <button
                     onClick={() => onColorChange(c.id)}
-                    className={`w-10 h-10 rounded-full border-2 transition-all ${
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
                       selectedColor === c.id
-                        ? "ring-2 ring-black ring-offset-2 border-transparent"
+                        ? "ring-2 ring-black ring-offset-1 border-transparent"
                         : "border-gray-200 hover:scale-110"
                     }`}
                     style={{ backgroundColor: c.hex }}
                     title={c.label}
                   />
                   {hasDesign && (
-                    <div className='absolute -top-1 -right-1 bg-blue-500 rounded-full w-4 h-4 flex items-center justify-center'>
-                      <Palette className='w-2.5 h-2.5 text-white' />
+                    <div className='absolute -top-0.5 -right-0.5 bg-blue-500 rounded-full w-3 h-3 flex items-center justify-center'>
+                      <Palette className='w-2 h-2 text-white' />
                     </div>
                   )}
                 </div>
@@ -203,37 +218,32 @@ export function ProductSidebar({
             })}
           </div>
           {colorsWithDesign.length > 0 && (
-            <p className='text-xs text-blue-600'>
-              <Palette className='w-3 h-3 inline mr-1' />
+            <p className='text-[10px] text-blue-600'>
+              <Palette className='w-2.5 h-2.5 inline mr-0.5' />
               {colorsWithDesign.length}개 색상에 디자인이 있습니다
             </p>
           )}
         </div>
 
         {/* Size Selection */}
-        <div className='space-y-3'>
-          <div className='flex justify-between items-center'>
-            <Label className='text-xs text-gray-500 font-bold uppercase'>
-              {t("common.size")}
-            </Label>
-            <span className='text-xs text-gray-400 underline cursor-pointer'>
-              {t("common.sizeGuide")}
-            </span>
-          </div>
+        <div className='space-y-2'>
+          <Label className='text-[10px] text-gray-500 font-bold uppercase'>
+            {t("common.size")}
+          </Label>
           <div
-            className={`grid gap-2 ${
+            className={`grid gap-1.5 ${
               sizes.length <= 3
                 ? "grid-cols-3"
                 : sizes.length === 4
-                ? "grid-cols-4"
-                : "grid-cols-5"
+                  ? "grid-cols-4"
+                  : "grid-cols-5"
             }`}
           >
             {sizes.map((size) => (
               <button
                 key={size}
                 onClick={() => setSelectedSize(size)}
-                className={`py-2 text-sm border rounded hover:border-black transition-colors ${
+                className={`py-1.5 text-xs border rounded hover:border-black transition-colors ${
                   selectedSize === size
                     ? "bg-black text-white border-black"
                     : "bg-white text-gray-700"
@@ -243,59 +253,83 @@ export function ProductSidebar({
               </button>
             ))}
           </div>
-          <div className='bg-gray-50 p-2 text-xs text-gray-500 rounded'>
-            {t("product.description")}
-          </div>
         </div>
 
         {/* Quantity for new item */}
-        <div className='space-y-3'>
-          <Label className='text-xs text-gray-500 font-bold uppercase'>
+        <div className='space-y-2'>
+          <Label className='text-[10px] text-gray-500 font-bold uppercase'>
             {t("common.quantity")}
           </Label>
-          <div className='bg-gray-50 rounded p-4 flex justify-between items-center border border-gray-100'>
-            <div className='text-sm font-medium'>
-              {t("product.customHat")}
-              <span className='text-gray-400'>| {selectedSize}</span>
+          <div className='bg-gray-50 rounded p-2.5 space-y-2 border border-gray-100'>
+            <div className='flex justify-between items-center'>
+              <div className='flex items-center bg-white border rounded'>
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className='px-2 py-0.5 hover:bg-gray-100 border-r text-xs'
+                >
+                  -
+                </button>
+                <span className='px-2.5 py-0.5 text-xs font-medium min-w-[24px] text-center'>
+                  {quantity}
+                </span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className='px-2 py-0.5 hover:bg-gray-100 border-l text-xs'
+                >
+                  +
+                </button>
+              </div>
+              <div className='text-right'>
+                {isDiscounted ? (
+                  <>
+                    <span className='text-[10px] text-gray-400 line-through mr-0.5'>
+                      {basePrice.toLocaleString()}원
+                    </span>
+                    <span className='text-xs font-bold text-orange-600'>
+                      {currentUnitPrice.toLocaleString()}원
+                    </span>
+                    <span className='ml-0.5 text-[10px] text-red-500 font-semibold'>
+                      -{discountRate}%
+                    </span>
+                  </>
+                ) : (
+                  <span className='text-xs font-bold'>
+                    {basePrice.toLocaleString()}원
+                  </span>
+                )}
+              </div>
             </div>
-            <div className='flex items-center bg-white border rounded'>
+            {/* 할인 가격표 보기 버튼 */}
+            {hasPriceTiers && (
               <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className='px-3 py-1 hover:bg-gray-100 border-r'
+                onClick={() => setPricingModalOpen(true)}
+                className='w-full flex items-center justify-center gap-1 py-1.5 text-[10px] font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded transition-colors'
               >
-                -
+                <Tag className='w-2.5 h-2.5' />
+                대량 구매 할인 가격표 보기
               </button>
-              <span className='px-3 py-1 text-sm font-medium min-w-[30px] text-center'>
-                {quantity}
-              </span>
-              <button
-                onClick={() => setQuantity(quantity + 1)}
-                className='px-3 py-1 hover:bg-gray-100 border-l'
-              >
-                +
-              </button>
-            </div>
+            )}
           </div>
         </div>
 
         {/* 현재 디자인 상태 표시 */}
         <div
-          className={`p-3 rounded-lg border ${
+          className={`p-2 rounded-lg border ${
             hasCurrentDesign
               ? "bg-green-50 border-green-200"
               : "bg-yellow-50 border-yellow-200"
           }`}
         >
           {hasCurrentDesign ? (
-            <div className='flex items-center gap-2 text-sm text-green-700'>
-              <Check className='w-4 h-4' />
+            <div className='flex items-center gap-1.5 text-xs text-green-700'>
+              <Check className='w-3 h-3' />
               <span>
                 현재 색상에 {currentColorLayers.length}개 레이어가 있습니다
               </span>
             </div>
           ) : (
-            <div className='flex items-center gap-2 text-sm text-yellow-700'>
-              <Palette className='w-4 h-4' />
+            <div className='flex items-center gap-1.5 text-xs text-yellow-700'>
+              <Palette className='w-3 h-3' />
               <span>로고를 업로드하여 디자인을 시작하세요</span>
             </div>
           )}
@@ -305,13 +339,13 @@ export function ProductSidebar({
         <Button
           onClick={handleAddToCart}
           disabled={!hasCurrentDesign}
-          className={`w-full h-11 text-base rounded transform transition-all ${
+          className={`w-full h-9 text-sm rounded transform transition-all ${
             hasCurrentDesign
               ? "bg-black hover:bg-gray-900 hover:-translate-y-0.5"
               : "bg-gray-300 cursor-not-allowed"
           }`}
         >
-          <ShoppingBag className='mr-2 h-4 w-4' />
+          <ShoppingBag className='mr-1.5 h-3.5 w-3.5' />
           {hasCurrentDesign
             ? t("common.addToCart")
             : "디자인을 먼저 추가하세요"}
@@ -321,30 +355,30 @@ export function ProductSidebar({
         {cartItems.length > 0 && (
           <>
             <Separator />
-            <div className='space-y-3'>
+            <div className='space-y-2'>
               <div className='flex justify-between items-center'>
-                <Label className='text-xs text-gray-500 font-bold uppercase flex items-center gap-2'>
-                  <ShoppingCart className='w-4 h-4' />
+                <Label className='text-[10px] text-gray-500 font-bold uppercase flex items-center gap-1'>
+                  <ShoppingCart className='w-3 h-3' />
                   장바구니 ({totalCartItems}개)
                 </Label>
-                <span className='text-sm font-bold'>
+                <span className='text-xs font-bold'>
                   {totalCartPrice.toLocaleString()} KRW
                 </span>
               </div>
 
-              <div className='space-y-2 max-h-[280px] overflow-y-auto pr-1'>
+              <div className='space-y-1.5 max-h-[280px] overflow-y-auto pr-1'>
                 {cartItems.map((item) => (
                   <div
                     key={item.id}
-                    className='bg-gray-50 p-3 rounded-lg border border-gray-100 hover:border-gray-300 transition-all'
+                    className='bg-gray-50 p-2 rounded-lg border border-gray-100 hover:border-gray-300 transition-all'
                   >
                     {/* 아이템 정보 - 클릭 시 해당 디자인으로 이동 */}
                     <div
                       onClick={() => handleCartItemClick(item)}
-                      className='flex items-center gap-2 cursor-pointer group mb-2'
+                      className='flex items-center gap-1.5 cursor-pointer group mb-1.5'
                     >
                       <div
-                        className='w-6 h-6 rounded-full border-2 shadow-sm flex-shrink-0'
+                        className='w-5 h-5 rounded-full border-2 shadow-sm flex-shrink-0'
                         style={{
                           backgroundColor:
                             colors.find((c) => c.id === item.color)?.hex ||
@@ -352,10 +386,10 @@ export function ProductSidebar({
                         }}
                       />
                       <div className='flex-1 min-w-0'>
-                        <p className='text-sm font-medium truncate group-hover:text-blue-600 transition-colors'>
+                        <p className='text-xs font-medium truncate group-hover:text-blue-600 transition-colors'>
                           {item.colorLabel}
                         </p>
-                        <p className='text-xs text-gray-500'>
+                        <p className='text-[10px] text-gray-500'>
                           사이즈: {item.size}
                         </p>
                       </div>
@@ -368,32 +402,32 @@ export function ProductSidebar({
                           onClick={(e) =>
                             handleQuantityChange(item.id, item.quantity - 1, e)
                           }
-                          className='px-2 py-1 hover:bg-gray-100 rounded-l transition-colors border-r'
+                          className='px-1.5 py-0.5 hover:bg-gray-100 rounded-l transition-colors border-r'
                         >
-                          <Minus className='w-3 h-3' />
+                          <Minus className='w-2.5 h-2.5' />
                         </button>
-                        <span className='px-3 py-1 text-sm font-bold min-w-[32px] text-center'>
+                        <span className='px-2 py-0.5 text-xs font-bold min-w-[24px] text-center'>
                           {item.quantity}
                         </span>
                         <button
                           onClick={(e) =>
                             handleQuantityChange(item.id, item.quantity + 1, e)
                           }
-                          className='px-2 py-1 hover:bg-gray-100 rounded-r transition-colors border-l'
+                          className='px-1.5 py-0.5 hover:bg-gray-100 rounded-r transition-colors border-l'
                         >
-                          <Plus className='w-3 h-3' />
+                          <Plus className='w-2.5 h-2.5' />
                         </button>
                       </div>
 
-                      <div className='flex items-center gap-2'>
-                        <span className='text-sm font-bold'>
+                      <div className='flex items-center gap-1.5'>
+                        <span className='text-xs font-bold'>
                           {(item.unitPrice * item.quantity).toLocaleString()}원
                         </span>
                         <button
                           onClick={(e) => handleRemoveItem(item.id, e)}
-                          className='p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded transition-colors'
+                          className='p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded transition-colors'
                         >
-                          <Trash2 className='w-4 h-4' />
+                          <Trash2 className='w-3 h-3' />
                         </button>
                       </div>
                     </div>
@@ -407,21 +441,21 @@ export function ProductSidebar({
 
       {/* Footer - 총 합계 */}
       {totalCartItems > 0 && (
-        <div className='p-6 border-t bg-gray-50 space-y-3'>
-          <div className='space-y-1'>
-            <div className='flex justify-between text-sm'>
+        <div className='p-4 border-t bg-gray-50 space-y-2'>
+          <div className='space-y-0.5'>
+            <div className='flex justify-between text-xs'>
               <span className='text-gray-500'>상품 합계</span>
               <span>{totalCartPrice.toLocaleString()} KRW</span>
             </div>
-            <div className='flex justify-between text-sm'>
+            <div className='flex justify-between text-xs'>
               <span className='text-gray-500'>배송비</span>
               <span>{totalCartPrice >= 50000 ? "무료" : "3,000 KRW"}</span>
             </div>
           </div>
           <Separator />
           <div className='flex justify-between items-end'>
-            <span className='text-sm font-medium'>총 결제금액</span>
-            <span className='text-xl font-bold'>
+            <span className='text-xs font-medium'>총 결제금액</span>
+            <span className='text-base font-bold'>
               {(
                 totalCartPrice + (totalCartPrice >= 50000 ? 0 : 3000)
               ).toLocaleString()}{" "}
@@ -430,11 +464,22 @@ export function ProductSidebar({
           </div>
           <Button
             onClick={() => router.push("/cart")}
-            className='w-full h-11 bg-blue-600 hover:bg-blue-700 rounded'
+            className='w-full h-9 bg-blue-600 hover:bg-blue-700 rounded text-sm'
           >
             장바구니로 이동 ({totalCartItems}개)
           </Button>
         </div>
+      )}
+
+      {/* 할인 가격표 모달 */}
+      {hasPriceTiers && (
+        <PricingTableModal
+          open={pricingModalOpen}
+          onOpenChange={setPricingModalOpen}
+          productName={displayName}
+          basePrice={basePrice}
+          priceTiers={priceTiers!}
+        />
       )}
     </div>
   );

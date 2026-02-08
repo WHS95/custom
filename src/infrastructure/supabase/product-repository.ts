@@ -2,8 +2,8 @@
  * Supabase 상품 레포지토리 구현
  */
 
-import { createServerSupabaseClient, getSupabaseClient } from './client'
-import type { IProductRepository } from '@/domain/product/repository'
+import { createServerSupabaseClient, getSupabaseClient } from "./client";
+import type { IProductRepository } from "@/domain/product/repository";
 import type {
   Product,
   ProductWithAreas,
@@ -13,138 +13,144 @@ import type {
   UpsertCustomizableAreaDTO,
   ProductImage,
   ProductVariant,
+  PriceTier,
   ViewName,
   ProductCategory,
-} from '@/domain/product/types'
+} from "@/domain/product/types";
 
 /**
  * Supabase 상품 레포지토리
  */
 export class SupabaseProductRepository implements IProductRepository {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private client: any = null
-  private useServer = false
+  private client: any = null;
+  private useServer = false;
 
   /**
    * 클라이언트 가져오기
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getClient(): any {
-    if (this.client) return this.client
+    if (this.client) return this.client;
 
     if (this.useServer) {
-      return createServerSupabaseClient()
+      return createServerSupabaseClient();
     }
 
-    return getSupabaseClient()
+    return getSupabaseClient();
   }
 
   /**
    * 서버 사이드에서 사용할 때 서비스 역할 클라이언트로 전환
    */
   useServerClient(): this {
-    this.useServer = true
-    this.client = null
-    return this
+    this.useServer = true;
+    this.client = null;
+    return this;
   }
 
   /**
    * 테넌트별 상품 목록 조회
    */
-  async findByTenant(tenantId: string, includeInactive = false): Promise<Product[]> {
-    const client = this.getClient()
+  async findByTenant(
+    tenantId: string,
+    includeInactive = false,
+  ): Promise<Product[]> {
+    const client = this.getClient();
 
     let query = client
-      .from('products')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .order('sort_order', { ascending: true })
+      .from("products")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .order("sort_order", { ascending: true });
 
     if (!includeInactive) {
-      query = query.eq('is_active', true)
+      query = query.eq("is_active", true);
     }
 
-    const { data, error } = await query
+    const { data, error } = await query;
 
-    if (error || !data) return []
+    if (error || !data) return [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return data.map((row: any) => this.mapToProduct(row))
+    return data.map((row: any) => this.mapToProduct(row));
   }
 
   /**
    * 상품 ID로 조회
    */
   async findById(productId: string): Promise<Product | null> {
-    const client = this.getClient()
+    const client = this.getClient();
 
     const { data, error } = await client
-      .from('products')
-      .select('*')
-      .eq('id', productId)
-      .single()
+      .from("products")
+      .select("*")
+      .eq("id", productId)
+      .single();
 
-    if (error || !data) return null
-    return this.mapToProduct(data)
+    if (error || !data) return null;
+    return this.mapToProduct(data);
   }
 
   /**
    * 상품 슬러그로 조회 (테넌트 + 슬러그)
    */
   async findBySlug(tenantId: string, slug: string): Promise<Product | null> {
-    const client = this.getClient()
+    const client = this.getClient();
 
     const { data, error } = await client
-      .from('products')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .eq('slug', slug)
-      .single()
+      .from("products")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .eq("slug", slug)
+      .single();
 
-    if (error || !data) return null
-    return this.mapToProduct(data)
+    if (error || !data) return null;
+    return this.mapToProduct(data);
   }
 
   /**
    * 상품 + 커스터마이즈 영역 조회
    */
   async findWithAreas(productId: string): Promise<ProductWithAreas | null> {
-    const client = this.getClient()
+    const client = this.getClient();
 
     const { data: productData, error: productError } = await client
-      .from('products')
-      .select('*')
-      .eq('id', productId)
-      .single()
+      .from("products")
+      .select("*")
+      .eq("id", productId)
+      .single();
 
-    if (productError || !productData) return null
+    if (productError || !productData) return null;
 
     const { data: areasData, error: areasError } = await client
-      .from('product_customizable_areas')
-      .select('*')
-      .eq('product_id', productId)
-      .eq('is_enabled', true)
-      .order('sort_order', { ascending: true })
+      .from("product_customizable_areas")
+      .select("*")
+      .eq("product_id", productId)
+      .eq("is_enabled", true)
+      .order("sort_order", { ascending: true });
 
     if (areasError) {
-      console.error('커스터마이즈 영역 조회 실패:', areasError)
+      console.error("커스터마이즈 영역 조회 실패:", areasError);
     }
 
-    const product = this.mapToProduct(productData)
+    const product = this.mapToProduct(productData);
     return {
       ...product,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      customizableAreas: (areasData || []).map((row: any) => this.mapToCustomizableArea(row)),
-    }
+      customizableAreas: (areasData || []).map((row: any) =>
+        this.mapToCustomizableArea(row),
+      ),
+    };
   }
 
   /**
    * 상품 생성
    */
   async create(dto: CreateProductDTO): Promise<Product> {
-    const client = this.getClient()
+    const client = this.getClient();
 
     const { data, error } = await client
-      .from('products')
+      .from("products")
       .insert({
         tenant_id: dto.tenantId,
         name: dto.name,
@@ -152,14 +158,15 @@ export class SupabaseProductRepository implements IProductRepository {
         description: dto.description || null,
         category: dto.category,
         base_price: dto.basePrice,
+        price_tiers: dto.priceTiers || null,
         images: dto.images || [],
         variants: dto.variants,
       })
       .select()
-      .single()
+      .single();
 
     if (error) {
-      throw new Error(`상품 생성 실패: ${error.message}`)
+      throw new Error(`상품 생성 실패: ${error.message}`);
     }
 
     // 커스터마이즈 영역 생성
@@ -175,60 +182,63 @@ export class SupabaseProductRepository implements IProductRepository {
         image_url: area.imageUrl || null,
         is_enabled: area.isEnabled ?? true,
         sort_order: area.sortOrder ?? index,
-      }))
+      }));
 
-      await client.from('product_customizable_areas').insert(areas)
+      await client.from("product_customizable_areas").insert(areas);
     }
 
-    return this.mapToProduct(data)
+    return this.mapToProduct(data);
   }
 
   /**
    * 상품 수정
    */
   async update(productId: string, dto: UpdateProductDTO): Promise<Product> {
-    const client = this.getClient()
+    const client = this.getClient();
 
-    const updateData: Record<string, unknown> = {}
-    if (dto.name !== undefined) updateData.name = dto.name
-    if (dto.slug !== undefined) updateData.slug = dto.slug
-    if (dto.description !== undefined) updateData.description = dto.description
-    if (dto.category !== undefined) updateData.category = dto.category
-    if (dto.basePrice !== undefined) updateData.base_price = dto.basePrice
-    if (dto.images !== undefined) updateData.images = dto.images
-    if (dto.variants !== undefined) updateData.variants = dto.variants
-    if (dto.detailImageUrl !== undefined) updateData.detail_image_url = dto.detailImageUrl
-    if (dto.adminMessage !== undefined) updateData.admin_message = dto.adminMessage
-    if (dto.isActive !== undefined) updateData.is_active = dto.isActive
-    if (dto.sortOrder !== undefined) updateData.sort_order = dto.sortOrder
+    const updateData: Record<string, unknown> = {};
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.slug !== undefined) updateData.slug = dto.slug;
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.category !== undefined) updateData.category = dto.category;
+    if (dto.basePrice !== undefined) updateData.base_price = dto.basePrice;
+    if (dto.priceTiers !== undefined) updateData.price_tiers = dto.priceTiers;
+    if (dto.images !== undefined) updateData.images = dto.images;
+    if (dto.variants !== undefined) updateData.variants = dto.variants;
+    if (dto.detailImageUrl !== undefined)
+      updateData.detail_image_url = dto.detailImageUrl;
+    if (dto.adminMessage !== undefined)
+      updateData.admin_message = dto.adminMessage;
+    if (dto.isActive !== undefined) updateData.is_active = dto.isActive;
+    if (dto.sortOrder !== undefined) updateData.sort_order = dto.sortOrder;
 
     const { data, error } = await client
-      .from('products')
+      .from("products")
       .update(updateData)
-      .eq('id', productId)
+      .eq("id", productId)
       .select()
-      .single()
+      .single();
 
     if (error) {
-      throw new Error(`상품 수정 실패: ${error.message}`)
+      throw new Error(`상품 수정 실패: ${error.message}`);
     }
 
-    return this.mapToProduct(data)
+    return this.mapToProduct(data);
   }
 
   /**
    * 상품 삭제
    */
   async delete(productId: string): Promise<void> {
-    const client = this.getClient()
+    const client = this.getClient();
 
     const { error } = await client
-      .from('products')
+      .from("products")
       .delete()
-      .eq('id', productId)
+      .eq("id", productId);
 
     if (error) {
-      throw new Error(`상품 삭제 실패: ${error.message}`)
+      throw new Error(`상품 삭제 실패: ${error.message}`);
     }
   }
 
@@ -237,25 +247,28 @@ export class SupabaseProductRepository implements IProductRepository {
    * @param productId 상품 ID
    * @param colorId 색상 ID (선택사항, 지정하면 해당 색상 + 공통(null) 영역 반환)
    */
-  async findCustomizableAreas(productId: string, colorId?: string): Promise<CustomizableArea[]> {
-    const client = this.getClient()
+  async findCustomizableAreas(
+    productId: string,
+    colorId?: string,
+  ): Promise<CustomizableArea[]> {
+    const client = this.getClient();
 
     let query = client
-      .from('product_customizable_areas')
-      .select('*')
-      .eq('product_id', productId)
-      .order('sort_order', { ascending: true })
+      .from("product_customizable_areas")
+      .select("*")
+      .eq("product_id", productId)
+      .order("sort_order", { ascending: true });
 
     // colorId가 지정되면 해당 색상 또는 공통(null) 영역만 필터링
     if (colorId !== undefined) {
-      query = query.or(`color_id.eq.${colorId},color_id.is.null`)
+      query = query.or(`color_id.eq.${colorId},color_id.is.null`);
     }
 
-    const { data, error } = await query
+    const { data, error } = await query;
 
-    if (error || !data) return []
+    if (error || !data) return [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return data.map((row: any) => this.mapToCustomizableArea(row))
+    return data.map((row: any) => this.mapToCustomizableArea(row));
   }
 
   /**
@@ -263,12 +276,12 @@ export class SupabaseProductRepository implements IProductRepository {
    */
   async upsertCustomizableArea(
     productId: string,
-    dto: UpsertCustomizableAreaDTO
+    dto: UpsertCustomizableAreaDTO,
   ): Promise<CustomizableArea> {
-    const client = this.getClient()
+    const client = this.getClient();
 
     const { data, error } = await client
-      .from('product_customizable_areas')
+      .from("product_customizable_areas")
       .upsert(
         {
           product_id: productId,
@@ -283,31 +296,31 @@ export class SupabaseProductRepository implements IProductRepository {
           is_enabled: dto.isEnabled ?? true,
           sort_order: dto.sortOrder ?? 0,
         },
-        { onConflict: 'product_id,view_name,color_id' }
+        { onConflict: "product_id,view_name,color_id" },
       )
       .select()
-      .single()
+      .single();
 
     if (error) {
-      throw new Error(`커스터마이즈 영역 저장 실패: ${error.message}`)
+      throw new Error(`커스터마이즈 영역 저장 실패: ${error.message}`);
     }
 
-    return this.mapToCustomizableArea(data)
+    return this.mapToCustomizableArea(data);
   }
 
   /**
    * 커스터마이즈 영역 삭제
    */
   async deleteCustomizableArea(areaId: string): Promise<void> {
-    const client = this.getClient()
+    const client = this.getClient();
 
     const { error } = await client
-      .from('product_customizable_areas')
+      .from("product_customizable_areas")
       .delete()
-      .eq('id', areaId)
+      .eq("id", areaId);
 
     if (error) {
-      throw new Error(`커스터마이즈 영역 삭제 실패: ${error.message}`)
+      throw new Error(`커스터마이즈 영역 삭제 실패: ${error.message}`);
     }
   }
 
@@ -324,6 +337,7 @@ export class SupabaseProductRepository implements IProductRepository {
       description: row.description as string | undefined,
       category: row.category as ProductCategory,
       basePrice: row.base_price as number,
+      priceTiers: (row.price_tiers as PriceTier[] | null) ?? undefined,
       images: row.images as ProductImage[],
       variants: row.variants as ProductVariant[],
       detailImageUrl: row.detail_image_url as string | undefined,
@@ -332,10 +346,12 @@ export class SupabaseProductRepository implements IProductRepository {
       sortOrder: row.sort_order as number,
       createdAt: new Date(row.created_at as string),
       updatedAt: new Date(row.updated_at as string),
-    }
+    };
   }
 
-  private mapToCustomizableArea(row: Record<string, unknown>): CustomizableArea {
+  private mapToCustomizableArea(
+    row: Record<string, unknown>,
+  ): CustomizableArea {
     return {
       id: row.id as string,
       productId: row.product_id as string,
@@ -349,9 +365,9 @@ export class SupabaseProductRepository implements IProductRepository {
       imageUrl: row.image_url as string | undefined,
       isEnabled: row.is_enabled as boolean,
       sortOrder: row.sort_order as number,
-    }
+    };
   }
 }
 
 // 싱글톤 인스턴스
-export const productRepository = new SupabaseProductRepository()
+export const productRepository = new SupabaseProductRepository();
