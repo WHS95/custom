@@ -254,21 +254,23 @@ export default function CartPage() {
 
       <main className='container mx-auto px-4 py-8'>
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
-          {/* 장바구니 아이템 목록 */}
-          <div className='lg:col-span-2 space-y-4'>
-            {items.map((item) => {
-              const isExpanded = expandedItems.has(item.id);
-              const hasDesign = item.designLayers.length > 0;
-
-              // 뷰별 레이어 그룹화
-              const layersByView = item.designLayers.reduce(
-                (acc, layer) => {
-                  if (!acc[layer.view]) acc[layer.view] = [];
-                  acc[layer.view].push(layer);
-                  return acc;
-                },
-                {} as Record<string, typeof item.designLayers>,
-              );
+          {/* 장바구니 아이템 목록 - 상품별 > 색상별 2단계 그룹핑 */}
+          <div className='lg:col-span-2 space-y-6'>
+            {(() => {
+              // 1단계: 상품별 그룹핑
+              const productGroups: Record<
+                string,
+                { productName: string; items: typeof items }
+              > = {};
+              items.forEach((item) => {
+                if (!productGroups[item.productId]) {
+                  productGroups[item.productId] = {
+                    productName: item.productName,
+                    items: [],
+                  };
+                }
+                productGroups[item.productId].items.push(item);
+              });
 
               const viewLabels: Record<string, string> = {
                 front: "앞면",
@@ -278,197 +280,261 @@ export default function CartPage() {
                 top: "상단",
               };
 
-              return (
-                <Card key={item.id} className='overflow-hidden'>
-                  <CardContent className='p-4'>
-                    <div className='flex gap-4'>
-                      {/* 디자인 미리보기 */}
-                      <div className='w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border'>
-                        {hasDesign ? (
-                          <div className='w-full h-full relative'>
-                            {item.designLayers
-                              .filter((l) => l.view === "front")
-                              .slice(0, 1)
-                              .map((layer) => (
-                                <img
-                                  key={layer.id}
-                                  src={layer.content}
-                                  alt='Design'
-                                  className='w-full h-full object-contain'
-                                />
-                              ))}
-                            {!item.designLayers.some(
-                              (l) => l.view === "front",
-                            ) &&
-                              item.designLayers[0] && (
-                                <img
-                                  src={item.designLayers[0].content}
-                                  alt='Design'
-                                  className='w-full h-full object-contain'
-                                />
-                              )}
-                          </div>
-                        ) : (
-                          <div className='w-full h-full flex items-center justify-center'>
-                            <Layers className='w-8 h-8 text-gray-300' />
-                          </div>
-                        )}
-                      </div>
+              return Object.entries(productGroups).map(([productId, group]) => {
+                // 2단계: 색상별 그룹핑
+                const colorGroups: Record<
+                  string,
+                  {
+                    colorLabel: string;
+                    color: string;
+                    items: typeof items;
+                  }
+                > = {};
+                group.items.forEach((item) => {
+                  if (!colorGroups[item.color]) {
+                    colorGroups[item.color] = {
+                      colorLabel: item.colorLabel,
+                      color: item.color,
+                      items: [],
+                    };
+                  }
+                  colorGroups[item.color].items.push(item);
+                });
 
-                      {/* 상품 정보 */}
-                      <div className='flex-1 min-w-0'>
-                        <div className='flex justify-between items-start'>
-                          <div>
-                            <h3 className='font-bold'>{item.productName}</h3>
-                            <p className='text-sm text-gray-500'>
-                              {item.colorLabel} / {item.size}
-                            </p>
-                            {hasDesign && (
-                              <span className='inline-flex items-center text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded mt-1'>
-                                <Layers className='w-3 h-3 mr-1' />
-                                {item.designLayers.length}개 레이어
-                              </span>
-                            )}
-                          </div>
-                          <Button
-                            variant='ghost'
-                            size='icon'
-                            className='text-red-500 hover:text-red-600 hover:bg-red-50'
-                            onClick={() => removeItem(item.id)}
+                // 상품별 소계
+                const productSubtotal = group.items.reduce(
+                  (sum, item) => sum + item.unitPrice * item.quantity,
+                  0,
+                );
+
+                return (
+                  <Card key={productId} className='overflow-hidden'>
+                    {/* 상품 헤더 */}
+                    <CardHeader className='pb-2'>
+                      <CardTitle className='text-base flex justify-between items-center'>
+                        <span>{group.productName}</span>
+                        <span className='text-sm font-medium text-gray-500'>
+                          소계 {productSubtotal.toLocaleString()}원
+                        </span>
+                      </CardTitle>
+                    </CardHeader>
+
+                    <CardContent className='pt-0 space-y-4'>
+                      {Object.entries(colorGroups).map(
+                        ([colorId, colorGroup]) => (
+                          <div
+                            key={colorId}
+                            className='border rounded-lg overflow-hidden'
                           >
-                            <Trash2 className='h-4 w-4' />
-                          </Button>
-                        </div>
+                            {/* 색상 그룹 헤더 */}
+                            <div className='flex items-center gap-2.5 px-4 py-2.5 bg-gray-50 border-b'>
+                              <div
+                                className='w-5 h-5 rounded-full border-2 shadow-sm flex-shrink-0'
+                                style={{
+                                  backgroundColor:
+                                    colorGroup.items[0]?.colorHex || "#000",
+                                }}
+                              />
+                              <span className='text-sm font-bold text-gray-800'>
+                                {colorGroup.colorLabel}
+                              </span>
+                              <span className='text-xs text-gray-400 ml-auto'>
+                                {colorGroup.items.length}건
+                              </span>
+                            </div>
 
-                        <div className='flex justify-between items-center mt-3'>
-                          {/* 수량 조절 */}
-                          <div className='flex items-center gap-2'>
-                            <Button
-                              variant='outline'
-                              size='icon'
-                              className='h-8 w-8'
-                              onClick={() => handleQuantityChange(item.id, -1)}
-                            >
-                              <Minus className='h-3 w-3' />
-                            </Button>
-                            <span className='w-8 text-center font-medium'>
-                              {item.quantity}
-                            </span>
-                            <Button
-                              variant='outline'
-                              size='icon'
-                              className='h-8 w-8'
-                              onClick={() => handleQuantityChange(item.id, 1)}
-                            >
-                              <Plus className='h-3 w-3' />
-                            </Button>
-                          </div>
+                            {/* 해당 색상의 아이템들 */}
+                            <div className='divide-y'>
+                              {colorGroup.items.map((item) => {
+                                const isExpanded = expandedItems.has(item.id);
+                                const hasDesign = item.designLayers.length > 0;
 
-                          {/* 가격 */}
-                          <div className='text-right'>
-                            {item.basePrice &&
-                            item.unitPrice < item.basePrice ? (
-                              <>
-                                <p className='text-xs text-gray-400 line-through'>
-                                  {item.basePrice.toLocaleString()}원
-                                </p>
-                                <p className='text-xs text-orange-600 font-medium'>
-                                  {item.unitPrice.toLocaleString()}원 x{" "}
-                                  {item.quantity}
-                                  <span className='ml-1 text-red-500'>
-                                    -
-                                    {Math.round(
-                                      ((item.basePrice - item.unitPrice) /
-                                        item.basePrice) *
-                                        100,
+                                // 뷰별 레이어 그룹화
+                                const layersByView = item.designLayers.reduce(
+                                  (acc, layer) => {
+                                    if (!acc[layer.view]) acc[layer.view] = [];
+                                    acc[layer.view].push(layer);
+                                    return acc;
+                                  },
+                                  {} as Record<
+                                    string,
+                                    typeof item.designLayers
+                                  >,
+                                );
+
+                                return (
+                                  <div key={item.id} className='p-4'>
+                                    {/* 아이템 정보 */}
+                                    <div className='flex justify-between items-start'>
+                                      <div>
+                                        <p className='text-sm text-gray-700'>
+                                          사이즈:{" "}
+                                          <span className='font-bold'>
+                                            {item.size}
+                                          </span>
+                                        </p>
+                                        {hasDesign && (
+                                          <span className='inline-flex items-center text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded mt-1'>
+                                            <Layers className='w-3 h-3 mr-1' />
+                                            {item.designLayers.length}개 레이어
+                                          </span>
+                                        )}
+                                      </div>
+                                      <Button
+                                        variant='ghost'
+                                        size='icon'
+                                        className='text-red-500 hover:text-red-600 hover:bg-red-50 h-8 w-8'
+                                        onClick={() => removeItem(item.id)}
+                                      >
+                                        <Trash2 className='h-4 w-4' />
+                                      </Button>
+                                    </div>
+
+                                    <div className='flex justify-between items-center mt-3'>
+                                      {/* 수량 조절 */}
+                                      <div className='flex items-center gap-2'>
+                                        <Button
+                                          variant='outline'
+                                          size='icon'
+                                          className='h-8 w-8'
+                                          onClick={() =>
+                                            handleQuantityChange(item.id, -1)
+                                          }
+                                        >
+                                          <Minus className='h-3 w-3' />
+                                        </Button>
+                                        <span className='w-8 text-center font-medium'>
+                                          {item.quantity}
+                                        </span>
+                                        <Button
+                                          variant='outline'
+                                          size='icon'
+                                          className='h-8 w-8'
+                                          onClick={() =>
+                                            handleQuantityChange(item.id, 1)
+                                          }
+                                        >
+                                          <Plus className='h-3 w-3' />
+                                        </Button>
+                                      </div>
+
+                                      {/* 가격 */}
+                                      <div className='text-right'>
+                                        {item.basePrice &&
+                                        item.unitPrice < item.basePrice ? (
+                                          <>
+                                            <p className='text-xs text-gray-400 line-through'>
+                                              {item.basePrice.toLocaleString()}
+                                              원
+                                            </p>
+                                            <p className='text-xs text-orange-600 font-medium'>
+                                              {item.unitPrice.toLocaleString()}
+                                              원 x {item.quantity}
+                                              <span className='ml-1 text-red-500'>
+                                                -
+                                                {Math.round(
+                                                  ((item.basePrice -
+                                                    item.unitPrice) /
+                                                    item.basePrice) *
+                                                    100,
+                                                )}
+                                                %
+                                              </span>
+                                            </p>
+                                          </>
+                                        ) : (
+                                          <p className='text-xs text-gray-500'>
+                                            {item.unitPrice.toLocaleString()}원
+                                            x {item.quantity}
+                                          </p>
+                                        )}
+                                        <p className='font-bold'>
+                                          {(
+                                            item.unitPrice * item.quantity
+                                          ).toLocaleString()}
+                                          원
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* 디자인 상세 보기 버튼 */}
+                                    {hasDesign && (
+                                      <button
+                                        onClick={() => toggleExpand(item.id)}
+                                        className='w-full mt-3 pt-3 border-t flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors'
+                                      >
+                                        <Eye className='w-4 h-4' />
+                                        {isExpanded
+                                          ? "디자인 상세 접기"
+                                          : "디자인 상세 보기"}
+                                        {isExpanded ? (
+                                          <ChevronUp className='w-4 h-4' />
+                                        ) : (
+                                          <ChevronDown className='w-4 h-4' />
+                                        )}
+                                      </button>
                                     )}
-                                    %
-                                  </span>
-                                </p>
-                              </>
-                            ) : (
-                              <p className='text-xs text-gray-500'>
-                                {item.unitPrice.toLocaleString()}원 x{" "}
-                                {item.quantity}
-                              </p>
-                            )}
-                            <p className='font-bold'>
-                              {(
-                                item.unitPrice * item.quantity
-                              ).toLocaleString()}
-                              원
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* 디자인 상세 보기 버튼 */}
-                    {hasDesign && (
-                      <button
-                        onClick={() => toggleExpand(item.id)}
-                        className='w-full mt-3 pt-3 border-t flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors'
-                      >
-                        <Eye className='w-4 h-4' />
-                        {isExpanded ? "디자인 상세 접기" : "디자인 상세 보기"}
-                        {isExpanded ? (
-                          <ChevronUp className='w-4 h-4' />
-                        ) : (
-                          <ChevronDown className='w-4 h-4' />
-                        )}
-                      </button>
-                    )}
+                                    {/* 펼쳐진 디자인 상세 */}
+                                    <div
+                                      className={`grid transition-all duration-300 ease-out ${
+                                        isExpanded
+                                          ? "grid-rows-[1fr] opacity-100"
+                                          : "grid-rows-[0fr] opacity-0"
+                                      }`}
+                                    >
+                                      <div className='overflow-hidden'>
+                                        <div className='pt-4 space-y-4'>
+                                          {/* 뷰별 디자인 정보 */}
+                                          <div className='bg-gray-50 rounded-lg p-4'>
+                                            <p className='text-sm font-medium text-gray-700 mb-3'>
+                                              커스텀 디자인 위치
+                                            </p>
+                                            <div className='flex flex-wrap gap-2'>
+                                              {Object.entries(layersByView).map(
+                                                ([view, layers]) => (
+                                                  <div
+                                                    key={view}
+                                                    className='flex items-center gap-2 bg-white border rounded-lg px-3 py-2'
+                                                  >
+                                                    <span className='text-sm font-medium'>
+                                                      {viewLabels[view] || view}
+                                                    </span>
+                                                    <span className='text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full'>
+                                                      {layers.length}개
+                                                    </span>
+                                                  </div>
+                                                ),
+                                              )}
+                                            </div>
+                                          </div>
 
-                    {/* 펼쳐진 디자인 상세 */}
-                    <div
-                      className={`grid transition-all duration-300 ease-out ${
-                        isExpanded
-                          ? "grid-rows-[1fr] opacity-100"
-                          : "grid-rows-[0fr] opacity-0"
-                      }`}
-                    >
-                      <div className='overflow-hidden'>
-                        <div className='pt-4 space-y-4'>
-                          {/* 뷰별 디자인 정보 */}
-                          <div className='bg-gray-50 rounded-lg p-4'>
-                            <p className='text-sm font-medium text-gray-700 mb-3'>
-                              커스텀 디자인 위치
-                            </p>
-                            <div className='flex flex-wrap gap-2'>
-                              {Object.entries(layersByView).map(
-                                ([view, layers]) => (
-                                  <div
-                                    key={view}
-                                    className='flex items-center gap-2 bg-white border rounded-lg px-3 py-2'
-                                  >
-                                    <span className='text-sm font-medium'>
-                                      {viewLabels[view] || view}
-                                    </span>
-                                    <span className='text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full'>
-                                      {layers.length}개
-                                    </span>
+                                          {/* 디자인 수정 버튼 */}
+                                          <Button
+                                            onClick={() =>
+                                              handleEditDesign(item)
+                                            }
+                                            variant='outline'
+                                            className='w-full'
+                                          >
+                                            <Pencil className='w-4 h-4 mr-2' />
+                                            스튜디오에서 디자인 수정하기
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
-                                ),
-                              )}
+                                );
+                              })}
                             </div>
                           </div>
-
-                          {/* 디자인 수정 버튼 */}
-                          <Button
-                            onClick={() => handleEditDesign(item)}
-                            variant='outline'
-                            className='w-full'
-                          >
-                            <Pencil className='w-4 h-4 mr-2' />
-                            스튜디오에서 디자인 수정하기
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                        ),
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              });
+            })()}
           </div>
 
           {/* 주문 요약 */}

@@ -107,11 +107,12 @@ export function ProductSidebar({
       return;
     }
 
-    addToCart({
+    const result = addToCart({
       productId: productId || "custom-hat",
       productName: displayName,
       color: selectedColor,
       colorLabel: selectedColorData?.label || selectedColor,
+      colorHex: selectedColorData?.hex,
       size: selectedSize,
       quantity: quantity,
       designLayers: [...currentColorLayers],
@@ -120,9 +121,15 @@ export function ProductSidebar({
       priceTiers: priceTiers || undefined,
     });
 
-    toast.success("장바구니에 추가되었습니다", {
-      description: `${selectedColorData?.label} / ${selectedSize} / ${quantity}개`,
-    });
+    if (result.merged) {
+      toast.success(
+        `${selectedColorData?.label} / ${selectedSize} 수량이 ${result.newQuantity}개로 변경됨`,
+      );
+    } else {
+      toast.success("장바구니에 추가되었습니다", {
+        description: `${selectedColorData?.label} / ${selectedSize} / ${quantity}개`,
+      });
+    }
 
     setQuantity(1);
   };
@@ -299,6 +306,17 @@ export function ProductSidebar({
                 )}
               </div>
             </div>
+
+            {/* 현재 선택 소계 */}
+            <div className='flex justify-between items-center pt-1.5 border-t border-gray-200'>
+              <span className='text-[10px] text-gray-500'>
+                {quantity}개 소계
+              </span>
+              <span className='text-sm font-bold text-gray-900'>
+                {(currentUnitPrice * quantity).toLocaleString()}원
+              </span>
+            </div>
+
             {/* 할인 가격표 보기 버튼 */}
             {hasPriceTiers && (
               <button
@@ -351,7 +369,7 @@ export function ProductSidebar({
             : "디자인을 먼저 추가하세요"}
         </Button>
 
-        {/* 장바구니 목록 - 항상 수량 조절 가능 */}
+        {/* 장바구니 목록 - 색상별 그룹핑 */}
         {cartItems.length > 0 && (
           <>
             <Separator />
@@ -366,73 +384,118 @@ export function ProductSidebar({
                 </span>
               </div>
 
-              <div className='space-y-1.5 max-h-[280px] overflow-y-auto pr-1'>
-                {cartItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className='bg-gray-50 p-2 rounded-lg border border-gray-100 hover:border-gray-300 transition-all'
-                  >
-                    {/* 아이템 정보 - 클릭 시 해당 디자인으로 이동 */}
+              <div className='space-y-2 max-h-[320px] overflow-y-auto pr-1'>
+                {/* 색상별 그룹핑 */}
+                {Object.entries(
+                  cartItems.reduce(
+                    (groups, item) => {
+                      if (!groups[item.color]) groups[item.color] = [];
+                      groups[item.color].push(item);
+                      return groups;
+                    },
+                    {} as Record<string, CartItem[]>,
+                  ),
+                ).map(([colorId, colorItems]) => {
+                  const colorData = colors.find((c) => c.id === colorId);
+                  const colorHex = colorData?.hex || "#000";
+                  const colorLabel = colorItems[0]?.colorLabel || colorId;
+
+                  return (
                     <div
-                      onClick={() => handleCartItemClick(item)}
-                      className='flex items-center gap-1.5 cursor-pointer group mb-1.5'
+                      key={colorId}
+                      className='bg-gray-50 rounded-lg border border-gray-100 overflow-hidden'
                     >
-                      <div
-                        className='w-5 h-5 rounded-full border-2 shadow-sm flex-shrink-0'
-                        style={{
-                          backgroundColor:
-                            colors.find((c) => c.id === item.color)?.hex ||
-                            "#000",
+                      {/* 색상 그룹 헤더 - 클릭 시 해당 색상 디자인으로 이동 */}
+                      <button
+                        onClick={() => {
+                          onColorChange(colorId);
+                          setSelectedColor(colorId);
+                          toast.info(`${colorLabel} 디자인으로 이동했습니다`);
                         }}
-                      />
-                      <div className='flex-1 min-w-0'>
-                        <p className='text-xs font-medium truncate group-hover:text-blue-600 transition-colors'>
-                          {item.colorLabel}
-                        </p>
-                        <p className='text-[10px] text-gray-500'>
-                          사이즈: {item.size}
-                        </p>
+                        className='w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 transition-colors group'
+                      >
+                        <div
+                          className='w-4 h-4 rounded-full border-2 shadow-sm flex-shrink-0'
+                          style={{ backgroundColor: colorHex }}
+                        />
+                        <span className='text-xs font-bold text-gray-700 group-hover:text-blue-600 transition-colors truncate'>
+                          {colorLabel}
+                        </span>
+                        <span className='text-[10px] text-gray-400 ml-auto flex-shrink-0'>
+                          {colorItems.length > 1
+                            ? `${colorItems.length}건`
+                            : ""}
+                        </span>
+                      </button>
+
+                      {/* 해당 색상의 아이템들 */}
+                      <div className='border-t border-gray-100'>
+                        {colorItems.map((item, idx) => (
+                          <div
+                            key={item.id}
+                            className={`px-2.5 py-1.5 ${
+                              idx > 0 ? "border-t border-gray-100" : ""
+                            }`}
+                          >
+                            <div className='flex items-center justify-between'>
+                              {/* 사이즈 표시 */}
+                              <span className='text-[10px] text-gray-500 font-medium w-8 flex-shrink-0'>
+                                {item.size}
+                              </span>
+
+                              {/* 수량 조정 */}
+                              <div className='flex items-center bg-white border rounded shadow-sm'>
+                                <button
+                                  onClick={(e) =>
+                                    handleQuantityChange(
+                                      item.id,
+                                      item.quantity - 1,
+                                      e,
+                                    )
+                                  }
+                                  className='px-1.5 py-0.5 hover:bg-gray-100 rounded-l transition-colors border-r'
+                                >
+                                  <Minus className='w-2.5 h-2.5' />
+                                </button>
+                                <span className='px-2 py-0.5 text-xs font-bold min-w-[24px] text-center'>
+                                  {item.quantity}
+                                </span>
+                                <button
+                                  onClick={(e) =>
+                                    handleQuantityChange(
+                                      item.id,
+                                      item.quantity + 1,
+                                      e,
+                                    )
+                                  }
+                                  className='px-1.5 py-0.5 hover:bg-gray-100 rounded-r transition-colors border-l'
+                                >
+                                  <Plus className='w-2.5 h-2.5' />
+                                </button>
+                              </div>
+
+                              {/* 가격 + 삭제 */}
+                              <div className='flex items-center gap-1'>
+                                <span className='text-xs font-bold'>
+                                  {(
+                                    item.unitPrice * item.quantity
+                                  ).toLocaleString()}
+                                  원
+                                </span>
+                                <button
+                                  onClick={(e) => handleRemoveItem(item.id, e)}
+                                  className='p-0.5 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded transition-colors'
+                                >
+                                  <Trash2 className='w-2.5 h-2.5' />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-
-                    {/* 수량 조정 - 항상 표시 */}
-                    <div className='flex items-center justify-between'>
-                      <div className='flex items-center bg-white border rounded shadow-sm'>
-                        <button
-                          onClick={(e) =>
-                            handleQuantityChange(item.id, item.quantity - 1, e)
-                          }
-                          className='px-1.5 py-0.5 hover:bg-gray-100 rounded-l transition-colors border-r'
-                        >
-                          <Minus className='w-2.5 h-2.5' />
-                        </button>
-                        <span className='px-2 py-0.5 text-xs font-bold min-w-[24px] text-center'>
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={(e) =>
-                            handleQuantityChange(item.id, item.quantity + 1, e)
-                          }
-                          className='px-1.5 py-0.5 hover:bg-gray-100 rounded-r transition-colors border-l'
-                        >
-                          <Plus className='w-2.5 h-2.5' />
-                        </button>
-                      </div>
-
-                      <div className='flex items-center gap-1.5'>
-                        <span className='text-xs font-bold'>
-                          {(item.unitPrice * item.quantity).toLocaleString()}원
-                        </span>
-                        <button
-                          onClick={(e) => handleRemoveItem(item.id, e)}
-                          className='p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded transition-colors'
-                        >
-                          <Trash2 className='w-3 h-3' />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </>

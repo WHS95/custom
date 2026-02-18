@@ -17,6 +17,7 @@ export interface CartItem {
   productName: string; // 상품명
   color: string; // 모자 색상 ID
   colorLabel: string; // 모자 색상 라벨 (예: "Midnight Black")
+  colorHex?: string; // 모자 색상 HEX 코드 (예: "#1a1a2e")
   size: string; // 사이즈 (S, M, L, XL, FREE)
   quantity: number; // 수량
   designLayers: DesignLayer[]; // 해당 색상의 디자인 레이어들
@@ -42,7 +43,10 @@ interface CartState {
   getGrandTotal: () => number;
 
   // === 액션 ===
-  addItem: (item: Omit<CartItem, "id" | "createdAt">) => void;
+  addItem: (item: Omit<CartItem, "id" | "createdAt">) => {
+    merged: boolean;
+    newQuantity: number;
+  };
   updateItemQuantity: (id: string, quantity: number) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
@@ -129,15 +133,18 @@ export const useCartStore = create<CartState>()(
           createdAt: Date.now(),
         };
 
-        set((state) => {
-          // 같은 색상 + 사이즈 + 동일 디자인이 있으면 수량만 증가
-          const existingIndex = state.items.findIndex(
-            (item) =>
-              item.color === itemData.color &&
-              item.size === itemData.size &&
-              areDesignsEqual(item.designLayers, itemData.designLayers),
-          );
+        // 같은 색상 + 사이즈 + 동일 디자인이 있는지 먼저 확인
+        const existingIndex = get().items.findIndex(
+          (item) =>
+            item.color === itemData.color &&
+            item.size === itemData.size &&
+            areDesignsEqual(item.designLayers, itemData.designLayers),
+        );
 
+        const merged = existingIndex >= 0;
+        let newQuantity = itemData.quantity;
+
+        set((state) => {
           if (existingIndex >= 0) {
             const updatedItems = [...state.items];
             updatedItems[existingIndex] = {
@@ -145,6 +152,7 @@ export const useCartStore = create<CartState>()(
               quantity:
                 updatedItems[existingIndex].quantity + itemData.quantity,
             };
+            newQuantity = updatedItems[existingIndex].quantity;
             return { items: updatedItems };
           }
 
@@ -155,6 +163,8 @@ export const useCartStore = create<CartState>()(
         if (get().userId) {
           get().syncToDB();
         }
+
+        return { merged, newQuantity };
       },
 
       updateItemQuantity: (id, quantity) => {
