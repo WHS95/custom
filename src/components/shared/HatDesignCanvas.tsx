@@ -59,6 +59,92 @@ interface HatDesignCanvasProps {
 }
 
 /**
+ * 회전 핸들 컴포넌트
+ * PPT처럼 드래그로 자유 회전 가능
+ */
+function RotationHandle({
+  layerId,
+  rotation,
+  pixelWidth,
+  pixelHeight,
+  onRotationChange,
+}: {
+  layerId: string
+  rotation: number
+  pixelWidth: number
+  pixelHeight: number
+  onRotationChange: (layerId: string, newRotation: number) => void
+}) {
+  const isDragging = useRef(false)
+  const centerRef = useRef({ x: 0, y: 0 })
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    isDragging.current = true
+
+    // 레이어 중심 좌표 계산
+    const handle = e.currentTarget as HTMLElement
+    const rndEl = handle.closest('[class*="z-10"]') as HTMLElement
+    if (!rndEl) return
+
+    const rect = rndEl.getBoundingClientRect()
+    centerRef.current = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    }
+
+    const handleMouseMove = (moveE: MouseEvent) => {
+      if (!isDragging.current) return
+
+      const angle = Math.atan2(
+        moveE.clientY - centerRef.current.y,
+        moveE.clientX - centerRef.current.x,
+      )
+      // atan2는 오른쪽이 0도, 위가 -90도이므로 90도를 더해 상단이 0도가 되도록 조정
+      let degrees = (angle * 180) / Math.PI + 90
+      if (degrees < 0) degrees += 360
+
+      // shift 키를 누르면 15도 단위로 스냅
+      if (moveE.shiftKey) {
+        degrees = Math.round(degrees / 15) * 15
+      }
+
+      onRotationChange(layerId, Math.round(degrees))
+    }
+
+    const handleMouseUp = () => {
+      isDragging.current = false
+      document.removeEventListener("mousemove", handleMouseMove)
+      document.removeEventListener("mouseup", handleMouseUp)
+    }
+
+    document.addEventListener("mousemove", handleMouseMove)
+    document.addEventListener("mouseup", handleMouseUp)
+  }, [layerId, onRotationChange])
+
+  return (
+    <>
+      {/* 회전 핸들 연결선 */}
+      <div
+        className="absolute left-1/2 -translate-x-1/2 w-px bg-blue-500 pointer-events-none"
+        style={{ top: -24, height: 24 }}
+      />
+      {/* 회전 핸들 원형 */}
+      <div
+        className="absolute left-1/2 -translate-x-1/2 cursor-grab active:cursor-grabbing"
+        style={{ top: -36 }}
+        onMouseDown={handleMouseDown}
+      >
+        <div className="w-5 h-5 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center shadow-md transition-colors">
+          <RotateCw size={10} className="text-white" />
+        </div>
+      </div>
+    </>
+  )
+}
+
+/**
  * 통합 모자 디자인 캔버스
  *
  * 모든 화면에서 동일한 좌표 시스템과 렌더링 로직을 사용합니다.
@@ -220,7 +306,8 @@ export function HatDesignCanvas({
         const pixelWidth = toPixel(layer.width)
         const pixelHeight = toPixel(layer.height)
 
-        const transformStyle = `rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`
+        const flipStyle = `scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`
+        const fullTransformStyle = `rotate(${layer.rotation}deg) ${flipStyle}`
 
         // 읽기 전용 모드
         if (!editable) {
@@ -235,7 +322,7 @@ export function HatDesignCanvas({
                 height: pixelHeight,
               }}
             >
-              <div className="w-full h-full" style={{ transform: transformStyle }}>
+              <div className="w-full h-full" style={{ transform: fullTransformStyle }}>
                 {layer.type === "image" ? (
                   <img
                     src={layer.content}
@@ -256,83 +343,131 @@ export function HatDesignCanvas({
           )
         }
 
-        // 편집 가능 모드 - Rnd 사용
+        // 드래그 회전 핸들러
+        const handleRotationChange = (layerId: string, newRotation: number) => {
+          if (onLayerUpdate) {
+            onLayerUpdate(layerId, { rotation: newRotation })
+          }
+        }
+
+        // 편집 가능 모드 - Rnd 사용 + 외부 div에 rotation 적용
         return (
-          <Rnd
+          <div
             key={layer.id}
-            position={{ x: pixelX, y: pixelY }}
-            size={{ width: pixelWidth, height: pixelHeight }}
-            bounds="parent"
-            lockAspectRatio={layer.type === "image"}
-            className={`z-10 ${isSelected ? "ring-2 ring-blue-500" : "hover:ring-2 hover:ring-blue-300"}`}
-            onDragStart={(e) => {
-              e.stopPropagation()
-              onLayerSelect?.(layer.id)
+            className="absolute z-10"
+            style={{
+              left: pixelX,
+              top: pixelY,
+              width: pixelWidth,
+              height: pixelHeight,
+              transform: `rotate(${layer.rotation}deg)`,
+              transformOrigin: "center center",
             }}
-            onDragStop={(e, d) => handleDragStop(layer.id, d.x, d.y)}
-            onResizeStop={(e, direction, ref, delta, position) => {
-              handleResizeStop(
-                layer.id,
-                position.x,
-                position.y,
-                parseFloat(ref.style.width),
-                parseFloat(ref.style.height)
-              )
-            }}
-            onClick={(e: React.MouseEvent) => handleLayerClick(layer.id, e)}
           >
-            <div className="relative w-full h-full group">
-              <div className="w-full h-full" style={{ transform: transformStyle }}>
-                {layer.type === "image" ? (
-                  <img
-                    src={layer.content}
-                    alt="Design"
-                    className="w-full h-full object-contain pointer-events-none"
-                    draggable={false}
+            <Rnd
+              position={{ x: 0, y: 0 }}
+              size={{ width: pixelWidth, height: pixelHeight }}
+              lockAspectRatio={layer.type === "image"}
+              enableResizing={isSelected}
+              disableDragging={false}
+              className={`${isSelected ? "ring-2 ring-blue-500" : "hover:ring-2 hover:ring-blue-300"}`}
+              onDragStart={(e) => {
+                e.stopPropagation()
+                onLayerSelect?.(layer.id)
+              }}
+              onDragStop={(e, d) => {
+                // 회전된 상태에서의 드래그 오프셋을 원래 좌표계로 변환
+                const rad = (layer.rotation * Math.PI) / 180
+                const cos = Math.cos(rad)
+                const sin = Math.sin(rad)
+                const rotatedDx = d.x * cos - d.y * sin
+                const rotatedDy = d.x * sin + d.y * cos
+                handleDragStop(layer.id, pixelX + rotatedDx, pixelY + rotatedDy)
+              }}
+              onResizeStop={(e, direction, ref, delta, position) => {
+                const newWidth = parseFloat(ref.style.width)
+                const newHeight = parseFloat(ref.style.height)
+                // 리사이즈 시 위치 오프셋도 회전 변환
+                const rad = (layer.rotation * Math.PI) / 180
+                const cos = Math.cos(rad)
+                const sin = Math.sin(rad)
+                const rotatedX = position.x * cos - position.y * sin
+                const rotatedY = position.x * sin + position.y * cos
+                if (onLayerUpdate) {
+                  onLayerUpdate(layer.id, {
+                    x: toPercent(pixelX + rotatedX),
+                    y: toPercent(pixelY + rotatedY),
+                    width: toPercent(newWidth),
+                    height: toPercent(newHeight),
+                  })
+                }
+              }}
+              onClick={(e: React.MouseEvent) => handleLayerClick(layer.id, e)}
+            >
+              <div className="relative w-full h-full group">
+                <div className="w-full h-full" style={{ transform: flipStyle }}>
+                  {layer.type === "image" ? (
+                    <img
+                      src={layer.content}
+                      alt="Design"
+                      className="w-full h-full object-contain pointer-events-none"
+                      draggable={false}
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full flex items-center justify-center text-center"
+                      style={{ color: layer.color || "#000" }}
+                    >
+                      {layer.content}
+                    </div>
+                  )}
+                </div>
+
+                {/* 회전 드래그 핸들 - 선택 시 항상 표시 */}
+                {isSelected && onLayerUpdate && (
+                  <RotationHandle
+                    layerId={layer.id}
+                    rotation={layer.rotation}
+                    pixelWidth={pixelWidth}
+                    pixelHeight={pixelHeight}
+                    onRotationChange={handleRotationChange}
                   />
-                ) : (
-                  <div
-                    className="w-full h-full flex items-center justify-center text-center"
-                    style={{ color: layer.color || "#000" }}
-                  >
-                    {layer.content}
+                )}
+
+                {/* 컨트롤 버튼들 */}
+                {isSelected && (
+                  <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                    {/* 45° 회전 버튼 */}
+                    {onLayerRotate && (
+                      <button
+                        className="bg-blue-500 text-white rounded-full p-1 hover:bg-blue-600 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onLayerRotate(layer.id, 45)
+                        }}
+                        title="45° 회전"
+                      >
+                        <RotateCw size={12} />
+                      </button>
+                    )}
+                    {/* 삭제 버튼 */}
+                    {onLayerRemove && (
+                      <button
+                        className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onLayerRemove(layer.id)
+                        }}
+                        title="삭제"
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
-
-              {/* 컨트롤 버튼들 */}
-              {isSelected && (
-                <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                  {/* 회전 버튼 */}
-                  {onLayerRotate && (
-                    <button
-                      className="bg-blue-500 text-white rounded-full p-1 hover:bg-blue-600 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onLayerRotate(layer.id, 45)
-                      }}
-                      title="45° 회전"
-                    >
-                      <RotateCw size={12} />
-                    </button>
-                  )}
-                  {/* 삭제 버튼 */}
-                  {onLayerRemove && (
-                    <button
-                      className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onLayerRemove(layer.id)
-                      }}
-                      title="삭제"
-                    >
-                      <X size={12} />
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </Rnd>
+            </Rnd>
+          </div>
         )
       })}
     </div>
