@@ -52,3 +52,11 @@ next-env.d.ts
 *.md
 !CLAUDE.md
 *.webp
+
+# 임시 파일
+.cursor/
+images/
+screenshots/
+response.txt
+upload_images.py
+scripts/
