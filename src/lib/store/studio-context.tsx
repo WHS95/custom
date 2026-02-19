@@ -101,8 +101,6 @@ const DEFAULT_CONFIG: StudioConfig = {
   }
 }
 
-const STORAGE_KEY = "runhouse_studio_config_cache"
-
 const StudioConfigContext = createContext<StudioConfigContextType | undefined>(undefined)
 
 export function StudioConfigProvider({ children }: { children: React.ReactNode }) {
@@ -132,24 +130,15 @@ export function StudioConfigProvider({ children }: { children: React.ReactNode }
           safeZones: settings.safeZones ?? DEFAULT_CONFIG.safeZones,
         }
         setConfig(newConfig)
-        // 로컬 캐시 업데이트
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newConfig))
+        // 로컬 캐시 업데이트 제거
         setError(null)
         return newConfig
       }
     } catch (err) {
       console.error('Failed to fetch config from API:', err)
       setError('설정을 불러오는데 실패했습니다')
-      // API 실패시 로컬 캐시 사용
-      const cached = localStorage.getItem(STORAGE_KEY)
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached) as StudioConfig
-          setConfig(mergeWithDefaults(parsed))
-        } catch (e) {
-          console.error('Failed to parse cached config:', e)
-        }
-      }
+      // API 실패시 기본값 사용
+      setConfig(DEFAULT_CONFIG)
     }
     return null
   }, [])
@@ -158,17 +147,7 @@ export function StudioConfigProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     const init = async () => {
       setIsLoading(true)
-      // 먼저 로컬 캐시로 빠르게 렌더링
-      const cached = localStorage.getItem(STORAGE_KEY)
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached) as StudioConfig
-          setConfig(mergeWithDefaults(parsed))
-        } catch (e) {
-          console.error('Failed to parse cached config:', e)
-        }
-      }
-      // API에서 최신 설정 가져오기
+      // API에서 설정 가져오기 (캐시 없이)
       await fetchConfig()
       setIsLoading(false)
     }
@@ -186,7 +165,6 @@ export function StudioConfigProvider({ children }: { children: React.ReactNode }
 
     // 낙관적 업데이트
     setConfig(newConfig)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newConfig))
 
     try {
       const response = await fetch('/api/tenant', {
@@ -211,7 +189,6 @@ export function StudioConfigProvider({ children }: { children: React.ReactNode }
           safeZones: result.data.settings.safeZones,
         }
         setConfig(serverConfig)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(serverConfig))
       }
     } catch (err) {
       console.error('Failed to save config:', err)

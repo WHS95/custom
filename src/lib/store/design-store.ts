@@ -1,7 +1,6 @@
 "use client"
 
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
 import { HatView } from './studio-context'
 
 /**
@@ -79,12 +78,10 @@ const generateSessionId = () => `session_${Date.now()}_${generateId()}`
 
 /**
  * 디자인 스토어
- * Zustand + persist 미들웨어를 사용하여 로컬 스토리지에 자동 저장
  * 색상별로 레이어를 분리 저장하여 각 색상에 다른 디자인 적용 가능
+ * localStorage 저장 기능 제거됨 - 세션 중에만 데이터 유지
  */
-export const useDesignStore = create<DesignState>()(
-    persist(
-        (set, get) => ({
+export const useDesignStore = create<DesignState>((set, get) => ({
             // === 초기 상태 ===
             sessionId: generateSessionId(),
             selectedColor: 'black',
@@ -277,21 +274,8 @@ export const useDesignStore = create<DesignState>()(
                 currentView: 'front',
                 lastUpdated: Date.now()
             }),
-        }),
-        {
-            name: 'runhouse-design-storage',
-            storage: createJSONStorage(() => localStorage),
-            partialize: (state) => ({
-                sessionId: state.sessionId,
-                selectedColor: state.selectedColor,
-                currentView: state.currentView,
-                layersByColor: state.layersByColor,
-                selectedLayerId: state.selectedLayerId,
-                lastUpdated: state.lastUpdated,
-            }),
-        }
+        })
     )
-)
 
 /**
  * 현재 색상의 현재 뷰 레이어만 가져오는 셀렉터

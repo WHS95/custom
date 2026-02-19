@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Package,
   Save,
@@ -29,49 +29,57 @@ import {
   Eye,
   Layers,
   Paperclip,
-} from "lucide-react"
-import Link from "next/link"
-import { toast } from "sonner"
-import { useStudioConfig, HatView, ProductColor } from "@/lib/store/studio-context"
-import { ORDER_STATUS_LABELS, type OrderStatus, type AttachmentFile } from "@/domain/order"
+} from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
+import {
+  useStudioConfig,
+  HatView,
+  ProductColor,
+} from "@/lib/store/studio-context";
+import {
+  ORDER_STATUS_LABELS,
+  type OrderStatus,
+  type AttachmentFile,
+} from "@/domain/order";
 import {
   HatDesignCanvas,
   DesignLayer,
   getDefaultLayerPosition,
-} from "@/components/shared/HatDesignCanvas"
+} from "@/components/shared/HatDesignCanvas";
 
 interface OrderItem {
-  id: string
-  productId: string
-  productName: string
-  color: string
-  colorLabel: string
-  size: string
-  quantity: number
-  unitPrice: number
-  totalPrice: number
-  designSnapshot: DesignLayer[]
+  id: string;
+  productId: string;
+  productName: string;
+  color: string;
+  colorLabel: string;
+  size: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  designSnapshot: DesignLayer[];
 }
 
 interface OrderDetail {
-  id: string
-  orderNumber: string
-  customerName: string
-  customerPhone: string
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string;
   shippingInfo: {
-    recipientName: string
-    phone: string
-    address: string
-    addressDetail?: string
-    organizationName?: string
-  }
-  items: OrderItem[]
-  subtotal: number
-  shippingCost: number
-  totalAmount: number
-  status: OrderStatus
-  attachmentFiles?: AttachmentFile[]
-  createdAt: string
+    recipientName: string;
+    phone: string;
+    address: string;
+    addressDetail?: string;
+    organizationName?: string;
+  };
+  items: OrderItem[];
+  subtotal: number;
+  shippingCost: number;
+  totalAmount: number;
+  status: OrderStatus;
+  attachmentFiles?: AttachmentFile[];
+  createdAt: string;
 }
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
@@ -82,7 +90,7 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   shipped: "bg-cyan-100 text-cyan-700",
   delivered: "bg-green-100 text-green-700",
   cancelled: "bg-gray-100 text-gray-700",
-}
+};
 
 const VIEWS: { id: HatView; label: string }[] = [
   { id: "front", label: "정면" },
@@ -90,248 +98,319 @@ const VIEWS: { id: HatView; label: string }[] = [
   { id: "left", label: "좌측" },
   { id: "right", label: "우측" },
   { id: "top", label: "상단" },
-]
+];
 
 export default function OrderDetailPage() {
-  const params = useParams()
-  const router = useRouter()
-  const orderNumber = params.orderNumber as string
+  const params = useParams();
+  const router = useRouter();
+  const orderNumber = params.orderNumber as string;
 
-  const { config } = useStudioConfig()
+  const { config } = useStudioConfig();
 
   // 주문 데이터
-  const [order, setOrder] = useState<OrderDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   // 상품별 색상 이미지 (productId -> ProductColor[])
-  const [productColorsMap, setProductColorsMap] = useState<Record<string, ProductColor[]>>({})
+  const [productColorsMap, setProductColorsMap] = useState<
+    Record<string, ProductColor[]>
+  >({});
 
   // 상품+색상별 인쇄 영역 (productId-colorId -> safeZones)
   const [productSafeZonesMap, setProductSafeZonesMap] = useState<
-    Record<string, Partial<Record<HatView, { x: number; y: number; width: number; height: number }>>>
-  >({})
+    Record<
+      string,
+      Partial<
+        Record<HatView, { x: number; y: number; width: number; height: number }>
+      >
+    >
+  >({});
 
   // 현재 선택된 아이템
-  const [selectedItemIndex, setSelectedItemIndex] = useState(0)
+  const [selectedItemIndex, setSelectedItemIndex] = useState(0);
 
   // 펼쳐진 아이템 (디자인 상세 보기)
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   // 디자인 편집 상태
-  const [editedLayers, setEditedLayers] = useState<Record<string, DesignLayer[]>>({})
-  const [hasChanges, setHasChanges] = useState(false)
+  const [editedLayers, setEditedLayers] = useState<
+    Record<string, DesignLayer[]>
+  >({});
+  const [hasChanges, setHasChanges] = useState(false);
 
   // 캔버스 상태
-  const [currentView, setCurrentView] = useState<HatView>("front")
-  const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null)
+  const [currentView, setCurrentView] = useState<HatView>("front");
+  const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
 
   // 현재 선택된 아이템
-  const currentItem = order?.items[selectedItemIndex]
+  const currentItem = order?.items[selectedItemIndex];
 
   // 현재 아이템의 레이어 (수정된 것 우선)
   const currentLayers = currentItem
     ? editedLayers[currentItem.id] || currentItem.designSnapshot || []
-    : []
+    : [];
 
   // 현재 뷰의 레이어만 필터링
-  const viewLayers = currentLayers.filter((l) => l.view === currentView)
+  const viewLayers = currentLayers.filter((l) => l.view === currentView);
 
   // 수정 가능 여부 (디자인 확정 전까지만)
-  const canEdit = order?.status === "pending"
+  const canEdit = order?.status === "pending";
 
   // 선택된 레이어
-  const selectedLayer = currentLayers.find((l) => l.id === selectedLayerId)
+  const selectedLayer = currentLayers.find((l) => l.id === selectedLayerId);
 
   // 주문 데이터 로드
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const response = await fetch(`/api/orders/${orderNumber}`)
-        const data = await response.json()
+        const response = await fetch(`/api/orders/${orderNumber}`);
+        const data = await response.json();
 
         if (data.success) {
-          setOrder(data.order)
+          setOrder(data.order);
           // 디자인이 있는 첫 번째 뷰로 이동
-          const firstItem = data.order.items[0]
+          const firstItem = data.order.items[0];
           if (firstItem?.designSnapshot?.length > 0) {
-            setCurrentView(firstItem.designSnapshot[0].view)
+            setCurrentView(firstItem.designSnapshot[0].view);
           }
 
           // 상품별 색상 이미지 및 인쇄 영역 불러오기
-          const uniqueProductColorPairs = data.order.items.map((item: OrderItem) => ({
-            productId: item.productId,
-            colorId: item.color,
-          }))
+          const uniqueProductColorPairs = data.order.items.map(
+            (item: OrderItem) => ({
+              productId: item.productId,
+              colorId: item.color,
+            }),
+          );
           // 중복 제거
           const uniquePairs = uniqueProductColorPairs.filter(
-            (pair: { productId: string; colorId: string }, index: number, self: { productId: string; colorId: string }[]) =>
-              index === self.findIndex((p) => p.productId === pair.productId && p.colorId === pair.colorId)
-          )
+            (
+              pair: { productId: string; colorId: string },
+              index: number,
+              self: { productId: string; colorId: string }[],
+            ) =>
+              index ===
+              self.findIndex(
+                (p) =>
+                  p.productId === pair.productId && p.colorId === pair.colorId,
+              ),
+          );
 
-          const colorsMap: Record<string, ProductColor[]> = {}
-          const safeZonesMap: Record<string, Partial<Record<HatView, { x: number; y: number; width: number; height: number }>>> = {}
+          const colorsMap: Record<string, ProductColor[]> = {};
+          const safeZonesMap: Record<
+            string,
+            Partial<
+              Record<
+                HatView,
+                { x: number; y: number; width: number; height: number }
+              >
+            >
+          > = {};
 
           for (const { productId, colorId } of uniquePairs) {
             try {
               // 상품 정보 불러오기 (이미지)
               if (!colorsMap[productId]) {
-                const productRes = await fetch(`/api/products/${productId}`)
-                const productData = await productRes.json()
+                const productRes = await fetch(`/api/products/${productId}`);
+                const productData = await productRes.json();
 
                 if (productData.success && productData.data) {
-                  const product = productData.data
+                  const product = productData.data;
                   // ProductImage[] -> ProductColor[] 변환
-                  const colors: ProductColor[] = (product.variants || []).map((variant: { id: string; label: string; hex: string }) => {
-                    const views: Record<HatView, string> = {
-                      front: "",
-                      back: "",
-                      left: "",
-                      right: "",
-                      top: "",
-                    }
-                    // 해당 색상의 이미지들 매핑
-                    ;(product.images || []).forEach((img: { colorId: string; view: string; url: string }) => {
-                      if (img.colorId === variant.id) {
-                        views[img.view as HatView] = img.url
-                      }
-                    })
-                    return {
-                      id: variant.id,
-                      label: variant.label,
-                      hex: variant.hex,
-                      views,
-                    }
-                  })
-                  colorsMap[productId as string] = colors
+                  const colors: ProductColor[] = (product.variants || []).map(
+                    (variant: { id: string; label: string; hex: string }) => {
+                      const views: Record<HatView, string> = {
+                        front: "",
+                        back: "",
+                        left: "",
+                        right: "",
+                        top: "",
+                      };
+                      // 해당 색상의 이미지들 매핑
+                      (product.images || []).forEach(
+                        (img: {
+                          colorId: string;
+                          view: string;
+                          url: string;
+                        }) => {
+                          if (img.colorId === variant.id) {
+                            views[img.view as HatView] = img.url;
+                          }
+                        },
+                      );
+                      return {
+                        id: variant.id,
+                        label: variant.label,
+                        hex: variant.hex,
+                        views,
+                      };
+                    },
+                  );
+                  colorsMap[productId as string] = colors;
                 }
               }
 
               // 색상별 인쇄 영역 불러오기
-              const areasRes = await fetch(`/api/products/${productId}/areas?colorId=${colorId}`)
-              const areasData = await areasRes.json()
+              const areasRes = await fetch(
+                `/api/products/${productId}/areas?colorId=${colorId}`,
+              );
+              const areasData = await areasRes.json();
 
               if (areasData.success && areasData.data) {
-                const zones: Partial<Record<HatView, { x: number; y: number; width: number; height: number }>> = {}
+                const zones: Partial<
+                  Record<
+                    HatView,
+                    { x: number; y: number; width: number; height: number }
+                  >
+                > = {};
 
                 // 먼저 공통 영역(colorId가 null) 추가
-                areasData.data.forEach((area: { viewName: string; colorId: string | null; zoneX: number; zoneY: number; zoneWidth: number; zoneHeight: number; isEnabled: boolean }) => {
-                  if (area.isEnabled && !area.colorId) {
-                    zones[area.viewName as HatView] = {
-                      x: area.zoneX,
-                      y: area.zoneY,
-                      width: area.zoneWidth,
-                      height: area.zoneHeight,
+                areasData.data.forEach(
+                  (area: {
+                    viewName: string;
+                    colorId: string | null;
+                    zoneX: number;
+                    zoneY: number;
+                    zoneWidth: number;
+                    zoneHeight: number;
+                    isEnabled: boolean;
+                  }) => {
+                    if (area.isEnabled && !area.colorId) {
+                      zones[area.viewName as HatView] = {
+                        x: area.zoneX,
+                        y: area.zoneY,
+                        width: area.zoneWidth,
+                        height: area.zoneHeight,
+                      };
                     }
-                  }
-                })
+                  },
+                );
 
                 // 색상별 영역으로 덮어씀 (우선순위 높음)
-                areasData.data.forEach((area: { viewName: string; colorId: string | null; zoneX: number; zoneY: number; zoneWidth: number; zoneHeight: number; isEnabled: boolean }) => {
-                  if (area.isEnabled && area.colorId === colorId) {
-                    zones[area.viewName as HatView] = {
-                      x: area.zoneX,
-                      y: area.zoneY,
-                      width: area.zoneWidth,
-                      height: area.zoneHeight,
+                areasData.data.forEach(
+                  (area: {
+                    viewName: string;
+                    colorId: string | null;
+                    zoneX: number;
+                    zoneY: number;
+                    zoneWidth: number;
+                    zoneHeight: number;
+                    isEnabled: boolean;
+                  }) => {
+                    if (area.isEnabled && area.colorId === colorId) {
+                      zones[area.viewName as HatView] = {
+                        x: area.zoneX,
+                        y: area.zoneY,
+                        width: area.zoneWidth,
+                        height: area.zoneHeight,
+                      };
                     }
-                  }
-                })
+                  },
+                );
 
-                const mapKey = `${productId}-${colorId}`
-                safeZonesMap[mapKey] = zones
+                const mapKey = `${productId}-${colorId}`;
+                safeZonesMap[mapKey] = zones;
               }
             } catch (err) {
-              console.error(`상품 ${productId} 정보 로드 실패:`, err)
+              console.error(`상품 ${productId} 정보 로드 실패:`, err);
             }
           }
 
-          setProductColorsMap(colorsMap)
-          setProductSafeZonesMap(safeZonesMap)
+          setProductColorsMap(colorsMap);
+          setProductSafeZonesMap(safeZonesMap);
         } else {
-          toast.error("주문을 찾을 수 없습니다.")
-          router.push("/dashboard")
+          toast.error("주문을 찾을 수 없습니다.");
+          router.push("/dashboard");
         }
       } catch (error) {
-        console.error("주문 조회 에러:", error)
-        toast.error("주문 조회에 실패했습니다.")
+        console.error("주문 조회 에러:", error);
+        toast.error("주문 조회에 실패했습니다.");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchOrder()
-  }, [orderNumber, router])
+    fetchOrder();
+  }, [orderNumber, router]);
 
   // 아이템 변경 시 해당 아이템의 디자인이 있는 뷰로 이동
   useEffect(() => {
     if (currentItem) {
-      const layers = editedLayers[currentItem.id] || currentItem.designSnapshot || []
+      const layers =
+        editedLayers[currentItem.id] || currentItem.designSnapshot || [];
       if (layers.length > 0) {
-        setCurrentView(layers[0].view)
+        setCurrentView(layers[0].view);
       }
-      setSelectedLayerId(null)
+      setSelectedLayerId(null);
     }
-  }, [selectedItemIndex, currentItem?.id])
+  }, [selectedItemIndex, currentItem?.id]);
 
   // 레이어 업데이트
-  const handleLayerUpdate = (layerId: string, updates: Partial<DesignLayer>) => {
-    if (!canEdit || !currentItem) return
+  const handleLayerUpdate = (
+    layerId: string,
+    updates: Partial<DesignLayer>,
+  ) => {
+    if (!canEdit || !currentItem) return;
 
-    const currentItemLayers = editedLayers[currentItem.id] || currentItem.designSnapshot || []
+    const currentItemLayers =
+      editedLayers[currentItem.id] || currentItem.designSnapshot || [];
     const updatedLayers = currentItemLayers.map((layer) =>
-      layer.id === layerId ? { ...layer, ...updates } : layer
-    )
+      layer.id === layerId ? { ...layer, ...updates } : layer,
+    );
 
     setEditedLayers((prev) => ({
       ...prev,
       [currentItem.id]: updatedLayers,
-    }))
-    setHasChanges(true)
-  }
+    }));
+    setHasChanges(true);
+  };
 
   // 레이어 삭제
   const handleLayerRemove = (layerId: string) => {
-    if (!canEdit || !currentItem) return
+    if (!canEdit || !currentItem) return;
 
-    const currentItemLayers = editedLayers[currentItem.id] || currentItem.designSnapshot || []
-    const updatedLayers = currentItemLayers.filter((layer) => layer.id !== layerId)
+    const currentItemLayers =
+      editedLayers[currentItem.id] || currentItem.designSnapshot || [];
+    const updatedLayers = currentItemLayers.filter(
+      (layer) => layer.id !== layerId,
+    );
 
     setEditedLayers((prev) => ({
       ...prev,
       [currentItem.id]: updatedLayers,
-    }))
-    setSelectedLayerId(null)
-    setHasChanges(true)
-  }
+    }));
+    setSelectedLayerId(null);
+    setHasChanges(true);
+  };
 
   // 레이어 회전
   const handleRotate = (degrees: number) => {
-    if (!selectedLayerId || !selectedLayer) return
+    if (!selectedLayerId || !selectedLayer) return;
     handleLayerUpdate(selectedLayerId, {
       rotation: (selectedLayer.rotation + degrees + 360) % 360,
-    })
-  }
+    });
+  };
 
   // 레이어 반전
   const handleFlip = (axis: "x" | "y") => {
-    if (!selectedLayerId || !selectedLayer) return
+    if (!selectedLayerId || !selectedLayer) return;
     handleLayerUpdate(selectedLayerId, {
-      [axis === "x" ? "flipX" : "flipY"]: axis === "x" ? !selectedLayer.flipX : !selectedLayer.flipY,
-    })
-  }
+      [axis === "x" ? "flipX" : "flipY"]:
+        axis === "x" ? !selectedLayer.flipX : !selectedLayer.flipY,
+    });
+  };
 
   // 이미지 업로드
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!canEdit || !currentItem) return
+    if (!canEdit || !currentItem) return;
 
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (event) => {
-      const content = event.target?.result as string
-      const defaultPos = getDefaultLayerPosition(currentView, config)
+      const content = event.target?.result as string;
+      const defaultPos = getDefaultLayerPosition(currentView, config);
 
       const newLayer: DesignLayer = {
         id: `layer_${Date.now()}`,
@@ -342,62 +421,63 @@ export default function OrderDetailPage() {
         flipX: false,
         flipY: false,
         view: currentView,
-      }
+      };
 
-      const currentItemLayers = editedLayers[currentItem.id] || currentItem.designSnapshot || []
+      const currentItemLayers =
+        editedLayers[currentItem.id] || currentItem.designSnapshot || [];
       setEditedLayers((prev) => ({
         ...prev,
         [currentItem.id]: [...currentItemLayers, newLayer],
-      }))
-      setSelectedLayerId(newLayer.id)
-      setHasChanges(true)
-    }
-    reader.readAsDataURL(file)
-    e.target.value = ""
-  }
+      }));
+      setSelectedLayerId(newLayer.id);
+      setHasChanges(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   // 이미지 다운로드 함수
   const handleDownloadImage = async (layer: DesignLayer, index: number) => {
     try {
-      const content = layer.content
-      let blob: Blob
+      const content = layer.content;
+      let blob: Blob;
 
       if (content.startsWith("data:")) {
         // Base64 이미지 처리
-        const base64Data = content.split(",")[1]
-        const mimeType = content.split(";")[0].split(":")[1] || "image/png"
-        const byteCharacters = atob(base64Data)
-        const byteNumbers = new Array(byteCharacters.length)
+        const base64Data = content.split(",")[1];
+        const mimeType = content.split(";")[0].split(":")[1] || "image/png";
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
         for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i)
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
         }
-        const byteArray = new Uint8Array(byteNumbers)
-        blob = new Blob([byteArray], { type: mimeType })
+        const byteArray = new Uint8Array(byteNumbers);
+        blob = new Blob([byteArray], { type: mimeType });
       } else {
         // URL 이미지 처리
-        const response = await fetch(content)
-        blob = await response.blob()
+        const response = await fetch(content);
+        blob = await response.blob();
       }
 
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      const ext = blob.type.split("/")[1] || "png"
-      a.download = `${order?.orderNumber}_${layer.view}_design_${index + 1}.${ext}`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-      toast.success("이미지가 다운로드되었습니다")
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const ext = blob.type.split("/")[1] || "png";
+      a.download = `${order?.orderNumber}_${layer.view}_design_${index + 1}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("이미지가 다운로드되었습니다");
     } catch (error) {
-      console.error("다운로드 에러:", error)
-      toast.error("이미지 다운로드에 실패했습니다")
+      console.error("다운로드 에러:", error);
+      toast.error("이미지 다운로드에 실패했습니다");
     }
-  }
+  };
 
   // 모든 디자인 이미지 다운로드
   const handleDownloadAllImages = async () => {
-    if (!order) return
+    if (!order) return;
 
     const imageLayers = order.items.flatMap((item, itemIdx) =>
       (editedLayers[item.id] || item.designSnapshot || [])
@@ -407,96 +487,96 @@ export default function OrderDetailPage() {
           itemIndex: itemIdx,
           layerIndex: layerIdx,
           colorLabel: item.colorLabel,
-        }))
-    )
+        })),
+    );
 
     if (imageLayers.length === 0) {
-      toast.info("다운로드할 디자인 이미지가 없습니다")
-      return
+      toast.info("다운로드할 디자인 이미지가 없습니다");
+      return;
     }
 
-    toast.info(`${imageLayers.length}개 이미지 다운로드 중...`)
+    toast.info(`${imageLayers.length}개 이미지 다운로드 중...`);
 
     for (let i = 0; i < imageLayers.length; i++) {
-      const { layer, colorLabel, layerIndex } = imageLayers[i]
+      const { layer, colorLabel, layerIndex } = imageLayers[i];
       try {
-        const content = layer.content
-        let blob: Blob
+        const content = layer.content;
+        let blob: Blob;
 
         if (content.startsWith("data:")) {
-          const base64Data = content.split(",")[1]
-          const mimeType = content.split(";")[0].split(":")[1] || "image/png"
-          const byteCharacters = atob(base64Data)
-          const byteNumbers = new Array(byteCharacters.length)
+          const base64Data = content.split(",")[1];
+          const mimeType = content.split(";")[0].split(":")[1] || "image/png";
+          const byteCharacters = atob(base64Data);
+          const byteNumbers = new Array(byteCharacters.length);
           for (let j = 0; j < byteCharacters.length; j++) {
-            byteNumbers[j] = byteCharacters.charCodeAt(j)
+            byteNumbers[j] = byteCharacters.charCodeAt(j);
           }
-          const byteArray = new Uint8Array(byteNumbers)
-          blob = new Blob([byteArray], { type: mimeType })
+          const byteArray = new Uint8Array(byteNumbers);
+          blob = new Blob([byteArray], { type: mimeType });
         } else {
-          const response = await fetch(content)
-          blob = await response.blob()
+          const response = await fetch(content);
+          blob = await response.blob();
         }
 
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        const ext = blob.type.split("/")[1] || "png"
-        a.download = `${order.orderNumber}_${colorLabel}_${layer.view}_${layerIndex + 1}.${ext}`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const ext = blob.type.split("/")[1] || "png";
+        a.download = `${order.orderNumber}_${colorLabel}_${layer.view}_${layerIndex + 1}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
         // 다운로드 간 딜레이
-        await new Promise((resolve) => setTimeout(resolve, 300))
+        await new Promise((resolve) => setTimeout(resolve, 300));
       } catch (error) {
-        console.error("다운로드 에러:", error)
+        console.error("다운로드 에러:", error);
       }
     }
 
-    toast.success("모든 이미지 다운로드 완료")
-  }
+    toast.success("모든 이미지 다운로드 완료");
+  };
 
   // 주문자 첨부파일 다운로드
   const handleDownloadAttachments = async () => {
     if (!order?.attachmentFiles || order.attachmentFiles.length === 0) {
-      toast.info("다운로드할 첨부파일이 없습니다")
-      return
+      toast.info("다운로드할 첨부파일이 없습니다");
+      return;
     }
 
-    toast.info(`${order.attachmentFiles.length}개 첨부파일 다운로드 중...`)
+    toast.info(`${order.attachmentFiles.length}개 첨부파일 다운로드 중...`);
 
     for (const file of order.attachmentFiles) {
       try {
-        const response = await fetch(file.url)
-        const blob = await response.blob()
+        const response = await fetch(file.url);
+        const blob = await response.blob();
 
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = file.name
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
         // 다운로드 간 딜레이
-        await new Promise((resolve) => setTimeout(resolve, 300))
+        await new Promise((resolve) => setTimeout(resolve, 300));
       } catch (error) {
-        console.error("첨부파일 다운로드 에러:", error)
-        toast.error(`${file.name} 다운로드 실패`)
+        console.error("첨부파일 다운로드 에러:", error);
+        toast.error(`${file.name} 다운로드 실패`);
       }
     }
 
-    toast.success("첨부파일 다운로드 완료")
-  }
+    toast.success("첨부파일 다운로드 완료");
+  };
 
   // 디자인 저장
   const handleSave = async () => {
-    if (!hasChanges || !order) return
+    if (!hasChanges || !order) return;
 
-    setSaving(true)
+    setSaving(true);
     try {
       const response = await fetch(`/api/orders/${orderNumber}/design`, {
         method: "PATCH",
@@ -507,80 +587,84 @@ export default function OrderDetailPage() {
             designSnapshot: editedLayers[item.id] || item.designSnapshot,
           })),
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (data.success) {
-        toast.success("디자인이 저장되었습니다.")
-        setHasChanges(false)
+        toast.success("디자인이 저장되었습니다.");
+        setHasChanges(false);
         // 주문 데이터 새로고침
-        const refreshResponse = await fetch(`/api/orders/${orderNumber}`)
-        const refreshData = await refreshResponse.json()
+        const refreshResponse = await fetch(`/api/orders/${orderNumber}`);
+        const refreshData = await refreshResponse.json();
         if (refreshData.success) {
-          setOrder(refreshData.order)
-          setEditedLayers({})
+          setOrder(refreshData.order);
+          setEditedLayers({});
         }
       } else {
-        throw new Error(data.error)
+        throw new Error(data.error);
       }
     } catch (error) {
-      console.error("저장 에러:", error)
-      toast.error("디자인 저장에 실패했습니다.")
+      console.error("저장 에러:", error);
+      toast.error("디자인 저장에 실패했습니다.");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      <div className='min-h-screen flex items-center justify-center'>
+        <Loader2 className='w-8 h-8 animate-spin text-gray-400' />
       </div>
-    )
+    );
   }
 
   if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Package className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500">주문을 찾을 수 없습니다.</p>
+      <div className='min-h-screen flex items-center justify-center'>
+        <div className='text-center'>
+          <Package className='w-12 h-12 mx-auto text-gray-300 mb-4' />
+          <p className='text-gray-500'>주문을 찾을 수 없습니다.</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className='min-h-screen bg-gray-100'>
       {/* 상단 헤더 */}
-      <div className="bg-white border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={() => router.back()}>
-                <ArrowLeft className="w-4 h-4 mr-1" />
+      <div className='bg-white border-b sticky top-0 z-50'>
+        <div className='container mx-auto px-4 py-3'>
+          <div className='flex items-center justify-between'>
+            <div className='flex items-center gap-4'>
+              <Button variant='ghost' size='sm' onClick={() => router.back()}>
+                <ArrowLeft className='w-4 h-4 mr-1' />
                 돌아가기
               </Button>
               <div>
-                <h1 className="font-bold text-lg">{order.orderNumber}</h1>
-                <p className="text-sm text-gray-500">
-                  {order.customerName} · {order.shippingInfo.organizationName || "개인"}
+                <h1 className='font-bold text-lg'>{order.orderNumber}</h1>
+                <p className='text-sm text-gray-500'>
+                  {order.customerName} ·{" "}
+                  {order.shippingInfo.organizationName || "개인"}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className='flex items-center gap-3'>
               <Badge className={STATUS_COLORS[order.status]}>
                 {ORDER_STATUS_LABELS[order.status]}
               </Badge>
               {canEdit ? (
-                <Badge variant="outline" className="text-green-600 border-green-300">
-                  <Unlock className="w-3 h-3 mr-1" />
+                <Badge
+                  variant='outline'
+                  className='text-green-600 border-green-300'
+                >
+                  <Unlock className='w-3 h-3 mr-1' />
                   수정 가능
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-gray-500">
-                  <Lock className="w-3 h-3 mr-1" />
+                <Badge variant='outline' className='text-gray-500'>
+                  <Lock className='w-3 h-3 mr-1' />
                   수정 불가
                 </Badge>
               )}
@@ -589,31 +673,35 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-64px)]">
+      <div className='flex h-[calc(100vh-64px)]'>
         {/* 좌측: 주문 아이템 목록 (색상별 커스텀 내역) */}
-        <div className="w-80 bg-white border-r overflow-y-auto">
-          <div className="p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Eye className="w-5 h-5 text-blue-600" />
-              <h3 className="font-bold text-base">커스텀 내역 확인</h3>
+        <div className='w-80 bg-white border-r overflow-y-auto'>
+          <div className='p-4'>
+            <div className='flex items-center gap-2 mb-4'>
+              <Eye className='w-5 h-5 text-blue-600' />
+              <h3 className='font-bold text-base'>커스텀 내역 확인</h3>
             </div>
-            <p className="text-xs text-gray-500 mb-4">
+            <p className='text-xs text-gray-500 mb-4'>
               각 색상을 클릭하여 디자인 상세를 확인하세요
             </p>
-            <div className="space-y-3">
+            <div className='space-y-3'>
               {order.items.map((item, index) => {
-                const itemLayers = editedLayers[item.id] || item.designSnapshot || []
-                const hasDesign = itemLayers.length > 0
-                const isEdited = !!editedLayers[item.id]
-                const isExpanded = expandedItems.has(item.id)
-                const isSelected = selectedItemIndex === index
+                const itemLayers =
+                  editedLayers[item.id] || item.designSnapshot || [];
+                const hasDesign = itemLayers.length > 0;
+                const isEdited = !!editedLayers[item.id];
+                const isExpanded = expandedItems.has(item.id);
+                const isSelected = selectedItemIndex === index;
 
                 // 뷰별 레이어 그룹화
-                const layersByView = itemLayers.reduce((acc, layer) => {
-                  if (!acc[layer.view]) acc[layer.view] = []
-                  acc[layer.view].push(layer)
-                  return acc
-                }, {} as Record<string, DesignLayer[]>)
+                const layersByView = itemLayers.reduce(
+                  (acc, layer) => {
+                    if (!acc[layer.view]) acc[layer.view] = [];
+                    acc[layer.view].push(layer);
+                    return acc;
+                  },
+                  {} as Record<string, DesignLayer[]>,
+                );
 
                 const viewLabels: Record<string, string> = {
                   front: "앞면",
@@ -621,7 +709,7 @@ export default function OrderDetailPage() {
                   left: "좌측",
                   right: "우측",
                   top: "상단",
-                }
+                };
 
                 return (
                   <div
@@ -637,60 +725,26 @@ export default function OrderDetailPage() {
                       className={`p-3 cursor-pointer ${isSelected ? "bg-blue-50" : "bg-gray-50"}`}
                       onClick={() => setSelectedItemIndex(index)}
                     >
-                      <div className="flex items-center gap-3">
-                        {/* 디자인 썸네일 */}
-                        <div className="w-14 h-14 bg-white rounded-lg border overflow-hidden flex-shrink-0">
-                          {hasDesign ? (
-                            <div className="w-full h-full relative">
-                              {itemLayers
-                                .filter((l) => l.view === "front")
-                                .slice(0, 1)
-                                .map((layer) => (
-                                  <img
-                                    key={layer.id}
-                                    src={layer.content}
-                                    alt="Design"
-                                    className="w-full h-full object-contain"
-                                  />
-                                ))}
-                              {!itemLayers.some((l) => l.view === "front") && itemLayers[0] && (
-                                <img
-                                  src={itemLayers[0].content}
-                                  alt="Design"
-                                  className="w-full h-full object-contain"
-                                />
-                              )}
-                            </div>
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Layers className="w-6 h-6 text-gray-300" />
-                            </div>
-                          )}
-                        </div>
-
+                      <div className='flex items-center gap-3'>
                         {/* 정보 */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-4 h-4 rounded-full border shadow-sm flex-shrink-0"
-                              style={{
-                                backgroundColor:
-                                  config.colors.find((c) => c.id === item.color)?.hex || "#000",
-                              }}
-                            />
-                            <span className="font-bold text-sm">{item.colorLabel}</span>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
+                        <div className='flex-1 min-w-0'>
+                          <p className='font-bold text-sm truncate'>
+                            {item.productName}
+                          </p>
+                          <p className='text-xs text-gray-600 mt-0.5'>
+                            {item.colorLabel}
+                          </p>
+                          <p className='text-xs text-gray-500 mt-0.5'>
                             사이즈: {item.size} · 수량: {item.quantity}개
                           </p>
-                          <div className="flex items-center gap-1 mt-1">
+                          <div className='flex items-center gap-1 mt-1'>
                             {hasDesign && (
-                              <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                              <span className='text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded'>
                                 {itemLayers.length}개 레이어
                               </span>
                             )}
                             {isEdited && (
-                              <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
+                              <span className='text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded'>
                                 수정됨
                               </span>
                             )}
@@ -700,23 +754,23 @@ export default function OrderDetailPage() {
                         {/* 펼침/접힘 버튼 */}
                         <button
                           onClick={(e) => {
-                            e.stopPropagation()
+                            e.stopPropagation();
                             setExpandedItems((prev) => {
-                              const next = new Set(prev)
+                              const next = new Set(prev);
                               if (next.has(item.id)) {
-                                next.delete(item.id)
+                                next.delete(item.id);
                               } else {
-                                next.add(item.id)
+                                next.add(item.id);
                               }
-                              return next
-                            })
+                              return next;
+                            });
                           }}
-                          className="p-1.5 hover:bg-white rounded-lg transition-colors"
+                          className='p-1.5 hover:bg-white rounded-lg transition-colors'
                         >
                           {isExpanded ? (
-                            <ChevronUp className="w-5 h-5 text-gray-400" />
+                            <ChevronUp className='w-5 h-5 text-gray-400' />
                           ) : (
-                            <ChevronDown className="w-5 h-5 text-gray-400" />
+                            <ChevronDown className='w-5 h-5 text-gray-400' />
                           )}
                         </button>
                       </div>
@@ -728,41 +782,47 @@ export default function OrderDetailPage() {
                         isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
                       }`}
                     >
-                      <div className="overflow-hidden">
-                        <div className="p-3 pt-0 space-y-3">
+                      <div className='overflow-hidden'>
+                        <div className='p-3 pt-0 space-y-3'>
                           <Separator />
 
                           {/* 뷰별 디자인 정보 */}
                           {hasDesign ? (
-                            <div className="space-y-2">
-                              <p className="text-xs font-medium text-gray-500">디자인 위치:</p>
-                              <div className="flex flex-wrap gap-1">
-                                {Object.entries(layersByView).map(([view, layers]) => (
-                                  <span
-                                    key={view}
-                                    className="text-xs bg-gray-100 px-2 py-1 rounded flex items-center gap-1"
-                                  >
-                                    <span>{viewLabels[view] || view}</span>
-                                    <span className="text-blue-600 font-medium">{layers.length}개</span>
-                                  </span>
-                                ))}
+                            <div className='space-y-2'>
+                              <p className='text-xs font-medium text-gray-500'>
+                                디자인 위치:
+                              </p>
+                              <div className='flex flex-wrap gap-1'>
+                                {Object.entries(layersByView).map(
+                                  ([view, layers]) => (
+                                    <span
+                                      key={view}
+                                      className='text-xs bg-gray-100 px-2 py-1 rounded flex items-center gap-1'
+                                    >
+                                      <span>{viewLabels[view] || view}</span>
+                                      <span className='text-blue-600 font-medium'>
+                                        {layers.length}개
+                                      </span>
+                                    </span>
+                                  ),
+                                )}
                               </div>
                             </div>
                           ) : (
-                            <p className="text-xs text-gray-400 text-center py-2">
+                            <p className='text-xs text-gray-400 text-center py-2'>
                               디자인이 없습니다
                             </p>
                           )}
 
                           {/* 가격 정보 */}
-                          <div className="bg-gray-50 rounded-lg p-2">
-                            <div className="flex justify-between text-xs">
-                              <span className="text-gray-500">단가</span>
+                          <div className='bg-gray-50 rounded-lg p-2'>
+                            <div className='flex justify-between text-xs'>
+                              <span className='text-gray-500'>단가</span>
                               <span>{item.unitPrice.toLocaleString()}원</span>
                             </div>
-                            <div className="flex justify-between text-sm font-bold mt-1">
+                            <div className='flex justify-between text-sm font-bold mt-1'>
                               <span>소계</span>
-                              <span className="text-blue-600">
+                              <span className='text-blue-600'>
                                 {item.totalPrice.toLocaleString()}원
                               </span>
                             </div>
@@ -770,36 +830,38 @@ export default function OrderDetailPage() {
 
                           {/* 캔버스에서 보기 버튼 */}
                           <Button
-                            size="sm"
+                            size='sm'
                             variant={isSelected ? "default" : "outline"}
-                            className="w-full"
+                            className='w-full'
                             onClick={() => setSelectedItemIndex(index)}
                           >
-                            <Eye className="w-4 h-4 mr-1" />
+                            <Eye className='w-4 h-4 mr-1' />
                             {isSelected ? "현재 보는 중" : "캔버스에서 보기"}
                           </Button>
                         </div>
                       </div>
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
           </div>
 
           {/* 주문 정보 요약 */}
           <Separator />
-          <div className="p-4 space-y-3 text-sm">
+          <div className='p-4 space-y-3 text-sm'>
             <div>
-              <p className="text-gray-500">배송지</p>
-              <p className="font-medium">{order.shippingInfo.recipientName}</p>
-              <p className="text-gray-600 text-xs">
+              <p className='text-gray-500'>배송지</p>
+              <p className='font-medium'>{order.shippingInfo.recipientName}</p>
+              <p className='text-gray-600 text-xs'>
                 {order.shippingInfo.address} {order.shippingInfo.addressDetail}
               </p>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">총 금액</span>
-              <span className="font-bold">{order.totalAmount.toLocaleString()}원</span>
+            <div className='flex justify-between'>
+              <span className='text-gray-500'>총 금액</span>
+              <span className='font-bold'>
+                {order.totalAmount.toLocaleString()}원
+              </span>
             </div>
           </div>
 
@@ -807,14 +869,14 @@ export default function OrderDetailPage() {
           {order.status === "delivered" && (
             <>
               <Separator />
-              <div className="p-4">
+              <div className='p-4'>
                 <Link href={`/gallery/write?order=${order.orderNumber}`}>
-                  <Button variant="outline" className="w-full">
-                    <MessageSquare className="w-4 h-4 mr-2" />
+                  <Button variant='outline' className='w-full'>
+                    <MessageSquare className='w-4 h-4 mr-2' />
                     후기 작성하기
                   </Button>
                 </Link>
-                <p className="text-xs text-gray-500 mt-2 text-center">
+                <p className='text-xs text-gray-500 mt-2 text-center'>
                   상품에 대한 후기를 남겨주세요
                 </p>
               </div>
@@ -823,29 +885,38 @@ export default function OrderDetailPage() {
         </div>
 
         {/* 중앙: 캔버스 */}
-        <div className="flex-1 flex flex-col">
+        <div className='flex-1 flex flex-col'>
           {/* 뷰 선택 탭 */}
-          <div className="bg-white border-b px-4 py-2">
-            <Tabs value={currentView} onValueChange={(v) => setCurrentView(v as HatView)}>
+          <div className='bg-white border-b px-4 py-2'>
+            <Tabs
+              value={currentView}
+              onValueChange={(v) => setCurrentView(v as HatView)}
+            >
               <TabsList>
                 {VIEWS.map((view) => {
-                  const hasDesignInView = currentLayers.some((l) => l.view === view.id)
+                  const hasDesignInView = currentLayers.some(
+                    (l) => l.view === view.id,
+                  );
                   return (
-                    <TabsTrigger key={view.id} value={view.id} className="relative">
+                    <TabsTrigger
+                      key={view.id}
+                      value={view.id}
+                      className='relative'
+                    >
                       {view.label}
                       {hasDesignInView && (
-                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full" />
+                        <span className='absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full' />
                       )}
                     </TabsTrigger>
-                  )
+                  );
                 })}
               </TabsList>
             </Tabs>
           </div>
 
           {/* 캔버스 영역 */}
-          <div className="flex-1 flex items-center justify-center p-8 bg-gray-100">
-            <div className="w-full max-w-[600px]">
+          <div className='flex-1 flex items-center justify-center p-8 bg-gray-100'>
+            <div className='w-full max-w-[600px]'>
               <HatDesignCanvas
                 hatColor={currentItem?.color || "black"}
                 currentView={currentView}
@@ -856,11 +927,17 @@ export default function OrderDetailPage() {
                 onLayerSelect={setSelectedLayerId}
                 selectedLayerId={selectedLayerId}
                 showSafeZone={true}
-                className="w-full rounded-xl shadow-lg bg-white"
-                productColors={currentItem?.productId ? productColorsMap[currentItem.productId] : undefined}
+                className='w-full rounded-xl shadow-lg bg-white'
+                productColors={
+                  currentItem?.productId
+                    ? productColorsMap[currentItem.productId]
+                    : undefined
+                }
                 productSafeZones={
                   currentItem?.productId && currentItem?.color
-                    ? productSafeZonesMap[`${currentItem.productId}-${currentItem.color}`]
+                    ? productSafeZonesMap[
+                        `${currentItem.productId}-${currentItem.color}`
+                      ]
                     : undefined
                 }
               />
@@ -869,15 +946,15 @@ export default function OrderDetailPage() {
         </div>
 
         {/* 우측: 도구 패널 */}
-        <div className="w-72 bg-white border-l overflow-y-auto">
-          <div className="p-4 space-y-4">
+        <div className='w-72 bg-white border-l overflow-y-auto'>
+          <div className='p-4 space-y-4'>
             {/* 모든 이미지 다운로드 버튼 */}
             <Button
               onClick={handleDownloadAllImages}
-              variant="outline"
-              className="w-full"
+              variant='outline'
+              className='w-full'
             >
-              <Download className="w-4 h-4 mr-2" />
+              <Download className='w-4 h-4 mr-2' />
               모든 디자인 이미지 다운로드
             </Button>
 
@@ -885,10 +962,10 @@ export default function OrderDetailPage() {
             {order?.attachmentFiles && order.attachmentFiles.length > 0 && (
               <Button
                 onClick={handleDownloadAttachments}
-                variant="outline"
-                className="w-full bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100"
+                variant='outline'
+                className='w-full bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100'
               >
-                <Paperclip className="w-4 h-4 mr-2" />
+                <Paperclip className='w-4 h-4 mr-2' />
                 주문자 첨부파일 ({order.attachmentFiles.length}개)
               </Button>
             )}
@@ -898,12 +975,12 @@ export default function OrderDetailPage() {
               <Button
                 onClick={handleSave}
                 disabled={!hasChanges || saving}
-                className="w-full"
+                className='w-full'
               >
                 {saving ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
                 ) : (
-                  <Save className="w-4 h-4 mr-2" />
+                  <Save className='w-4 h-4 mr-2' />
                 )}
                 {saving ? "저장 중..." : hasChanges ? "디자인 저장" : "저장됨"}
               </Button>
@@ -914,16 +991,16 @@ export default function OrderDetailPage() {
               <>
                 <Separator />
                 <div>
-                  <label className="block">
+                  <label className='block'>
                     <input
-                      type="file"
-                      accept="image/*"
+                      type='file'
+                      accept='image/*'
                       onChange={handleImageUpload}
-                      className="hidden"
+                      className='hidden'
                     />
-                    <Button variant="outline" className="w-full" asChild>
+                    <Button variant='outline' className='w-full' asChild>
                       <span>
-                        <Upload className="w-4 h-4 mr-2" />
+                        <Upload className='w-4 h-4 mr-2' />
                         이미지 추가
                       </span>
                     </Button>
@@ -936,39 +1013,55 @@ export default function OrderDetailPage() {
             {canEdit && selectedLayer && (
               <>
                 <Separator />
-                <div className="space-y-3">
-                  <h4 className="font-medium text-sm">레이어 편집</h4>
+                <div className='space-y-3'>
+                  <h4 className='font-medium text-sm'>레이어 편집</h4>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleRotate(-45)}>
-                      <RotateCcw className="w-4 h-4 mr-1" />
+                  <div className='grid grid-cols-2 gap-2'>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={() => handleRotate(-45)}
+                    >
+                      <RotateCcw className='w-4 h-4 mr-1' />
                       -45°
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleRotate(45)}>
-                      <RotateCw className="w-4 h-4 mr-1" />
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={() => handleRotate(45)}
+                    >
+                      <RotateCw className='w-4 h-4 mr-1' />
                       +45°
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleFlip("x")}>
-                      <FlipHorizontal className="w-4 h-4 mr-1" />
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={() => handleFlip("x")}
+                    >
+                      <FlipHorizontal className='w-4 h-4 mr-1' />
                       좌우
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleFlip("y")}>
-                      <FlipVertical className="w-4 h-4 mr-1" />
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={() => handleFlip("y")}
+                    >
+                      <FlipVertical className='w-4 h-4 mr-1' />
                       상하
                     </Button>
                   </div>
 
                   <Button
-                    variant="destructive"
-                    size="sm"
-                    className="w-full"
+                    variant='destructive'
+                    size='sm'
+                    className='w-full'
                     onClick={() => handleLayerRemove(selectedLayerId!)}
                   >
-                    <Trash2 className="w-4 h-4 mr-1" />
+                    <Trash2 className='w-4 h-4 mr-1' />
                     삭제
                   </Button>
 
-                  <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                  <div className='text-xs text-gray-500 bg-gray-50 p-2 rounded'>
                     회전: {selectedLayer.rotation}°
                     {selectedLayer.flipX && " · 좌우반전"}
                     {selectedLayer.flipY && " · 상하반전"}
@@ -980,13 +1073,15 @@ export default function OrderDetailPage() {
             {/* 현재 뷰 레이어 목록 */}
             <Separator />
             <div>
-              <h4 className="font-medium text-sm mb-2">레이어 ({viewLayers.length})</h4>
+              <h4 className='font-medium text-sm mb-2'>
+                레이어 ({viewLayers.length})
+              </h4>
               {viewLayers.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">
+                <p className='text-sm text-gray-400 text-center py-4'>
                   이 뷰에 디자인이 없습니다
                 </p>
               ) : (
-                <div className="space-y-2">
+                <div className='space-y-2'>
                   {viewLayers.map((layer, index) => (
                     <div
                       key={layer.id}
@@ -997,27 +1092,29 @@ export default function OrderDetailPage() {
                       }`}
                     >
                       <div
-                        className="flex items-center gap-2 cursor-pointer"
+                        className='flex items-center gap-2 cursor-pointer'
                         onClick={() => canEdit && setSelectedLayerId(layer.id)}
                       >
                         {layer.type === "image" ? (
-                          <ImageIcon className="w-4 h-4 text-gray-400" />
+                          <ImageIcon className='w-4 h-4 text-gray-400' />
                         ) : (
-                          <span className="text-xs">Aa</span>
+                          <span className='text-xs'>Aa</span>
                         )}
-                        <span className="truncate flex-1">
-                          {layer.type === "image" ? `이미지 ${index + 1}` : layer.content}
+                        <span className='truncate flex-1'>
+                          {layer.type === "image"
+                            ? `이미지 ${index + 1}`
+                            : layer.content}
                         </span>
                         {layer.type === "image" && (
                           <button
                             onClick={(e) => {
-                              e.stopPropagation()
-                              handleDownloadImage(layer, index)
+                              e.stopPropagation();
+                              handleDownloadImage(layer, index);
                             }}
-                            className="p-1 hover:bg-gray-200 rounded"
-                            title="이미지 다운로드"
+                            className='p-1 hover:bg-gray-200 rounded'
+                            title='이미지 다운로드'
                           >
-                            <Download className="w-3 h-3 text-gray-500" />
+                            <Download className='w-3 h-3 text-gray-500' />
                           </button>
                         )}
                       </div>
@@ -1031,12 +1128,12 @@ export default function OrderDetailPage() {
             {!canEdit && (
               <>
                 <Separator />
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-medium text-yellow-800">수정 불가</p>
-                      <p className="text-yellow-700 text-xs mt-1">
+                <div className='bg-yellow-50 border border-yellow-200 rounded-lg p-3'>
+                  <div className='flex items-start gap-2'>
+                    <AlertCircle className='w-4 h-4 text-yellow-600 mt-0.5' />
+                    <div className='text-sm'>
+                      <p className='font-medium text-yellow-800'>수정 불가</p>
+                      <p className='text-yellow-700 text-xs mt-1'>
                         디자인이 확정되어 더 이상 수정할 수 없습니다.
                       </p>
                     </div>
@@ -1048,5 +1145,5 @@ export default function OrderDetailPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
