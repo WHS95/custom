@@ -51,6 +51,7 @@ export function StudioLayout({
   const addLayer = useDesignStore((state) => state.addLayer);
   const updateLayer = useDesignStore((state) => state.updateLayer);
   const removeLayer = useDesignStore((state) => state.removeLayer);
+  const rotateLayer = useDesignStore((state) => state.rotateLayer);
 
   // 스튜디오 설정 (안전 영역 등)
   const { config } = useStudioConfig();
@@ -280,6 +281,13 @@ export function StudioLayout({
     updateLayer(id, updates);
   };
 
+  /**
+   * 레이어 회전 핸들러
+   */
+  const handleRotateLayer = (id: string, degrees: number) => {
+    rotateLayer(id, degrees);
+  };
+
   return (
     <div className='flex h-[calc(100vh-64px)] overflow-hidden bg-gray-50'>
       {/* 에러 알림 모달 */}
@@ -294,6 +302,7 @@ export function StudioLayout({
           layers={currentColorLayers}
           onRemoveLayer={handleRemoveLayer}
           onUpdateLayer={handleUpdateLayer}
+          onRotateLayer={handleRotateLayer}
           productColors={product ? productColors : undefined}
           productSafeZones={product ? productSafeZones : undefined}
           enabledViews={product ? enabledViews : undefined}

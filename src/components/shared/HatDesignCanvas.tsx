@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect, useCallback } from "react"
 import { Rnd } from "react-rnd"
-import { X } from "lucide-react"
+import { X, RotateCw } from "lucide-react"
 import { useStudioConfig, HatView, ProductColor, Zone } from "@/lib/store/studio-context"
 
 /**
@@ -44,6 +44,7 @@ interface HatDesignCanvasProps {
   onLayerUpdate?: (layerId: string, updates: Partial<DesignLayer>) => void
   onLayerRemove?: (layerId: string) => void
   onLayerSelect?: (layerId: string | null) => void
+  onLayerRotate?: (layerId: string, degrees: number) => void
   selectedLayerId?: string | null
 
   // 스타일링
@@ -70,6 +71,7 @@ export function HatDesignCanvas({
   onLayerUpdate,
   onLayerRemove,
   onLayerSelect,
+  onLayerRotate,
   selectedLayerId,
   className = "",
   showSafeZone = true,
@@ -298,17 +300,36 @@ export function HatDesignCanvas({
                 )}
               </div>
 
-              {/* 삭제 버튼 */}
-              {isSelected && onLayerRemove && (
-                <button
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onLayerRemove(layer.id)
-                  }}
-                >
-                  <X size={12} />
-                </button>
+              {/* 컨트롤 버튼들 */}
+              {isSelected && (
+                <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                  {/* 회전 버튼 */}
+                  {onLayerRotate && (
+                    <button
+                      className="bg-blue-500 text-white rounded-full p-1 hover:bg-blue-600 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onLayerRotate(layer.id, 45)
+                      }}
+                      title="45° 회전"
+                    >
+                      <RotateCw size={12} />
+                    </button>
+                  )}
+                  {/* 삭제 버튼 */}
+                  {onLayerRemove && (
+                    <button
+                      className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onLayerRemove(layer.id)
+                      }}
+                      title="삭제"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </Rnd>

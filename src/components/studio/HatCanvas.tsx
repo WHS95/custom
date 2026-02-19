@@ -19,6 +19,7 @@ interface HatCanvasProps {
   layers: DesignLayer[];
   onRemoveLayer: (id: string) => void;
   onUpdateLayer?: (id: string, updates: Partial<DesignLayer>) => void;
+  onRotateLayer?: (id: string, degrees: number) => void;
   selectedLayerId?: string | null;
   onSelectLayer?: (id: string | null) => void;
   productColors?: ProductColor[]; // 상품별 색상/이미지 (제공되면 기본 config 대신 사용)
@@ -46,6 +47,7 @@ export function HatCanvas({
   layers,
   onRemoveLayer,
   onUpdateLayer,
+  onRotateLayer,
   selectedLayerId,
   onSelectLayer,
   productColors,
@@ -167,6 +169,7 @@ export function HatCanvas({
               editable={true}
               onLayerUpdate={onUpdateLayer}
               onLayerRemove={onRemoveLayer}
+              onLayerRotate={onRotateLayer}
               onLayerSelect={onSelectLayer}
               selectedLayerId={selectedLayerId}
               showSafeZone={true}
