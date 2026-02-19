@@ -28,6 +28,9 @@ export interface DesignLayer {
  * 
  * 핵심 변경: layersByColor로 색상별 레이어 분리 저장
  */
+// 히스토리 최대 크기
+const MAX_HISTORY = 30
+
 interface DesignState {
     // === 상태 ===
     sessionId: string                           // 현재 디자인 세션 ID
@@ -37,33 +40,43 @@ interface DesignState {
     selectedLayerId: string | null              // 현재 선택된 레이어 ID
     lastUpdated: number                         // 마지막 업데이트 타임스탬프
 
+    // === Undo/Redo 히스토리 ===
+    history: Record<string, DesignLayer[]>[]    // 과거 상태 스택
+    future: Record<string, DesignLayer[]>[]     // Redo용 스택
+
     // === 계산된 값 (현재 색상 기준) ===
     getCurrentLayers: () => DesignLayer[]       // 현재 색상의 레이어들
     getLayersForColor: (color: string) => DesignLayer[]  // 특정 색상의 레이어들
     hasDesignForColor: (color: string) => boolean  // 특정 색상에 디자인이 있는지
+    canUndo: () => boolean
+    canRedo: () => boolean
 
     // === 액션 ===
     // 색상 관련
     setSelectedColor: (color: string) => void
-    
+
     // 뷰 관련
     setCurrentView: (view: HatView) => void
-    
+
     // 레이어 CRUD (현재 선택된 색상 기준)
     addLayer: (layer: Omit<DesignLayer, 'id'>) => string
     updateLayer: (id: string, updates: Partial<DesignLayer>) => void
     removeLayer: (id: string) => void
     selectLayer: (id: string | null) => void
-    
+
     // 레이어 변환 (회전, 반전)
     rotateLayer: (id: string, degrees: number) => void
     flipLayerX: (id: string) => void
     flipLayerY: (id: string) => void
-    
+
     // 색상별 디자인 관리
     clearColorDesign: (color: string) => void   // 특정 색상의 디자인만 초기화
     copyDesignToColor: (fromColor: string, toColor: string) => void  // 디자인 복사
     setLayersForColor: (color: string, layers: DesignLayer[]) => void  // 특정 색상에 레이어 설정 (장바구니에서 수정 시 사용)
+
+    // Undo/Redo
+    undo: () => void
+    redo: () => void
 
     // 세션 관리
     clearDesign: () => void
@@ -81,7 +94,27 @@ const generateSessionId = () => `session_${Date.now()}_${generateId()}`
  * 색상별로 레이어를 분리 저장하여 각 색상에 다른 디자인 적용 가능
  * localStorage 저장 기능 제거됨 - 세션 중에만 데이터 유지
  */
-export const useDesignStore = create<DesignState>((set, get) => ({
+// layersByColor 딥카피 헬퍼
+const cloneLayers = (layers: Record<string, DesignLayer[]>): Record<string, DesignLayer[]> => {
+    const result: Record<string, DesignLayer[]> = {}
+    for (const key in layers) {
+        result[key] = layers[key].map(l => ({ ...l }))
+    }
+    return result
+}
+
+export const useDesignStore = create<DesignState>((set, get) => {
+    // 히스토리에 현재 상태 저장 (변경 전 호출)
+    const pushHistory = () => {
+        const { layersByColor, history } = get()
+        const newHistory = [...history, cloneLayers(layersByColor)]
+        if (newHistory.length > MAX_HISTORY) {
+            newHistory.shift()
+        }
+        set({ history: newHistory, future: [] })
+    }
+
+    return {
             // === 초기 상태 ===
             sessionId: generateSessionId(),
             selectedColor: 'black',
@@ -89,6 +122,8 @@ export const useDesignStore = create<DesignState>((set, get) => ({
             layersByColor: {},  // { 'black': [...], 'khaki': [...], ... }
             selectedLayerId: null,
             lastUpdated: Date.now(),
+            history: [],
+            future: [],
 
             // === 계산된 값 ===
             getCurrentLayers: () => {
@@ -105,6 +140,9 @@ export const useDesignStore = create<DesignState>((set, get) => ({
                 return layers && layers.length > 0
             },
 
+            canUndo: () => get().history.length > 0,
+            canRedo: () => get().future.length > 0,
+
             // === 색상 관련 액션 ===
             setSelectedColor: (color) => set({ 
                 selectedColor: color,
@@ -120,9 +158,10 @@ export const useDesignStore = create<DesignState>((set, get) => ({
 
             // === 레이어 CRUD 액션 ===
             addLayer: (layerData) => {
+                pushHistory()
                 const id = generateId()
                 const { selectedColor } = get()
-                
+
                 const newLayer: DesignLayer = {
                     ...layerData,
                     id,
@@ -132,7 +171,7 @@ export const useDesignStore = create<DesignState>((set, get) => ({
                     flipX: layerData.flipX || false,
                     flipY: layerData.flipY || false,
                 }
-                
+
                 set((state) => ({
                     layersByColor: {
                         ...state.layersByColor,
@@ -141,13 +180,14 @@ export const useDesignStore = create<DesignState>((set, get) => ({
                     selectedLayerId: id,
                     lastUpdated: Date.now()
                 }))
-                
+
                 return id
             },
 
             updateLayer: (id, updates) => {
+                pushHistory()
                 const { selectedColor } = get()
-                
+
                 set((state) => ({
                     layersByColor: {
                         ...state.layersByColor,
@@ -160,8 +200,9 @@ export const useDesignStore = create<DesignState>((set, get) => ({
             },
 
             removeLayer: (id) => {
+                pushHistory()
                 const { selectedColor } = get()
-                
+
                 set((state) => ({
                     layersByColor: {
                         ...state.layersByColor,
@@ -178,8 +219,9 @@ export const useDesignStore = create<DesignState>((set, get) => ({
 
             // === 레이어 변환 액션 ===
             rotateLayer: (id, degrees) => {
+                pushHistory()
                 const { selectedColor } = get()
-                
+
                 set((state) => ({
                     layersByColor: {
                         ...state.layersByColor,
@@ -194,8 +236,9 @@ export const useDesignStore = create<DesignState>((set, get) => ({
             },
 
             flipLayerX: (id) => {
+                pushHistory()
                 const { selectedColor } = get()
-                
+
                 set((state) => ({
                     layersByColor: {
                         ...state.layersByColor,
@@ -208,8 +251,9 @@ export const useDesignStore = create<DesignState>((set, get) => ({
             },
 
             flipLayerY: (id) => {
+                pushHistory()
                 const { selectedColor } = get()
-                
+
                 set((state) => ({
                     layersByColor: {
                         ...state.layersByColor,
@@ -222,15 +266,19 @@ export const useDesignStore = create<DesignState>((set, get) => ({
             },
 
             // === 색상별 디자인 관리 ===
-            clearColorDesign: (color) => set((state) => ({
-                layersByColor: {
-                    ...state.layersByColor,
-                    [color]: []
-                },
-                lastUpdated: Date.now()
-            })),
+            clearColorDesign: (color) => {
+                pushHistory()
+                set((state) => ({
+                    layersByColor: {
+                        ...state.layersByColor,
+                        [color]: []
+                    },
+                    lastUpdated: Date.now()
+                }))
+            },
 
             copyDesignToColor: (fromColor, toColor) => {
+                pushHistory()
                 const sourceLayers = get().layersByColor[fromColor] || []
 
                 // 레이어 복사 (새 ID 부여)
@@ -249,6 +297,7 @@ export const useDesignStore = create<DesignState>((set, get) => ({
             },
 
             setLayersForColor: (color, layers) => {
+                pushHistory()
                 set((state) => ({
                     layersByColor: {
                         ...state.layersByColor,
@@ -259,10 +308,45 @@ export const useDesignStore = create<DesignState>((set, get) => ({
                 }))
             },
 
+            // === Undo/Redo 액션 ===
+            undo: () => {
+                const { history, layersByColor } = get()
+                if (history.length === 0) return
+
+                const previous = history[history.length - 1]
+                const newHistory = history.slice(0, -1)
+
+                set({
+                    layersByColor: previous,
+                    future: [cloneLayers(layersByColor), ...get().future],
+                    history: newHistory,
+                    selectedLayerId: null,
+                    lastUpdated: Date.now()
+                })
+            },
+
+            redo: () => {
+                const { future, layersByColor } = get()
+                if (future.length === 0) return
+
+                const next = future[0]
+                const newFuture = future.slice(1)
+
+                set({
+                    layersByColor: next,
+                    history: [...get().history, cloneLayers(layersByColor)],
+                    future: newFuture,
+                    selectedLayerId: null,
+                    lastUpdated: Date.now()
+                })
+            },
+
             // === 세션 관리 액션 ===
             clearDesign: () => set({
                 layersByColor: {},
                 selectedLayerId: null,
+                history: [],
+                future: [],
                 lastUpdated: Date.now()
             }),
 
@@ -272,10 +356,12 @@ export const useDesignStore = create<DesignState>((set, get) => ({
                 selectedLayerId: null,
                 selectedColor: 'black',
                 currentView: 'front',
+                history: [],
+                future: [],
                 lastUpdated: Date.now()
             }),
-        })
-    )
+        }
+    })
 
 /**
  * 현재 색상의 현재 뷰 레이어만 가져오는 셀렉터

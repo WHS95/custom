@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useCallback } from "react";
 import { HatCanvas } from "./HatCanvas";
 import { ProductSidebar } from "./ProductSidebar";
 import { DesignToolbar } from "./DesignToolbar";
@@ -52,12 +52,33 @@ export function StudioLayout({
   const updateLayer = useDesignStore((state) => state.updateLayer);
   const removeLayer = useDesignStore((state) => state.removeLayer);
   const rotateLayer = useDesignStore((state) => state.rotateLayer);
+  const undo = useDesignStore((state) => state.undo);
+  const redo = useDesignStore((state) => state.redo);
 
   // 스튜디오 설정 (안전 영역 등)
   const { config } = useStudioConfig();
 
   // 에러 알림 모달
   const { showAlert, AlertModal } = useAlertModal();
+
+  // Undo/Redo 키보드 단축키
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+    if (!isCtrlOrCmd) return;
+
+    if (e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      undo();
+    } else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
+      e.preventDefault();
+      redo();
+    }
+  }, [undo, redo]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   // 상품의 색상 정보를 studio-context 형식으로 변환
   const productColors: ProductColor[] = useMemo(() => {

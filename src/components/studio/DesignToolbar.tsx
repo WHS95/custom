@@ -1,16 +1,49 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Image as ImageIcon, Info } from "lucide-react";
+import { Image as ImageIcon, Info, Undo2, Redo2 } from "lucide-react";
+import { useDesignStore } from "@/lib/store/design-store";
 
 interface DesignToolbarProps {
   onUploadClick: () => void;
 }
 
 export function DesignToolbar({ onUploadClick }: DesignToolbarProps) {
+  const undo = useDesignStore((state) => state.undo);
+  const redo = useDesignStore((state) => state.redo);
+  const canUndo = useDesignStore((state) => state.canUndo);
+  const canRedo = useDesignStore((state) => state.canRedo);
+
   return (
     <div className='absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 bg-white rounded-2xl shadow-lg border p-2 z-20'>
       <UploadButton onClick={onUploadClick} />
+
+      {/* 구분선 */}
+      <div className='h-px bg-gray-200 mx-1' />
+
+      {/* Undo 버튼 */}
+      <Button
+        variant='ghost'
+        size='icon'
+        className='rounded-full h-10 w-10 hover:bg-black hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-current'
+        onClick={undo}
+        disabled={!canUndo()}
+        title='되돌리기 (Ctrl+Z)'
+      >
+        <Undo2 className='h-5 w-5' />
+      </Button>
+
+      {/* Redo 버튼 */}
+      <Button
+        variant='ghost'
+        size='icon'
+        className='rounded-full h-10 w-10 hover:bg-black hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-current'
+        onClick={redo}
+        disabled={!canRedo()}
+        title='다시하기 (Ctrl+Shift+Z)'
+      >
+        <Redo2 className='h-5 w-5' />
+      </Button>
     </div>
   );
 }
