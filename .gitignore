@@ -50,4 +50,5 @@ next-env.d.ts
 /migration
 /supabase
 *.md
+!CLAUDE.md
 *.webp
