@@ -324,7 +324,7 @@ export function StudioLayout({
   /**
    * 텍스트 레이어 추가 핸들러
    */
-  const handleAddText = (data: { text: string; color: string; fontSize: number }) => {
+  const handleAddText = (data: { text: string; color: string; fontSize: number; fontFamily: string }) => {
     const defaultPos = getDefaultLayerPosition(currentView, effectiveConfig);
 
     addLayer({
@@ -337,6 +337,7 @@ export function StudioLayout({
       flipY: false,
       color: data.color,
       fontSize: data.fontSize,
+      fontFamily: data.fontFamily,
     });
 
     toast.success("텍스트 레이어가 추가되었습니다");

@@ -30,6 +30,7 @@ export interface DesignLayer {
   view: HatView
   color?: string
   fontSize?: number
+  fontFamily?: string
 }
 
 interface HatDesignCanvasProps {
@@ -337,6 +338,7 @@ export function HatDesignCanvas({
                     style={{
                       color: layer.color || "#000",
                       fontSize: `${((layer.fontSize || 24) / 400) * canvasSize}px`,
+                      fontFamily: layer.fontFamily || undefined,
                     }}
                   >
                     {layer.content}
@@ -423,6 +425,7 @@ export function HatDesignCanvas({
                       style={{
                         color: layer.color || "#000",
                         fontSize: `${((layer.fontSize || 24) / 400) * canvasSize}px`,
+                        fontFamily: layer.fontFamily || undefined,
                       }}
                     >
                       {layer.content}

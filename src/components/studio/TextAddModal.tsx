@@ -17,25 +17,46 @@ const COLOR_PRESETS = [
   { label: "회색", hex: "#6B7280" },
 ];
 
+/** 상업적 무료 폰트 목록 (Google Fonts) */
+const FONT_LIST = [
+  { label: "Noto Sans KR", family: "'Noto Sans KR'", category: "한글" },
+  { label: "Nanum Gothic", family: "'Nanum Gothic'", category: "한글" },
+  { label: "Nanum Myeongjo", family: "'Nanum Myeongjo'", category: "한글" },
+  { label: "Gothic A1", family: "'Gothic A1'", category: "한글" },
+  { label: "Black Han Sans", family: "'Black Han Sans'", category: "한글" },
+  { label: "Jua", family: "'Jua'", category: "한글" },
+  { label: "Do Hyeon", family: "'Do Hyeon'", category: "한글" },
+  { label: "Gugi", family: "'Gugi'", category: "한글" },
+  { label: "Gasoek One", family: "'Gasoek One'", category: "한글" },
+  { label: "Sunflower", family: "'Sunflower'", category: "한글" },
+  { label: "Inter", family: "'Inter'", category: "영문" },
+  { label: "Oswald", family: "'Oswald'", category: "영문" },
+  { label: "Bebas Neue", family: "'Bebas Neue'", category: "영문" },
+  { label: "Permanent Marker", family: "'Permanent Marker'", category: "영문" },
+  { label: "Bangers", family: "'Bangers'", category: "영문" },
+];
+
 interface TextAddModalProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: (data: { text: string; color: string; fontSize: number }) => void;
+  onConfirm: (data: { text: string; color: string; fontSize: number; fontFamily: string }) => void;
 }
 
 export function TextAddModal({ open, onClose, onConfirm }: TextAddModalProps) {
   const [text, setText] = useState("");
   const [color, setColor] = useState("#000000");
   const [fontSize, setFontSize] = useState(24);
+  const [fontFamily, setFontFamily] = useState(FONT_LIST[0].family);
 
   if (!open) return null;
 
   const handleConfirm = () => {
     if (!text.trim()) return;
-    onConfirm({ text: text.trim(), color, fontSize });
+    onConfirm({ text: text.trim(), color, fontSize, fontFamily });
     setText("");
     setColor("#000000");
     setFontSize(24);
+    setFontFamily(FONT_LIST[0].family);
     onClose();
   };
 
@@ -55,7 +76,7 @@ export function TextAddModal({ open, onClose, onConfirm }: TextAddModalProps) {
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       {/* 모달 */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto">
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold">텍스트 추가</h2>
@@ -81,6 +102,53 @@ export function TextAddModal({ open, onClose, onConfirm }: TextAddModalProps) {
             className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             autoFocus
           />
+        </div>
+
+        {/* 폰트 선택 */}
+        <div className="mb-5">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            폰트
+          </label>
+          <div className="border rounded-lg max-h-[200px] overflow-y-auto">
+            {/* 한글 폰트 */}
+            <div className="px-2 py-1 bg-gray-50 text-xs font-semibold text-gray-500 sticky top-0">
+              한글
+            </div>
+            {FONT_LIST.filter(f => f.category === "한글").map((font) => (
+              <button
+                key={font.family}
+                onClick={() => setFontFamily(font.family)}
+                className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                  fontFamily === font.family
+                    ? "bg-blue-50 text-blue-700"
+                    : "hover:bg-gray-50"
+                }`}
+              >
+                <span style={{ fontFamily: font.family }} className="text-base">
+                  {font.label} - 모자 인쇄
+                </span>
+              </button>
+            ))}
+            {/* 영문 폰트 */}
+            <div className="px-2 py-1 bg-gray-50 text-xs font-semibold text-gray-500 sticky top-0">
+              영문 (English)
+            </div>
+            {FONT_LIST.filter(f => f.category === "영문").map((font) => (
+              <button
+                key={font.family}
+                onClick={() => setFontFamily(font.family)}
+                className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                  fontFamily === font.family
+                    ? "bg-blue-50 text-blue-700"
+                    : "hover:bg-gray-50"
+                }`}
+              >
+                <span style={{ fontFamily: font.family }} className="text-base">
+                  {font.label} - Hat Print
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* 색상 선택 */}
@@ -128,7 +196,11 @@ export function TextAddModal({ open, onClose, onConfirm }: TextAddModalProps) {
         <div className="mb-6 p-4 bg-gray-50 rounded-lg border min-h-[60px] flex items-center justify-center">
           {text.trim() ? (
             <span
-              style={{ color, fontSize: `${Math.min(fontSize, 40)}px` }}
+              style={{
+                color,
+                fontSize: `${Math.min(fontSize, 40)}px`,
+                fontFamily,
+              }}
               className="font-medium break-all text-center"
             >
               {text}

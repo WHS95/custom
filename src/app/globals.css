@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* 상업적 무료 폰트 (Google Fonts) - 모자 인쇄용 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Black+Han+Sans&family=Jua&family=Do+Hyeon&family=Gugi&family=Gasoek+One&family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Gothic+A1:wght@400;700&family=Sunflower:wght@500&family=Oswald:wght@400;700&family=Bebas+Neue&family=Permanent+Marker&family=Bangers&display=swap');
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
