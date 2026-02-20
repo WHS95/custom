@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useMemo, useEffect, useCallback } from "react";
+import React, { useMemo, useEffect, useCallback, useState } from "react";
 import { HatCanvas } from "./HatCanvas";
 import { ProductSidebar } from "./ProductSidebar";
 import { DesignToolbar } from "./DesignToolbar";
+import { TextAddModal } from "./TextAddModal";
 import { toast } from "sonner";
 import {
   useDesignStore,
@@ -54,6 +55,9 @@ export function StudioLayout({
   const rotateLayer = useDesignStore((state) => state.rotateLayer);
   const undo = useDesignStore((state) => state.undo);
   const redo = useDesignStore((state) => state.redo);
+
+  // 텍스트 추가 모달 상태
+  const [isTextModalOpen, setIsTextModalOpen] = useState(false);
 
   // 스튜디오 설정 (안전 영역 등)
   const { config } = useStudioConfig();
@@ -284,6 +288,27 @@ export function StudioLayout({
   };
 
   /**
+   * 텍스트 레이어 추가 핸들러
+   */
+  const handleAddText = (data: { text: string; color: string; fontSize: number }) => {
+    const defaultPos = getDefaultLayerPosition(currentView, effectiveConfig);
+
+    addLayer({
+      type: "text",
+      content: data.text,
+      ...defaultPos,
+      view: currentView,
+      rotation: 0,
+      flipX: false,
+      flipY: false,
+      color: data.color,
+      fontSize: data.fontSize,
+    });
+
+    toast.success("텍스트 레이어가 추가되었습니다");
+  };
+
+  /**
    * 레이어 삭제 핸들러
    */
   const handleRemoveLayer = (id: string) => {
@@ -334,6 +359,7 @@ export function StudioLayout({
           onUploadClick={() =>
             document.getElementById("hidden-file-input")?.click()
           }
+          onTextClick={() => setIsTextModalOpen(true)}
         />
 
         {/* Hidden Input for Toolbar Action - PNG 파일만 허용 */}
@@ -345,6 +371,13 @@ export function StudioLayout({
           className='hidden'
         />
       </div>
+
+      {/* 텍스트 추가 모달 */}
+      <TextAddModal
+        open={isTextModalOpen}
+        onClose={() => setIsTextModalOpen(false)}
+        onConfirm={handleAddText}
+      />
 
       {/* Right Sidebar: Product & Commerce */}
       <ProductSidebar

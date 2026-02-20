@@ -29,6 +29,7 @@ export interface DesignLayer {
   flipY: boolean
   view: HatView
   color?: string
+  fontSize?: number
 }
 
 interface HatDesignCanvasProps {
@@ -332,8 +333,11 @@ export function HatDesignCanvas({
                   />
                 ) : (
                   <div
-                    className="w-full h-full flex items-center justify-center text-center"
-                    style={{ color: layer.color || "#000" }}
+                    className="w-full h-full flex items-center justify-center text-center font-bold whitespace-nowrap overflow-hidden"
+                    style={{
+                      color: layer.color || "#000",
+                      fontSize: `${((layer.fontSize || 24) / 400) * canvasSize}px`,
+                    }}
                   >
                     {layer.content}
                   </div>
@@ -415,8 +419,11 @@ export function HatDesignCanvas({
                     />
                   ) : (
                     <div
-                      className="w-full h-full flex items-center justify-center text-center"
-                      style={{ color: layer.color || "#000" }}
+                      className="w-full h-full flex items-center justify-center text-center font-bold whitespace-nowrap overflow-hidden"
+                      style={{
+                        color: layer.color || "#000",
+                        fontSize: `${((layer.fontSize || 24) / 400) * canvasSize}px`,
+                      }}
                     >
                       {layer.content}
                     </div>

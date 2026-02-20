@@ -20,6 +20,7 @@ export interface DesignLayer {
     flipY: boolean          // 상하 반전
     view: HatView           // 해당 레이어가 속한 뷰 (front, back, left, right, top)
     color?: string          // 텍스트 색상 (텍스트 레이어용)
+    fontSize?: number       // 폰트 크기 (텍스트 레이어용, 기본 24)
 }
 
 /**
