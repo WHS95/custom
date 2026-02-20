@@ -49,6 +49,11 @@ import {
   X,
   History,
   FileText,
+  Copy,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  BarChart3,
 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -143,6 +148,8 @@ export default function AdminOrdersPage() {
   const [orderDetailOpen, setOrderDetailOpen] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [updating, setUpdating] = useState(false)
+  const [shippingCopied, setShippingCopied] = useState(false)
+  const [showProductSummary, setShowProductSummary] = useState(false)
 
   // 수정용 폼 상태
   const [formData, setFormData] = useState({
@@ -352,6 +359,31 @@ export default function AdminOrdersPage() {
     }
   }
 
+  // 배송지 정보 복사
+  const handleCopyShippingInfo = async () => {
+    if (!selectedOrder) return
+    const info = selectedOrder.shippingInfo
+    const lines = [
+      `수령인: ${info.recipientName}`,
+      `연락처: ${info.phone}`,
+      `주소: ${info.zipCode ? `[${info.zipCode}] ` : ""}${info.address}${info.addressDetail ? ` ${info.addressDetail}` : ""}`,
+    ]
+    if (info.organizationName) {
+      lines.push(`단체명: ${info.organizationName}`)
+    }
+    if (info.memo) {
+      lines.push(`배송메모: ${info.memo}`)
+    }
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"))
+      setShippingCopied(true)
+      toast.success("배송지 정보가 복사되었습니다.")
+      setTimeout(() => setShippingCopied(false), 2000)
+    } catch {
+      toast.error("복사에 실패했습니다.")
+    }
+  }
+
   const filteredOrders = orders.filter((order) => {
     if (!searchQuery) return true
     const query = searchQuery.toLowerCase()
@@ -362,6 +394,22 @@ export default function AdminOrdersPage() {
       order.shippingInfo.organizationName?.toLowerCase().includes(query)
     )
   })
+
+  // 제품별 주문 현황 집계 (취소 주문 제외)
+  const productSummary = (() => {
+    const summary: Record<string, Record<string, Record<string, number>>> = {}
+    orders
+      .filter((order) => order.status !== "cancelled")
+      .forEach((order) => {
+        order.items.forEach((item) => {
+          if (!summary[item.productName]) summary[item.productName] = {}
+          if (!summary[item.productName][item.colorLabel]) summary[item.productName][item.colorLabel] = {}
+          summary[item.productName][item.colorLabel][item.size] =
+            (summary[item.productName][item.colorLabel][item.size] || 0) + item.quantity
+        })
+      })
+    return summary
+  })()
 
   // 상태별 카운트
   const statusCounts = orders.reduce(
@@ -452,6 +500,78 @@ export default function AdminOrdersPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* 제품별 주문 현황 */}
+        {Object.keys(productSummary).length > 0 && (
+          <Card className="mb-6">
+            <CardHeader
+              className="pb-2 cursor-pointer"
+              onClick={() => setShowProductSummary(!showProductSummary)}
+            >
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4" />
+                  제품별 주문 현황
+                  <span className="text-xs font-normal text-gray-500">(취소 제외)</span>
+                </CardTitle>
+                {showProductSummary ? (
+                  <ChevronUp className="w-4 h-4 text-gray-400" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                )}
+              </div>
+            </CardHeader>
+            {showProductSummary && (
+              <CardContent>
+                <div className="space-y-4">
+                  {Object.entries(productSummary).map(([productName, colors]) => (
+                    <div key={productName}>
+                      <p className="font-medium text-sm mb-2">{productName}</p>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b bg-gray-50">
+                              <th className="text-left p-2 text-gray-500 font-medium">컬러</th>
+                              <th className="text-left p-2 text-gray-500 font-medium">사이즈</th>
+                              <th className="text-right p-2 text-gray-500 font-medium">수량</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {Object.entries(colors).map(([colorLabel, sizes]) =>
+                              Object.entries(sizes).map(([size, qty], idx) => (
+                                <tr key={`${colorLabel}-${size}`} className="hover:bg-gray-50">
+                                  {idx === 0 ? (
+                                    <td
+                                      className="p-2 font-medium"
+                                      rowSpan={Object.keys(sizes).length}
+                                    >
+                                      {colorLabel}
+                                    </td>
+                                  ) : null}
+                                  <td className="p-2">{size}</td>
+                                  <td className="p-2 text-right font-bold">{qty}개</td>
+                                </tr>
+                              ))
+                            )}
+                            <tr className="bg-gray-50 font-bold">
+                              <td className="p-2" colSpan={2}>소계</td>
+                              <td className="p-2 text-right">
+                                {Object.values(colors).reduce(
+                                  (sum, sizes) => sum + Object.values(sizes).reduce((s, q) => s + q, 0),
+                                  0
+                                )}개
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        )}
 
         {/* 주문 목록 테이블 */}
         <Card>
@@ -675,10 +795,27 @@ export default function AdminOrdersPage() {
                   {/* 배송지 정보 */}
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        배송지 정보
-                      </CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <MapPin className="w-4 h-4" />
+                          배송지 정보
+                        </CardTitle>
+                        {!editMode && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs text-gray-500 hover:text-gray-700"
+                            onClick={handleCopyShippingInfo}
+                          >
+                            {shippingCopied ? (
+                              <Check className="w-3.5 h-3.5 mr-1 text-green-500" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5 mr-1" />
+                            )}
+                            {shippingCopied ? "복사됨" : "복사"}
+                          </Button>
+                        )}
+                      </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {editMode ? (
