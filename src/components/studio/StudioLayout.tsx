@@ -53,6 +53,8 @@ export function StudioLayout({
   const updateLayer = useDesignStore((state) => state.updateLayer);
   const removeLayer = useDesignStore((state) => state.removeLayer);
   const rotateLayer = useDesignStore((state) => state.rotateLayer);
+  const selectLayer = useDesignStore((state) => state.selectLayer);
+  const selectedLayerId = useDesignStore((state) => state.selectedLayerId);
   const undo = useDesignStore((state) => state.undo);
   const redo = useDesignStore((state) => state.redo);
 
@@ -65,19 +67,54 @@ export function StudioLayout({
   // 에러 알림 모달
   const { showAlert, AlertModal } = useAlertModal();
 
-  // Undo/Redo 키보드 단축키
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    const isCtrlOrCmd = e.ctrlKey || e.metaKey;
-    if (!isCtrlOrCmd) return;
+  // 현재 색상의 모든 레이어 가져오기
+  const currentColorLayers = useCurrentColorLayers();
 
-    if (e.key === 'z' && !e.shiftKey) {
-      e.preventDefault();
-      undo();
-    } else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
-      e.preventDefault();
-      redo();
+  // 키보드 단축키
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // 입력 필드에서는 단축키 무시
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+      return;
     }
-  }, [undo, redo]);
+
+    const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+
+    // Ctrl/Cmd 조합 단축키
+    if (isCtrlOrCmd) {
+      if (e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
+        e.preventDefault();
+        redo();
+      } else if (e.key === 'a') {
+        // Ctrl+A: 현재 뷰의 첫 번째 레이어 선택
+        e.preventDefault();
+        const viewLayers = currentColorLayers.filter(l => l.view === currentView);
+        if (viewLayers.length > 0) {
+          selectLayer(viewLayers[0].id);
+        }
+      }
+      return;
+    }
+
+    // 단일 키 단축키
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      // Delete/Backspace: 선택된 레이어 삭제
+      if (selectedLayerId) {
+        e.preventDefault();
+        removeLayer(selectedLayerId);
+        toast.info("레이어가 삭제되었습니다");
+      }
+    } else if (e.key === 'Escape') {
+      // Escape: 레이어 선택 해제
+      if (selectedLayerId) {
+        e.preventDefault();
+        selectLayer(null);
+      }
+    }
+  }, [undo, redo, selectedLayerId, removeLayer, selectLayer, currentColorLayers, currentView]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -130,9 +167,6 @@ export function StudioLayout({
       }
     }
   }, [productColors, selectedColor, setSelectedColor]);
-
-  // 현재 색상의 모든 레이어 가져오기
-  const currentColorLayers = useCurrentColorLayers();
 
   // 상품의 커스터마이즈 영역을 safeZones 형식으로 변환
   // 비활성화된 영역은 제외하여 PRINT AREA가 표시되지 않도록 함
@@ -349,6 +383,8 @@ export function StudioLayout({
           onRemoveLayer={handleRemoveLayer}
           onUpdateLayer={handleUpdateLayer}
           onRotateLayer={handleRotateLayer}
+          selectedLayerId={selectedLayerId}
+          onSelectLayer={selectLayer}
           productColors={product ? productColors : undefined}
           productSafeZones={product ? productSafeZones : undefined}
           enabledViews={product ? enabledViews : undefined}
