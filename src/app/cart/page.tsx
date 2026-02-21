@@ -54,13 +54,20 @@ export default function CartPage() {
 
   // 디자인 스토어
   const setLayersForColor = useDesignStore((state) => state.setLayersForColor);
+  const setCurrentView = useDesignStore((state) => state.setCurrentView);
+  const newSession = useDesignStore((state) => state.newSession);
 
   // 디자인 수정하기 - 스튜디오로 이동
   const handleEditDesign = (item: (typeof items)[0]) => {
-    // 장바구니 아이템의 디자인을 design-store에 로드
+    // 이전 세션 상태가 섞이지 않도록 초기화 후, 장바구니 아이템 디자인을 로드
+    newSession();
     setLayersForColor(item.color, item.designLayers);
+    const firstLayerView = item.designLayers[0]?.view;
+    if (firstLayerView) {
+      setCurrentView(firstLayerView);
+    }
     // 스튜디오로 이동
-    router.push(`/studio/${item.productId}`);
+    router.push(`/studio/${item.productId}?mode=order&cartItemId=${item.id}`);
     toast.info(`${item.colorLabel} 디자인 수정 모드로 이동합니다`);
   };
 

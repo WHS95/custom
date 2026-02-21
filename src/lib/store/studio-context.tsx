@@ -1,40 +1,51 @@
-"use client"
+"use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react"
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+import {
+  PRINT_COLOR_PALETTE,
+  type PrintColor,
+} from "@/lib/constants/print-color-palette";
 
-export type HatView = "front" | "left" | "right" | "back" | "top"
+export type HatView = "front" | "left" | "right" | "back" | "top";
 
 export interface Zone {
-  x: number // %
-  y: number // %
-  width: number // %
-  height: number // %
+  x: number; // %
+  y: number; // %
+  width: number; // %
+  height: number; // %
 }
 
 export interface ProductColor {
-  id: string
-  label: string
-  hex: string
-  views: Record<HatView, string> // url or base64
+  id: string;
+  label: string;
+  hex: string;
+  views: Record<HatView, string>; // url or base64
 }
 
 export interface StudioConfig {
-  basePrice: number
-  shippingFreeThreshold: number
-  shippingCost: number
-  currency: string
-  colors: ProductColor[]
-  safeZones: Record<HatView, Zone>
+  basePrice: number;
+  shippingFreeThreshold: number;
+  shippingCost: number;
+  currency: string;
+  colors: ProductColor[];
+  safeZones: Record<HatView, Zone>;
+  printColorPalette: PrintColor[];
 }
 
 interface StudioConfigContextType {
-  config: StudioConfig
-  isLoading: boolean
-  isSaving: boolean
-  error: string | null
-  updateConfig: (newConfig: Partial<StudioConfig>) => Promise<void>
-  resetConfig: () => Promise<void>
-  refreshConfig: () => Promise<void>
+  config: StudioConfig;
+  isLoading: boolean;
+  isSaving: boolean;
+  error: string | null;
+  updateConfig: (newConfig: Partial<StudioConfig>) => Promise<void>;
+  resetConfig: () => Promise<void>;
+  refreshConfig: () => Promise<void>;
 }
 
 const DEFAULT_CONFIG: StudioConfig = {
@@ -52,8 +63,8 @@ const DEFAULT_CONFIG: StudioConfig = {
         left: "/assets/hats/black-left.png",
         right: "/assets/hats/black-right.png",
         back: "/assets/hats/black-back.png",
-        top: "/assets/hats/black-top.png"
-      }
+        top: "/assets/hats/black-top.png",
+      },
     },
     {
       id: "khaki",
@@ -64,8 +75,8 @@ const DEFAULT_CONFIG: StudioConfig = {
         left: "/assets/hats/khaki-side.png",
         right: "/assets/hats/khaki-side.png",
         back: "/assets/hats/khaki-back.png",
-        top: "/assets/hats/khaki-top.png"
-      }
+        top: "/assets/hats/khaki-top.png",
+      },
     },
     {
       id: "beige",
@@ -76,8 +87,8 @@ const DEFAULT_CONFIG: StudioConfig = {
         left: "/assets/hats/beige-side.png",
         right: "/assets/hats/beige-side.png",
         back: "/assets/hats/beige-back.png",
-        top: "/assets/hats/beige-top.png"
-      }
+        top: "/assets/hats/beige-top.png",
+      },
     },
     {
       id: "red",
@@ -88,8 +99,8 @@ const DEFAULT_CONFIG: StudioConfig = {
         left: "/assets/hats/red-side.png",
         right: "/assets/hats/red-side.png",
         back: "/assets/hats/red-back.png",
-        top: "/assets/hats/red-top.png"
-      }
+        top: "/assets/hats/red-top.png",
+      },
     },
   ],
   safeZones: {
@@ -98,144 +109,165 @@ const DEFAULT_CONFIG: StudioConfig = {
     right: { x: 30, y: 40, width: 40, height: 20 },
     back: { x: 30, y: 40, width: 40, height: 20 },
     top: { x: 25, y: 25, width: 50, height: 50 },
-  }
-}
+  },
+  printColorPalette: PRINT_COLOR_PALETTE,
+};
 
-const StudioConfigContext = createContext<StudioConfigContextType | undefined>(undefined)
+const StudioConfigContext = createContext<StudioConfigContextType | undefined>(
+  undefined,
+);
 
-export function StudioConfigProvider({ children }: { children: React.ReactNode }) {
-  const [config, setConfig] = useState<StudioConfig>(DEFAULT_CONFIG)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+export function StudioConfigProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [config, setConfig] = useState<StudioConfig>(DEFAULT_CONFIG);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   /**
    * API에서 테넌트 설정 가져오기
    */
   const fetchConfig = useCallback(async () => {
     try {
-      const response = await fetch('/api/tenant')
+      const response = await fetch("/api/tenant");
       if (!response.ok) {
-        throw new Error('Failed to fetch tenant settings')
+        throw new Error("Failed to fetch tenant settings");
       }
-      const result = await response.json()
+      const result = await response.json();
       if (result.success && result.data?.settings) {
-        const settings = result.data.settings
+        const settings = result.data.settings;
         const newConfig: StudioConfig = {
           basePrice: settings.basePrice ?? DEFAULT_CONFIG.basePrice,
-          shippingFreeThreshold: settings.shippingFreeThreshold ?? DEFAULT_CONFIG.shippingFreeThreshold,
+          shippingFreeThreshold:
+            settings.shippingFreeThreshold ??
+            DEFAULT_CONFIG.shippingFreeThreshold,
           shippingCost: settings.shippingCost ?? DEFAULT_CONFIG.shippingCost,
           currency: settings.currency ?? DEFAULT_CONFIG.currency,
           colors: settings.colors ?? DEFAULT_CONFIG.colors,
           safeZones: settings.safeZones ?? DEFAULT_CONFIG.safeZones,
-        }
-        setConfig(newConfig)
+          printColorPalette:
+            settings.printColorPalette ?? DEFAULT_CONFIG.printColorPalette,
+        };
+        setConfig(newConfig);
         // 로컬 캐시 업데이트 제거
-        setError(null)
-        return newConfig
+        setError(null);
+        return newConfig;
       }
     } catch (err) {
-      console.error('Failed to fetch config from API:', err)
-      setError('설정을 불러오는데 실패했습니다')
+      console.error("Failed to fetch config from API:", err);
+      setError("설정을 불러오는데 실패했습니다");
       // API 실패시 기본값 사용
-      setConfig(DEFAULT_CONFIG)
+      setConfig(DEFAULT_CONFIG);
     }
-    return null
-  }, [])
+    return null;
+  }, []);
 
   // 초기 로드
   useEffect(() => {
     const init = async () => {
-      setIsLoading(true)
+      setIsLoading(true);
       // API에서 설정 가져오기 (캐시 없이)
-      await fetchConfig()
-      setIsLoading(false)
-    }
-    init()
-  }, [fetchConfig])
+      await fetchConfig();
+      setIsLoading(false);
+    };
+    init();
+  }, [fetchConfig]);
 
   /**
    * 설정 업데이트 (API에 저장)
    */
-  const updateConfig = useCallback(async (updates: Partial<StudioConfig>) => {
-    setIsSaving(true)
-    setError(null)
+  const updateConfig = useCallback(
+    async (updates: Partial<StudioConfig>) => {
+      setIsSaving(true);
+      setError(null);
 
-    const newConfig = { ...config, ...updates }
+      const newConfig = { ...config, ...updates };
 
-    // 낙관적 업데이트
-    setConfig(newConfig)
+      // 낙관적 업데이트
+      setConfig(newConfig);
 
-    try {
-      const response = await fetch('/api/tenant', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings: newConfig }),
-      })
+      try {
+        const response = await fetch("/api/tenant", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ settings: newConfig }),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to save settings')
-      }
-
-      const result = await response.json()
-      if (result.success && result.data?.settings) {
-        // 서버 응답으로 동기화
-        const serverConfig: StudioConfig = {
-          basePrice: result.data.settings.basePrice,
-          shippingFreeThreshold: result.data.settings.shippingFreeThreshold,
-          shippingCost: result.data.settings.shippingCost,
-          currency: result.data.settings.currency,
-          colors: result.data.settings.colors,
-          safeZones: result.data.settings.safeZones,
+        if (!response.ok) {
+          throw new Error("Failed to save settings");
         }
-        setConfig(serverConfig)
+
+        const result = await response.json();
+        if (result.success && result.data?.settings) {
+          // 서버 응답으로 동기화
+          const serverConfig: StudioConfig = {
+            basePrice: result.data.settings.basePrice,
+            shippingFreeThreshold: result.data.settings.shippingFreeThreshold,
+            shippingCost: result.data.settings.shippingCost,
+            currency: result.data.settings.currency,
+            colors: result.data.settings.colors,
+            safeZones: result.data.settings.safeZones,
+            printColorPalette:
+              result.data.settings.printColorPalette ??
+              DEFAULT_CONFIG.printColorPalette,
+          };
+          setConfig(serverConfig);
+        }
+      } catch (err) {
+        console.error("Failed to save config:", err);
+        setError("설정 저장에 실패했습니다");
+        // 실패시 이전 상태로 롤백하지 않음 (로컬은 유지)
+      } finally {
+        setIsSaving(false);
       }
-    } catch (err) {
-      console.error('Failed to save config:', err)
-      setError('설정 저장에 실패했습니다')
-      // 실패시 이전 상태로 롤백하지 않음 (로컬은 유지)
-    } finally {
-      setIsSaving(false)
-    }
-  }, [config])
+    },
+    [config],
+  );
 
   /**
    * 기본값으로 리셋
    */
   const resetConfig = useCallback(async () => {
-    await updateConfig(DEFAULT_CONFIG)
-  }, [updateConfig])
+    await updateConfig(DEFAULT_CONFIG);
+  }, [updateConfig]);
 
   /**
    * 서버에서 설정 다시 가져오기
    */
   const refreshConfig = useCallback(async () => {
-    setIsLoading(true)
-    await fetchConfig()
-    setIsLoading(false)
-  }, [fetchConfig])
+    setIsLoading(true);
+    await fetchConfig();
+    setIsLoading(false);
+  }, [fetchConfig]);
 
   return (
-    <StudioConfigContext.Provider value={{
-      config,
-      isLoading,
-      isSaving,
-      error,
-      updateConfig,
-      resetConfig,
-      refreshConfig,
-    }}>
+    <StudioConfigContext.Provider
+      value={{
+        config,
+        isLoading,
+        isSaving,
+        error,
+        updateConfig,
+        resetConfig,
+        refreshConfig,
+      }}
+    >
       {children}
     </StudioConfigContext.Provider>
-  )
+  );
 }
 
 export function useStudioConfig() {
-  const context = useContext(StudioConfigContext)
+  const context = useContext(StudioConfigContext);
   if (!context) {
-    throw new Error("useStudioConfig must be used within a StudioConfigProvider")
+    throw new Error(
+      "useStudioConfig must be used within a StudioConfigProvider",
+    );
   }
-  return context
+  return context;
 }
 
 /**
@@ -244,17 +276,25 @@ export function useStudioConfig() {
 function mergeWithDefaults(parsed: Partial<StudioConfig>): StudioConfig {
   return {
     basePrice: parsed.basePrice ?? DEFAULT_CONFIG.basePrice,
-    shippingFreeThreshold: parsed.shippingFreeThreshold ?? DEFAULT_CONFIG.shippingFreeThreshold,
+    shippingFreeThreshold:
+      parsed.shippingFreeThreshold ?? DEFAULT_CONFIG.shippingFreeThreshold,
     shippingCost: parsed.shippingCost ?? DEFAULT_CONFIG.shippingCost,
     currency: parsed.currency ?? DEFAULT_CONFIG.currency,
-    colors: parsed.colors?.length ? parsed.colors.map((c, i) => ({
-      ...DEFAULT_CONFIG.colors[i],
-      ...c,
-      views: { ...(DEFAULT_CONFIG.colors[i]?.views || {}), ...(c.views || {}) }
-    })) : DEFAULT_CONFIG.colors,
+    colors: parsed.colors?.length
+      ? parsed.colors.map((c, i) => ({
+          ...DEFAULT_CONFIG.colors[i],
+          ...c,
+          views: {
+            ...(DEFAULT_CONFIG.colors[i]?.views || {}),
+            ...(c.views || {}),
+          },
+        }))
+      : DEFAULT_CONFIG.colors,
+    printColorPalette:
+      parsed.printColorPalette ?? DEFAULT_CONFIG.printColorPalette,
     safeZones: {
       ...DEFAULT_CONFIG.safeZones,
-      ...(parsed.safeZones || {})
-    }
-  }
+      ...(parsed.safeZones || {}),
+    },
+  };
 }

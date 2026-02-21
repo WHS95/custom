@@ -5,52 +5,96 @@
  * GET /api/orders - 주문 목록 조회
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from "next/server";
 import {
   createOrder,
   getOrdersByPhone,
   getOrdersByUserId,
   getOrdersForAdmin,
   DEFAULT_TENANT_ID,
-} from '@/application/order-service'
-import type { CreateOrderDTO, ShippingInfo } from '@/domain/order'
-import { notifyNewOrder } from '@/lib/slack'
+} from "@/application/order-service";
+import { getTenantById } from "@/application/tenant-service";
+import type { CreateOrderDTO, ShippingInfo } from "@/domain/order";
+import { notifyNewOrder } from "@/lib/slack";
+import {
+  isAllowedPrintColor,
+  type PrintColor,
+} from "@/lib/constants/print-color-palette";
+
+function hasInvalidTextLayerColor(
+  items: unknown,
+  palette?: PrintColor[],
+): boolean {
+  if (!Array.isArray(items)) return false;
+
+  return items.some((item) => {
+    const layers = (item as Record<string, unknown>)?.designLayers;
+    if (!Array.isArray(layers)) return false;
+
+    return layers.some((layer) => {
+      const layerObj = layer as Record<string, unknown>;
+      if (layerObj?.type !== "text") return false;
+      return !isAllowedPrintColor(layerObj?.color, palette);
+    });
+  });
+}
 
 /**
  * POST - 주문 생성
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await request.json();
 
     // 유효성 검사
-    if (!body.customerName || !body.customerPhone || !body.shippingInfo || !body.items?.length) {
+    if (
+      !body.customerName ||
+      !body.customerPhone ||
+      !body.shippingInfo ||
+      !body.items?.length
+    ) {
       return NextResponse.json(
-        { error: '필수 정보가 누락되었습니다.' },
-        { status: 400 }
-      )
+        { error: "필수 정보가 누락되었습니다." },
+        { status: 400 },
+      );
     }
 
     // 배송 정보 유효성 검사
-    const shippingInfo: ShippingInfo = body.shippingInfo
-    if (!shippingInfo.recipientName || !shippingInfo.phone || !shippingInfo.address) {
+    const shippingInfo: ShippingInfo = body.shippingInfo;
+    if (
+      !shippingInfo.recipientName ||
+      !shippingInfo.phone ||
+      !shippingInfo.address
+    ) {
       return NextResponse.json(
-        { error: '배송 정보가 올바르지 않습니다.' },
-        { status: 400 }
-      )
+        { error: "배송 정보가 올바르지 않습니다." },
+        { status: 400 },
+      );
+    }
+
+    const tenantId = body.tenantId || DEFAULT_TENANT_ID;
+    const tenant = await getTenantById(tenantId);
+    const palette = tenant?.settings?.printColorPalette;
+
+    // 텍스트 색상은 테넌트의 인쇄 허용 팔레트 내에서만 주문 가능
+    if (hasInvalidTextLayerColor(body.items, palette)) {
+      return NextResponse.json(
+        { error: "텍스트 색상은 지정된 인쇄 가능 색상만 선택할 수 있습니다." },
+        { status: 400 },
+      );
     }
 
     const dto: CreateOrderDTO = {
-      tenantId: body.tenantId || DEFAULT_TENANT_ID,
+      tenantId,
       userId: body.userId,
       customerName: body.customerName,
       customerPhone: body.customerPhone,
       customerEmail: body.customerEmail,
       shippingInfo: shippingInfo,
       items: body.items,
-    }
+    };
 
-    const order = await createOrder(dto)
+    const order = await createOrder(dto);
 
     // 슬랙 알림 발송 (비동기, 실패해도 주문 처리에 영향 없음)
     notifyNewOrder(
@@ -58,8 +102,8 @@ export async function POST(request: NextRequest) {
       order.customerName,
       order.totalAmount,
       order.items.length,
-      shippingInfo.organizationName
-    ).catch((err) => console.error('[Slack] 신규 주문 알림 실패:', err))
+      shippingInfo.organizationName,
+    ).catch((err) => console.error("[Slack] 신규 주문 알림 실패:", err));
 
     return NextResponse.json({
       success: true,
@@ -70,13 +114,13 @@ export async function POST(request: NextRequest) {
         totalAmount: order.totalAmount,
         createdAt: order.createdAt,
       },
-    })
+    });
   } catch (error) {
-    console.error('주문 생성 에러:', error)
+    console.error("주문 생성 에러:", error);
     return NextResponse.json(
-      { error: '주문 생성에 실패했습니다.' },
-      { status: 500 }
-    )
+      { error: "주문 생성에 실패했습니다." },
+      { status: 500 },
+    );
   }
 }
 
@@ -92,18 +136,26 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const phone = searchParams.get('phone')
-    const userId = searchParams.get('userId')
-    const isAdmin = searchParams.get('admin') === 'true'
-    const status = searchParams.get('status')
-    const detail = searchParams.get('detail') === 'true'
+    const { searchParams } = new URL(request.url);
+    const phone = searchParams.get("phone");
+    const userId = searchParams.get("userId");
+    const isAdmin = searchParams.get("admin") === "true";
+    const status = searchParams.get("status");
+    const detail = searchParams.get("detail") === "true";
 
     if (isAdmin) {
       // 관리자용 전체 조회
       const orders = await getOrdersForAdmin({
-        status: status as 'pending' | 'design_confirmed' | 'preparing' | 'in_production' | 'shipped' | 'delivered' | 'cancelled' | undefined,
-      })
+        status: status as
+          | "pending"
+          | "design_confirmed"
+          | "preparing"
+          | "in_production"
+          | "shipped"
+          | "delivered"
+          | "cancelled"
+          | undefined,
+      });
 
       return NextResponse.json({
         success: true,
@@ -122,12 +174,12 @@ export async function GET(request: NextRequest) {
           createdAt: order.createdAt,
           updatedAt: order.updatedAt,
         })),
-      })
+      });
     }
 
     // 로그인 회원용 조회
     if (userId) {
-      const orders = await getOrdersByUserId(userId)
+      const orders = await getOrdersByUserId(userId);
 
       return NextResponse.json({
         success: true,
@@ -147,12 +199,12 @@ export async function GET(request: NextRequest) {
             })),
           }),
         })),
-      })
+      });
     }
 
     if (phone) {
       // 고객용 전화번호 조회
-      const orders = await getOrdersByPhone(phone)
+      const orders = await getOrdersByPhone(phone);
 
       return NextResponse.json({
         success: true,
@@ -164,18 +216,18 @@ export async function GET(request: NextRequest) {
           itemCount: order.items.length,
           createdAt: order.createdAt,
         })),
-      })
+      });
     }
 
     return NextResponse.json(
-      { error: '전화번호 또는 사용자 ID를 입력해주세요.' },
-      { status: 400 }
-    )
+      { error: "전화번호 또는 사용자 ID를 입력해주세요." },
+      { status: 400 },
+    );
   } catch (error) {
-    console.error('주문 조회 에러:', error)
+    console.error("주문 조회 에러:", error);
     return NextResponse.json(
-      { error: '주문 조회에 실패했습니다.' },
-      { status: 500 }
-    )
+      { error: "주문 조회에 실패했습니다." },
+      { status: 500 },
+    );
   }
 }

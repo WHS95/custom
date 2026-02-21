@@ -5,6 +5,7 @@ import { HatCanvas } from "./HatCanvas";
 import { ProductSidebar } from "./ProductSidebar";
 import { DesignToolbar } from "./DesignToolbar";
 import { TextAddModal } from "./TextAddModal";
+import { TextEditToolbar } from "./TextEditToolbar";
 import { toast } from "sonner";
 import {
   useDesignStore,
@@ -15,7 +16,10 @@ import {
   ProductColor,
   HatView,
 } from "@/lib/store/studio-context";
-import { getDefaultLayerPosition } from "@/components/shared/HatDesignCanvas";
+import {
+  getDefaultLayerPosition,
+  measureTextLayerSize,
+} from "@/components/shared/HatDesignCanvas";
 import { useAlertModal } from "@/components/ui/alert-modal";
 import type {
   ProductImage,
@@ -71,54 +75,71 @@ export function StudioLayout({
   const currentColorLayers = useCurrentColorLayers();
 
   // 키보드 단축키
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // 입력 필드에서는 단축키 무시
-    const target = e.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-      return;
-    }
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      // 입력 필드에서는 단축키 무시
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
 
-    const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+      const isCtrlOrCmd = e.ctrlKey || e.metaKey;
 
-    // Ctrl/Cmd 조합 단축키
-    if (isCtrlOrCmd) {
-      if (e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        undo();
-      } else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
-        e.preventDefault();
-        redo();
-      } else if (e.key === 'a') {
-        // Ctrl+A: 현재 뷰의 첫 번째 레이어 선택
-        e.preventDefault();
-        const viewLayers = currentColorLayers.filter(l => l.view === currentView);
-        if (viewLayers.length > 0) {
-          selectLayer(viewLayers[0].id);
+      // Ctrl/Cmd 조합 단축키
+      if (isCtrlOrCmd) {
+        if (e.key === "z" && !e.shiftKey) {
+          e.preventDefault();
+          undo();
+        } else if ((e.key === "z" && e.shiftKey) || e.key === "y") {
+          e.preventDefault();
+          redo();
+        } else if (e.key === "a") {
+          // Ctrl+A: 현재 뷰의 첫 번째 레이어 선택
+          e.preventDefault();
+          const viewLayers = currentColorLayers.filter(
+            (l) => l.view === currentView,
+          );
+          if (viewLayers.length > 0) {
+            selectLayer(viewLayers[0].id);
+          }
+        }
+        return;
+      }
+
+      // 단일 키 단축키
+      if (e.key === "Delete" || e.key === "Backspace") {
+        // Delete/Backspace: 선택된 레이어 삭제
+        if (selectedLayerId) {
+          e.preventDefault();
+          removeLayer(selectedLayerId);
+          toast.info("레이어가 삭제되었습니다");
+        }
+      } else if (e.key === "Escape") {
+        // Escape: 레이어 선택 해제
+        if (selectedLayerId) {
+          e.preventDefault();
+          selectLayer(null);
         }
       }
-      return;
-    }
-
-    // 단일 키 단축키
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-      // Delete/Backspace: 선택된 레이어 삭제
-      if (selectedLayerId) {
-        e.preventDefault();
-        removeLayer(selectedLayerId);
-        toast.info("레이어가 삭제되었습니다");
-      }
-    } else if (e.key === 'Escape') {
-      // Escape: 레이어 선택 해제
-      if (selectedLayerId) {
-        e.preventDefault();
-        selectLayer(null);
-      }
-    }
-  }, [undo, redo, selectedLayerId, removeLayer, selectLayer, currentColorLayers, currentView]);
+    },
+    [
+      undo,
+      redo,
+      selectedLayerId,
+      removeLayer,
+      selectLayer,
+      currentColorLayers,
+      currentView,
+    ],
+  );
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
   // 상품의 색상 정보를 studio-context 형식으로 변환
@@ -253,6 +274,13 @@ export function StudioLayout({
     };
   }, [config, product, productColors, productSafeZones]);
 
+  // 선택된 텍스트 레이어
+  const selectedTextLayer = useMemo(() => {
+    if (!selectedLayerId) return null;
+    const layer = currentColorLayers.find((l) => l.id === selectedLayerId);
+    return layer?.type === "text" ? layer : null;
+  }, [selectedLayerId, currentColorLayers]);
+
   // 카카오톡 문의 링크
   const KAKAO_LINK = "https://open.kakao.com/me/runhouse";
 
@@ -324,8 +352,22 @@ export function StudioLayout({
   /**
    * 텍스트 레이어 추가 핸들러
    */
-  const handleAddText = (data: { text: string; color: string; fontSize: number; fontFamily: string }) => {
-    const defaultPos = getDefaultLayerPosition(currentView, effectiveConfig);
+  const handleAddText = (data: {
+    text: string;
+    color: string;
+    fontSize: number;
+    fontFamily: string;
+  }) => {
+    const textSize = measureTextLayerSize(
+      data.text,
+      data.fontSize,
+      data.fontFamily,
+    );
+    const defaultPos = getDefaultLayerPosition(
+      currentView,
+      effectiveConfig,
+      textSize,
+    );
 
     addLayer({
       type: "text",
@@ -390,6 +432,24 @@ export function StudioLayout({
           productSafeZones={product ? productSafeZones : undefined}
           enabledViews={product ? enabledViews : undefined}
         />
+
+        {/* 선택된 텍스트 레이어 편집 툴바 */}
+        {selectedTextLayer && (
+          <TextEditToolbar
+            fontFamily={selectedTextLayer.fontFamily || "'Noto Sans KR'"}
+            color={selectedTextLayer.color || "#000000"}
+            fontSize={selectedTextLayer.fontSize || 24}
+            onFontFamilyChange={(fontFamily) =>
+              handleUpdateLayer(selectedTextLayer.id, { fontFamily })
+            }
+            onColorChange={(color) =>
+              handleUpdateLayer(selectedTextLayer.id, { color })
+            }
+            onFontSizeChange={(fontSize) =>
+              handleUpdateLayer(selectedTextLayer.id, { fontSize })
+            }
+          />
+        )}
 
         {/* Floating Tool Bar */}
         <DesignToolbar

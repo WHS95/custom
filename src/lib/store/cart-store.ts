@@ -48,6 +48,7 @@ interface CartState {
     newQuantity: number;
   };
   updateItemQuantity: (id: string, quantity: number) => void;
+  updateItemDesign: (id: string, designLayers: DesignLayer[]) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
 
@@ -192,6 +193,19 @@ export const useCartStore = create<CartState>()(
         }
       },
 
+      updateItemDesign: (id, designLayers) => {
+        set((state) => ({
+          items: state.items.map((item) =>
+            item.id === id ? { ...item, designLayers } : item,
+          ),
+        }));
+
+        // DB 동기화
+        if (get().userId) {
+          get().syncToDB();
+        }
+      },
+
       removeItem: (id) => {
         set((state) => ({
           items: state.items.filter((item) => item.id !== id),
@@ -256,6 +270,8 @@ export const useCartStore = create<CartState>()(
             return;
           }
 
+          const localItems = get().items;
+
           if (data && data.length > 0) {
             // DB의 장바구니 데이터를 CartItem 형식으로 변환
             const dbItems: CartItem[] = data.map((item) => ({
@@ -278,7 +294,6 @@ export const useCartStore = create<CartState>()(
             }));
 
             // 로컬 장바구니와 병합 (DB 우선)
-            const localItems = get().items;
             const mergedItems = [...dbItems];
 
             // 로컬에만 있는 아이템 추가
@@ -300,6 +315,9 @@ export const useCartStore = create<CartState>()(
             if (localItems.length > 0) {
               await get().syncToDB();
             }
+          } else if (localItems.length > 0) {
+            // DB 장바구니가 비어있으면 로컬 장바구니를 최초 업로드
+            await get().syncToDB();
           }
         } catch (error) {
           console.error("장바구니 동기화 에러:", error);
@@ -316,11 +334,15 @@ export const useCartStore = create<CartState>()(
           const supabase = getSupabaseBrowserClient();
 
           // 기존 장바구니 삭제
-          await supabase
+          const { error: deleteError } = await supabase
             .schema("runhousecustom")
             .from("user_carts")
             .delete()
             .eq("user_id", userId);
+          if (deleteError) {
+            console.error("장바구니 삭제 에러:", deleteError);
+            return;
+          }
 
           // 현재 장바구니 저장
           if (items.length > 0) {

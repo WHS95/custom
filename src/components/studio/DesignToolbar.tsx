@@ -9,7 +9,10 @@ interface DesignToolbarProps {
   onTextClick: () => void;
 }
 
-export function DesignToolbar({ onUploadClick, onTextClick }: DesignToolbarProps) {
+export function DesignToolbar({
+  onUploadClick,
+  onTextClick,
+}: DesignToolbarProps) {
   const undo = useDesignStore((state) => state.undo);
   const redo = useDesignStore((state) => state.redo);
   const canUndo = useDesignStore((state) => state.canUndo);
@@ -89,6 +92,10 @@ function UploadButton({ onClick }: { onClick: () => void }) {
           <li className='flex items-start gap-1.5'>
             <span className='text-yellow-400 mt-0.5'>•</span>
             <span>.ai 파일은 주문시 첨부해주세요</span>
+          </li>
+          <li className='flex items-start gap-1.5'>
+            <span className='text-yellow-400 mt-0.5'>•</span>
+            <span>이미지 색상은 인쇄 가능 색상으로 별도 안내됩니다</span>
           </li>
         </ul>
         {/* 화살표 */}
