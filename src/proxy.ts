@@ -1,5 +1,5 @@
 /**
- * Next.js 미들웨어
+ * Next.js Proxy
  *
  * Supabase Auth 세션 갱신 및 보호된 라우트 처리
  */
@@ -13,7 +13,7 @@ const PROTECTED_ROUTES = ["/mypage", "/cart"];
 // 인증된 사용자가 접근하면 안 되는 경로 (회원가입 등)
 const AUTH_ROUTES = ["/signup"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,

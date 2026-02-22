@@ -167,7 +167,6 @@ export function OrderStyleStudioLayout({
       const content = ev.target?.result as string;
       const defaultPos = getDefaultLayerPosition(currentView, {
         ...config,
-        colors: productColors,
         safeZones: productSafeZones as Record<
           HatView,
           { x: number; y: number; width: number; height: number }
