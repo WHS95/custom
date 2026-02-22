@@ -6,7 +6,9 @@ import { useCartStore } from "@/lib/store/cart-store";
 import Link from "next/link";
 import { LanguageToggle } from "./LanguageToggle";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, User, LogIn, LogOut, Loader2, Users } from "lucide-react";
+import { ShoppingCart, User, LogIn, LogOut, Loader2, Users, MessageCircle } from "lucide-react";
+
+const KAKAO_LINK = "https://open.kakao.com/me/runhouse";
 
 export function Navbar() {
   const { t } = useLanguage();
@@ -43,6 +45,13 @@ export function Navbar() {
 
         <div className='flex items-center gap-3'>
           {/* <LanguageToggle /> */}
+
+          <Button asChild variant='ghost' size='sm' className='gap-1 hidden sm:inline-flex'>
+            <a href={KAKAO_LINK} target='_blank' rel='noopener noreferrer'>
+              <MessageCircle className='w-4 h-4' />
+              <span>문의 하기</span>
+            </a>
+          </Button>
 
           {/* 장바구니 */}
           <Button asChild variant='ghost' size='icon' className='relative'>
