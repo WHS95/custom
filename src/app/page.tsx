@@ -1,34 +1,14 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { ProductGrid } from "@/components/products";
-import { Button } from "@/components/ui/button";
-import { Loader2, Settings, ShoppingCart } from "lucide-react";
+import { ProductGrid } from "@/components/products/ProductGrid";
+import { getProductsByTenant } from "@/application/product-service";
+import { DEFAULT_TENANT_ID } from "@/application/tenant-service";
 import type { Product } from "@/domain/product/types";
-import { useCartStore } from "@/lib/store/cart-store";
-
-export default function Home() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const cartItems = useCartStore((state) => state.items);
-
-  useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const res = await fetch("/api/products");
-        const json = await res.json();
-        if (json.success) {
-          setProducts(json.data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch products:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchProducts();
-  }, []);
+export default async function Home() {
+  let products: Product[] = [];
+  try {
+    products = await getProductsByTenant(DEFAULT_TENANT_ID);
+  } catch (err) {
+    console.error("Failed to fetch products:", err);
+  }
 
   return (
     <div className='min-h-screen bg-gray-50'>
@@ -62,13 +42,7 @@ export default function Home() {
           <p className='text-gray-600'>커스텀하고 싶은 상품을 선택하세요</p> */}
         </div>
 
-        {isLoading ? (
-          <div className='flex items-center justify-center py-16'>
-            <Loader2 className='h-8 w-8 animate-spin text-gray-400' />
-          </div>
-        ) : (
-          <ProductGrid products={products} />
-        )}
+        <ProductGrid products={products} />
       </main>
 
       {/* Footer */}
