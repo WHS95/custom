@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { StudioLayout } from "@/components/studio/StudioLayout";
 import { OrderStyleStudioLayout } from "@/components/studio/OrderStyleStudioLayout";
 import { Loader2, ChevronDown } from "lucide-react";
@@ -120,11 +121,16 @@ export default function StudioPage() {
       {/* 제품 상세 이미지 */}
       {!isOrderMode && product.detailImageUrl && (
         <div id='product-detail-section' className='bg-white'>
-          <img
-            src={product.detailImageUrl}
-            alt={`${product.name} 상세 정보`}
-            className='w-full max-w-3xl mx-auto'
-          />
+          <div className='relative w-full max-w-3xl mx-auto'>
+            <Image
+              src={product.detailImageUrl}
+              alt={`${product.name} 상세 정보`}
+              width={1200}
+              height={1600}
+              sizes="(max-width: 768px) 100vw, 768px"
+              className='w-full h-auto'
+            />
+          </div>
         </div>
       )}
     </div>

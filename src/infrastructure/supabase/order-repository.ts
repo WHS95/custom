@@ -421,6 +421,26 @@ export class SupabaseOrderRepository implements IOrderRepository {
   }
 
   /**
+   * 상태별 주문 건수 조회 (전체 데이터 로드 없이 카운트만)
+   */
+  async countByStatus(tenantId: string, status: OrderStatus): Promise<number> {
+    const client = this.getClient()
+
+    const { count, error } = await client
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('status', status)
+
+    if (error) {
+      console.error(`주문 카운트 실패 (${status}):`, error)
+      return 0
+    }
+
+    return count || 0
+  }
+
+  /**
    * 오늘 주문 수 조회
    */
   async getTodayOrderCount(tenantId: string): Promise<number> {

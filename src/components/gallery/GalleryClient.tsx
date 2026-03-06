@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -96,10 +97,12 @@ export function GalleryClient({
                     className='aspect-video relative bg-gray-100 cursor-pointer'
                     onClick={() => openImageModal(review)}
                   >
-                    <img
+                    <Image
                       src={review.images[0].url}
                       alt={review.images[0].caption || "후기 이미지"}
-                      className='w-full h-full object-cover'
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className='object-cover'
                     />
                     {review.images.length > 1 && (
                       <Badge className='absolute bottom-2 right-2 bg-black/70'>
@@ -172,10 +175,12 @@ export function GalleryClient({
                     className='aspect-video relative bg-gray-100 cursor-pointer'
                     onClick={() => openImageModal(review)}
                   >
-                    <img
+                    <Image
                       src={review.images[0].url}
                       alt={review.images[0].caption || "후기 이미지"}
-                      className='w-full h-full object-cover'
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className='object-cover'
                     />
                     {review.images.length > 1 && (
                       <Badge className='absolute bottom-2 right-2 bg-black/70'>

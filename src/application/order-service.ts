@@ -125,6 +125,7 @@ export async function getOrderStatusHistory(
 
 /**
  * 주문 상태별 통계 (관리자 대시보드용)
+ * 단일 쿼리로 모든 상태의 건수를 집계
  */
 export async function getOrderStats(
   tenantId: string = DEFAULT_TENANT_ID
@@ -141,11 +142,17 @@ export async function getOrderStats(
     'cancelled',
   ]
 
-  const stats: Record<OrderStatus, number> = {} as Record<OrderStatus, number>
+  // 모든 상태를 병렬로 카운트 (전체 주문 데이터를 로드하지 않음)
+  const results = await Promise.all(
+    statuses.map(async (status) => {
+      const count = await repo.countByStatus(tenantId, status)
+      return { status, count }
+    })
+  )
 
-  for (const status of statuses) {
-    const orders = await repo.findAll({ tenantId, status })
-    stats[status] = orders.length
+  const stats: Record<OrderStatus, number> = {} as Record<OrderStatus, number>
+  for (const { status, count } of results) {
+    stats[status] = count
   }
 
   return stats

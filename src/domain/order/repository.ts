@@ -37,6 +37,9 @@ export interface IOrderRepository {
   // 상태 이력
   getStatusHistory(orderId: string): Promise<OrderStatusHistory[]>
 
+  // 상태별 주문 건수 카운트
+  countByStatus(tenantId: string, status: string): Promise<number>
+
   // 오늘 주문 수 (주문번호 생성용)
   getTodayOrderCount(tenantId: string): Promise<number>
 }

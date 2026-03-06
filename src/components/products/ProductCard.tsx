@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/domain/product/types";
@@ -29,10 +30,12 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* 이미지 영역 */}
         <div className="aspect-square relative bg-gray-50 overflow-hidden">
           {thumbnailImage ? (
-            <img
+            <Image
               src={thumbnailImage}
               alt={product.name}
-              className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-contain transition-transform duration-500 group-hover:scale-110"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">

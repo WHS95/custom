@@ -220,112 +220,129 @@ export default function OrderDetailPage() {
             >
           > = {};
 
-          for (const { productId, colorId } of uniquePairs) {
-            try {
-              // 상품 정보 불러오기 (이미지)
-              if (!colorsMap[productId]) {
+          // 고유 상품 ID 추출 후 상품 정보 병렬 fetch
+          const uniqueProductIds = [...new Set(uniquePairs.map((p: { productId: string; colorId: string }) => p.productId))];
+          const productResults = await Promise.all(
+            uniqueProductIds.map(async (productId) => {
+              try {
                 const productRes = await fetch(`/api/products/${productId}`);
                 const productData = await productRes.json();
+                return { productId, productData };
+              } catch (err) {
+                console.error(`상품 ${productId} 정보 로드 실패:`, err);
+                return { productId, productData: null };
+              }
+            }),
+          );
 
-                if (productData.success && productData.data) {
-                  const product = productData.data;
-                  // ProductImage[] -> ProductColor[] 변환
-                  const colors: ProductColor[] = (product.variants || []).map(
-                    (variant: { id: string; label: string; hex: string }) => {
-                      const views: Record<HatView, string> = {
-                        front: "",
-                        back: "",
-                        left: "",
-                        right: "",
-                        top: "",
-                      };
-                      // 해당 색상의 이미지들 매핑
-                      (product.images || []).forEach(
-                        (img: {
-                          colorId: string;
-                          view: string;
-                          url: string;
-                        }) => {
-                          if (img.colorId === variant.id) {
-                            views[img.view as HatView] = img.url;
-                          }
-                        },
-                      );
-                      return {
-                        id: variant.id,
-                        label: variant.label,
-                        hex: variant.hex,
-                        views,
-                      };
+          // 상품 정보 매핑
+          for (const { productId, productData } of productResults) {
+            if (productData?.success && productData.data) {
+              const product = productData.data;
+              const colors: ProductColor[] = (product.variants || []).map(
+                (variant: { id: string; label: string; hex: string }) => {
+                  const views: Record<HatView, string> = {
+                    front: "",
+                    back: "",
+                    left: "",
+                    right: "",
+                    top: "",
+                  };
+                  (product.images || []).forEach(
+                    (img: {
+                      colorId: string;
+                      view: string;
+                      url: string;
+                    }) => {
+                      if (img.colorId === variant.id) {
+                        views[img.view as HatView] = img.url;
+                      }
                     },
                   );
-                  colorsMap[productId as string] = colors;
-                }
-              }
-
-              // 색상별 인쇄 영역 불러오기
-              const areasRes = await fetch(
-                `/api/products/${productId}/areas?colorId=${colorId}`,
+                  return {
+                    id: variant.id,
+                    label: variant.label,
+                    hex: variant.hex,
+                    views,
+                  };
+                },
               );
-              const areasData = await areasRes.json();
+              colorsMap[productId as string] = colors;
+            }
+          }
 
-              if (areasData.success && areasData.data) {
-                const zones: Partial<
-                  Record<
-                    HatView,
-                    { x: number; y: number; width: number; height: number }
-                  >
-                > = {};
-
-                // 먼저 공통 영역(colorId가 null) 추가
-                areasData.data.forEach(
-                  (area: {
-                    viewName: string;
-                    colorId: string | null;
-                    zoneX: number;
-                    zoneY: number;
-                    zoneWidth: number;
-                    zoneHeight: number;
-                    isEnabled: boolean;
-                  }) => {
-                    if (area.isEnabled && !area.colorId) {
-                      zones[area.viewName as HatView] = {
-                        x: area.zoneX,
-                        y: area.zoneY,
-                        width: area.zoneWidth,
-                        height: area.zoneHeight,
-                      };
-                    }
-                  },
+          // 인쇄 영역 병렬 fetch
+          const areasResults = await Promise.all(
+            uniquePairs.map(async ({ productId, colorId }: { productId: string; colorId: string }) => {
+              try {
+                const areasRes = await fetch(
+                  `/api/products/${productId}/areas?colorId=${colorId}`,
                 );
-
-                // 색상별 영역으로 덮어씀 (우선순위 높음)
-                areasData.data.forEach(
-                  (area: {
-                    viewName: string;
-                    colorId: string | null;
-                    zoneX: number;
-                    zoneY: number;
-                    zoneWidth: number;
-                    zoneHeight: number;
-                    isEnabled: boolean;
-                  }) => {
-                    if (area.isEnabled && area.colorId === colorId) {
-                      zones[area.viewName as HatView] = {
-                        x: area.zoneX,
-                        y: area.zoneY,
-                        width: area.zoneWidth,
-                        height: area.zoneHeight,
-                      };
-                    }
-                  },
-                );
-
-                const mapKey = `${productId}-${colorId}`;
-                safeZonesMap[mapKey] = zones;
+                const areasData = await areasRes.json();
+                return { productId, colorId, areasData };
+              } catch (err) {
+                console.error(`상품 ${productId} 영역 로드 실패:`, err);
+                return { productId, colorId, areasData: null };
               }
-            } catch (err) {
-              console.error(`상품 ${productId} 정보 로드 실패:`, err);
+            }),
+          );
+
+          // 인쇄 영역 매핑
+          for (const { productId, colorId, areasData } of areasResults) {
+            if (areasData?.success && areasData.data) {
+              const zones: Partial<
+                Record<
+                  HatView,
+                  { x: number; y: number; width: number; height: number }
+                >
+              > = {};
+
+              // 먼저 공통 영역(colorId가 null) 추가
+              areasData.data.forEach(
+                (area: {
+                  viewName: string;
+                  colorId: string | null;
+                  zoneX: number;
+                  zoneY: number;
+                  zoneWidth: number;
+                  zoneHeight: number;
+                  isEnabled: boolean;
+                }) => {
+                  if (area.isEnabled && !area.colorId) {
+                    zones[area.viewName as HatView] = {
+                      x: area.zoneX,
+                      y: area.zoneY,
+                      width: area.zoneWidth,
+                      height: area.zoneHeight,
+                    };
+                  }
+                },
+              );
+
+              // 색상별 영역으로 덮어씀 (우선순위 높음)
+              areasData.data.forEach(
+                (area: {
+                  viewName: string;
+                  colorId: string | null;
+                  zoneX: number;
+                  zoneY: number;
+                  zoneWidth: number;
+                  zoneHeight: number;
+                  isEnabled: boolean;
+                }) => {
+                  if (area.isEnabled && area.colorId === colorId) {
+                    zones[area.viewName as HatView] = {
+                      x: area.zoneX,
+                      y: area.zoneY,
+                      width: area.zoneWidth,
+                      height: area.zoneHeight,
+                    };
+                  }
+                },
+              );
+
+              const mapKey = `${productId}-${colorId}`;
+              safeZonesMap[mapKey] = zones;
             }
           }
 
