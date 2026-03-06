@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState, useCallback, useMemo } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { ChevronDown, ChevronUp, Layers, Eye } from "lucide-react"
 import { CartItem, useCartItemsByColor } from "@/lib/store/cart-store"
@@ -38,24 +38,28 @@ interface CustomizationReviewProps {
   colorHexMap?: Record<string, string>
 }
 
-export function CustomizationReview({ colorHexMap }: CustomizationReviewProps) {
+export const CustomizationReview = React.memo(function CustomizationReview({ colorHexMap }: CustomizationReviewProps) {
   const itemsByColor = useCartItemsByColor()
   const [expandedColors, setExpandedColors] = useState<Set<string>>(new Set())
 
-  // 색상별 그룹 데이터 생성
-  const colorGroups: ColorGroup[] = Object.entries(itemsByColor).map(([color, items]) => ({
-    color,
-    colorLabel: items[0]?.colorLabel || color,
-    colorHex: colorHexMap?.[color] || COLOR_HEX_MAP[color] || "#888888",
-    items,
-    totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
-  }))
+  // 색상별 그룹 데이터 생성 (메모이제이션)
+  const colorGroups: ColorGroup[] = useMemo(
+    () =>
+      Object.entries(itemsByColor).map(([color, items]) => ({
+        color,
+        colorLabel: items[0]?.colorLabel || color,
+        colorHex: colorHexMap?.[color] || COLOR_HEX_MAP[color] || "#888888",
+        items,
+        totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
+      })),
+    [itemsByColor, colorHexMap],
+  )
 
   if (colorGroups.length === 0) {
     return null
   }
 
-  const toggleExpand = (color: string) => {
+  const toggleExpand = useCallback((color: string) => {
     setExpandedColors((prev) => {
       const next = new Set(prev)
       if (next.has(color)) {
@@ -65,7 +69,7 @@ export function CustomizationReview({ colorHexMap }: CustomizationReviewProps) {
       }
       return next
     })
-  }
+  }, [])
 
   // 사이즈별 수량 요약
   const getSizeSummary = (items: CartItem[]) => {
@@ -262,4 +266,4 @@ export function CustomizationReview({ colorHexMap }: CustomizationReviewProps) {
       </CardContent>
     </Card>
   )
-}
+})

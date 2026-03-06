@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     const isAdmin = searchParams.get('admin') === 'true'
     const status = searchParams.get('status')
     const featured = searchParams.get('featured')
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100)
 
     const supabase = createServerSupabaseClient()
 

@@ -297,6 +297,8 @@ export interface OrderFilter {
   orderNumber?: string
   dateFrom?: Date
   dateTo?: Date
+  page?: number
+  limit?: number
 }
 
 // ============================================

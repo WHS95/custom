@@ -184,6 +184,10 @@ export async function GET(request: NextRequest) {
     const detail = searchParams.get("detail") === "true";
 
     if (isAdmin) {
+      // 페이지네이션 파라미터
+      const page = parseInt(searchParams.get("page") || "1");
+      const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
+
       // 관리자용 전체 조회
       const orders = await getOrdersForAdmin({
         status: status as
@@ -195,10 +199,14 @@ export async function GET(request: NextRequest) {
           | "delivered"
           | "cancelled"
           | undefined,
+        page,
+        limit,
       });
 
       return NextResponse.json({
         success: true,
+        page,
+        limit,
         orders: orders.map((order) => ({
           id: order.id,
           orderNumber: order.orderNumber,
