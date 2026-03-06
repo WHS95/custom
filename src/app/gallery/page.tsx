@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
 import { createServerSupabaseClient } from "@/infrastructure/supabase";
 import { DEFAULT_TENANT_ID } from "@/application/tenant-service";
 import type { Review } from "@/domain/review/types";
 import { GalleryClient } from "@/components/gallery/GalleryClient";
+
+export const metadata: Metadata = {
+  title: "고객 후기 | RunHouse Custom",
+  description: "RunHouse Custom 고객분들의 생생한 커스텀 모자 후기를 확인하세요.",
+  openGraph: {
+    title: "고객 후기 | RunHouse Custom",
+    description: "실제 고객분들의 커스텀 모자 후기와 사진을 확인하세요.",
+  },
+};
 
 function toReview(row: any): Review {
   return {

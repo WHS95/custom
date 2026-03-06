@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,7 +18,7 @@ const categoryLabel: Record<string, string> = {
   accessory: "액세서리",
 };
 
-export function ProductCard({ product }: ProductCardProps) {
+export const ProductCard = React.memo(function ProductCard({ product }: ProductCardProps) {
   const thumbnailImage = product.images?.[0]?.url || null;
   const hasPriceTiers = product.priceTiers && product.priceTiers.length > 0;
   const lowestTierPrice = hasPriceTiers
@@ -112,4 +113,4 @@ export function ProductCard({ product }: ProductCardProps) {
       </Card>
     </Link>
   );
-}
+});

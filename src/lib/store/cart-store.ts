@@ -69,6 +69,18 @@ interface CartState {
 const generateId = () =>
   `cart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+// DB 동기화 디바운스 (2초 내 변경 묶어서 처리)
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+const debouncedSync = () => {
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    const state = useCartStore.getState();
+    if (state.userId) {
+      state.syncToDB();
+    }
+  }, 2000);
+};
+
 // 디자인 레이어 비교 (간단한 비교 - 실제로는 더 정교한 비교 필요할 수 있음)
 const areDesignsEqual = (
   layers1: DesignLayer[],
@@ -159,10 +171,8 @@ export const useCartStore = create<CartState>()(
           return { items: [...state.items, newItem] };
         });
 
-        // DB 동기화 (로그인 상태인 경우)
-        if (get().userId) {
-          get().syncToDB();
-        }
+        // DB 동기화 (로그인 상태인 경우, 디바운스 적용)
+        debouncedSync();
 
         return { merged, newQuantity };
       },
@@ -186,10 +196,7 @@ export const useCartStore = create<CartState>()(
           }),
         }));
 
-        // DB 동기화
-        if (get().userId) {
-          get().syncToDB();
-        }
+        debouncedSync();
       },
 
       updateItemDesign: (id, designLayers) => {
@@ -199,10 +206,7 @@ export const useCartStore = create<CartState>()(
           ),
         }));
 
-        // DB 동기화
-        if (get().userId) {
-          get().syncToDB();
-        }
+        debouncedSync();
       },
 
       removeItem: (id) => {
@@ -210,16 +214,13 @@ export const useCartStore = create<CartState>()(
           items: state.items.filter((item) => item.id !== id),
         }));
 
-        // DB 동기화
-        if (get().userId) {
-          get().syncToDB();
-        }
+        debouncedSync();
       },
 
       clearCart: () => {
         set({ items: [] });
 
-        // DB 동기화 (장바구니 비우기)
+        // 장바구니 비우기는 즉시 동기화
         if (get().userId) {
           get().syncToDB();
         }
