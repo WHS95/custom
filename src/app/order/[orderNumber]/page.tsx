@@ -29,7 +29,16 @@ import {
   Eye,
   Layers,
   Paperclip,
+  ListOrdered,
+  Wrench,
 } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -132,6 +141,10 @@ export default function OrderDetailPage() {
 
   // 펼쳐진 아이템 (디자인 상세 보기)
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  // 모바일 Sheet 상태
+  const [mobileItemsOpen, setMobileItemsOpen] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
 
   // 디자인 편집 상태
   const [editedLayers, setEditedLayers] = useState<
@@ -614,8 +627,33 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <Loader2 className='w-8 h-8 animate-spin text-gray-400' />
+      <div className="min-h-screen bg-gray-100">
+        <div className="bg-white border-b sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center gap-4">
+              <Skeleton className="w-24 h-8 rounded" />
+              <div>
+                <Skeleton className="w-32 h-5 rounded" />
+                <Skeleton className="w-20 h-4 rounded mt-1" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex h-[calc(100vh-64px)]">
+          <div className="hidden lg:block w-80 bg-white border-r p-4 space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="w-full h-24 rounded-xl" />
+            ))}
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            <Skeleton className="w-full max-w-[500px] aspect-square rounded-xl mx-8" />
+          </div>
+          <div className="hidden lg:block w-72 bg-white border-l p-4 space-y-4">
+            <Skeleton className="w-full h-10 rounded" />
+            <Skeleton className="w-full h-10 rounded" />
+            <Skeleton className="w-full h-32 rounded" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -631,263 +669,436 @@ export default function OrderDetailPage() {
     );
   }
 
+  // 좌측 사이드바 - 주문 아이템 목록
+  const renderItemsSidebar = () => {
+    const sidebarViewLabels: Record<string, string> = {
+      front: "앞면",
+      back: "뒷면",
+      left: "좌측",
+      right: "우측",
+      top: "상단",
+    };
+
+    return (
+      <>
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Eye className="w-5 h-5 text-blue-600" />
+            <h3 className="font-bold text-base">커스텀 내역 확인</h3>
+          </div>
+          <p className="text-xs text-gray-500 mb-4">
+            각 색상을 클릭하여 디자인 상세를 확인하세요
+          </p>
+          <div className="space-y-3">
+            {order.items.map((item, index) => {
+              const itemLayers =
+                editedLayers[item.id] || item.designSnapshot || [];
+              const hasDesign = itemLayers.length > 0;
+              const isEdited = !!editedLayers[item.id];
+              const isExpanded = expandedItems.has(item.id);
+              const isSelected = selectedItemIndex === index;
+
+              const layersByView = itemLayers.reduce(
+                (acc, layer) => {
+                  if (!acc[layer.view]) acc[layer.view] = [];
+                  acc[layer.view].push(layer);
+                  return acc;
+                },
+                {} as Record<string, DesignLayer[]>,
+              );
+
+              return (
+                <div
+                  key={item.id}
+                  className={`rounded-xl border-2 overflow-hidden transition-all ${
+                    isSelected
+                      ? "border-blue-500 shadow-md"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <div
+                    className={`p-3 cursor-pointer ${isSelected ? "bg-blue-50" : "bg-gray-50"}`}
+                    onClick={() => {
+                      setSelectedItemIndex(index);
+                      setMobileItemsOpen(false);
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate">
+                          {item.productName}
+                        </p>
+                        <p className="text-xs text-gray-600 mt-0.5">
+                          {item.colorLabel}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          사이즈: {item.size} · 수량: {item.quantity}개
+                        </p>
+                        <div className="flex items-center gap-1 mt-1">
+                          {hasDesign && (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                              {itemLayers.length}개 레이어
+                            </span>
+                          )}
+                          {isEdited && (
+                            <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
+                              수정됨
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedItems((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(item.id)) {
+                              next.delete(item.id);
+                            } else {
+                              next.add(item.id);
+                            }
+                            return next;
+                          });
+                        }}
+                        className="p-1.5 hover:bg-white rounded-lg transition-colors"
+                      >
+                        {isExpanded ? (
+                          <ChevronUp className="w-5 h-5 text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`grid transition-all duration-300 ease-out ${
+                      isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="p-3 pt-0 space-y-3">
+                        <Separator />
+                        {hasDesign ? (
+                          <div className="space-y-2">
+                            <p className="text-xs font-medium text-gray-500">
+                              디자인 위치:
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {Object.entries(layersByView).map(
+                                ([view, layers]) => (
+                                  <span
+                                    key={view}
+                                    className="text-xs bg-gray-100 px-2 py-1 rounded flex items-center gap-1"
+                                  >
+                                    <span>{sidebarViewLabels[view] || view}</span>
+                                    <span className="text-blue-600 font-medium">
+                                      {layers.length}개
+                                    </span>
+                                  </span>
+                                ),
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400 text-center py-2">
+                            디자인이 없습니다
+                          </p>
+                        )}
+
+                        <div className="bg-gray-50 rounded-lg p-2">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">단가</span>
+                            <span>{item.unitPrice.toLocaleString()}원</span>
+                          </div>
+                          <div className="flex justify-between text-sm font-bold mt-1">
+                            <span>소계</span>
+                            <span className="text-blue-600">
+                              {item.totalPrice.toLocaleString()}원
+                            </span>
+                          </div>
+                        </div>
+
+                        <Button
+                          size="sm"
+                          variant={isSelected ? "default" : "outline"}
+                          className="w-full"
+                          onClick={() => {
+                            setSelectedItemIndex(index);
+                            setMobileItemsOpen(false);
+                          }}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          {isSelected ? "현재 보는 중" : "캔버스에서 보기"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <Separator />
+        <div className="p-4 space-y-3 text-sm">
+          <div>
+            <p className="text-gray-500">배송지</p>
+            <p className="font-medium">{order.shippingInfo.recipientName}</p>
+            <p className="text-gray-600 text-xs">
+              {order.shippingInfo.address} {order.shippingInfo.addressDetail}
+            </p>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">총 금액</span>
+            <span className="font-bold">
+              {order.totalAmount.toLocaleString()}원
+            </span>
+          </div>
+        </div>
+
+        {order.status === "delivered" && (
+          <>
+            <Separator />
+            <div className="p-4">
+              <Link href={`/gallery/write?order=${order.orderNumber}`}>
+                <Button variant="outline" className="w-full">
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  후기 작성하기
+                </Button>
+              </Link>
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                상품에 대한 후기를 남겨주세요
+              </p>
+            </div>
+          </>
+        )}
+      </>
+    );
+  };
+
+  // 우측 도구 패널
+  const renderToolsPanel = () => (
+    <div className="p-4 space-y-4">
+      <Button
+        onClick={handleDownloadAllImages}
+        variant="outline"
+        className="w-full"
+      >
+        <Download className="w-4 h-4 mr-2" />
+        모든 디자인 이미지 다운로드
+      </Button>
+
+      {order?.attachmentFiles && order.attachmentFiles.length > 0 && (
+        <Button
+          onClick={handleDownloadAttachments}
+          variant="outline"
+          className="w-full bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100"
+        >
+          <Paperclip className="w-4 h-4 mr-2" />
+          주문자 첨부파일 ({order.attachmentFiles.length}개)
+        </Button>
+      )}
+
+      {canEdit && (
+        <Button
+          onClick={handleSave}
+          disabled={!hasChanges || saving}
+          className="w-full"
+        >
+          {saving ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4 mr-2" />
+          )}
+          {saving ? "저장 중..." : hasChanges ? "디자인 저장" : "저장됨"}
+        </Button>
+      )}
+
+      {canEdit && (
+        <>
+          <Separator />
+          <div>
+            <label className="block">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <Button variant="outline" className="w-full" asChild>
+                <span>
+                  <Upload className="w-4 h-4 mr-2" />
+                  이미지 추가
+                </span>
+              </Button>
+            </label>
+          </div>
+        </>
+      )}
+
+      {canEdit && selectedLayer && (
+        <>
+          <Separator />
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm">레이어 편집</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" onClick={() => handleRotate(-45)}>
+                <RotateCcw className="w-4 h-4 mr-1" />
+                -45°
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleRotate(45)}>
+                <RotateCw className="w-4 h-4 mr-1" />
+                +45°
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleFlip("x")}>
+                <FlipHorizontal className="w-4 h-4 mr-1" />
+                좌우
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleFlip("y")}>
+                <FlipVertical className="w-4 h-4 mr-1" />
+                상하
+              </Button>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="w-full"
+              onClick={() => handleLayerRemove(selectedLayerId!)}
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              삭제
+            </Button>
+            <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+              회전: {selectedLayer.rotation}°
+              {selectedLayer.flipX && " · 좌우반전"}
+              {selectedLayer.flipY && " · 상하반전"}
+            </div>
+          </div>
+        </>
+      )}
+
+      <Separator />
+      <div>
+        <h4 className="font-medium text-sm mb-2">
+          레이어 ({viewLayers.length})
+        </h4>
+        {viewLayers.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-4">
+            이 뷰에 디자인이 없습니다
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {viewLayers.map((layer, index) => (
+              <div
+                key={layer.id}
+                className={`p-2 rounded border text-sm ${
+                  selectedLayerId === layer.id
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <div
+                  className="flex items-center gap-2 cursor-pointer"
+                  onClick={() => canEdit && setSelectedLayerId(layer.id)}
+                >
+                  {layer.type === "image" ? (
+                    <ImageIcon className="w-4 h-4 text-gray-400" />
+                  ) : (
+                    <span className="text-xs">Aa</span>
+                  )}
+                  <span className="truncate flex-1">
+                    {layer.type === "image"
+                      ? `이미지 ${index + 1}`
+                      : layer.content}
+                  </span>
+                  {layer.type === "image" && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadImage(layer, index);
+                      }}
+                      className="p-1 hover:bg-gray-200 rounded"
+                      title="이미지 다운로드"
+                    >
+                      <Download className="w-3 h-3 text-gray-500" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {!canEdit && (
+        <>
+          <Separator />
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-yellow-800">수정 불가</p>
+                <p className="text-yellow-700 text-xs mt-1">
+                  디자인이 확정되어 더 이상 수정할 수 없습니다.
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
   return (
-    <div className='min-h-screen bg-gray-100'>
+    <div className="min-h-screen bg-gray-100">
       {/* 상단 헤더 */}
-      <div className='bg-white border-b sticky top-0 z-50'>
-        <div className='container mx-auto px-4 py-3'>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-4'>
-              <Button variant='ghost' size='sm' onClick={() => router.back()}>
-                <ArrowLeft className='w-4 h-4 mr-1' />
+      <div className="bg-white border-b sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => router.back()}>
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => router.back()}>
+                <ArrowLeft className="w-4 h-4 mr-1" />
                 돌아가기
               </Button>
               <div>
-                <h1 className='font-bold text-lg'>{order.orderNumber}</h1>
-                <p className='text-sm text-gray-500'>
+                <h1 className="font-bold text-sm sm:text-lg">{order.orderNumber}</h1>
+                <p className="text-xs sm:text-sm text-gray-500">
                   {order.customerName} ·{" "}
                   {order.shippingInfo.organizationName || "개인"}
                 </p>
               </div>
             </div>
-            <div className='flex items-center gap-3'>
-              <Badge className={STATUS_COLORS[order.status]}>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Badge className={`text-xs sm:text-sm ${STATUS_COLORS[order.status]}`}>
                 {ORDER_STATUS_LABELS[order.status]}
               </Badge>
-              {canEdit ? (
-                <Badge
-                  variant='outline'
-                  className='text-green-600 border-green-300'
-                >
-                  <Unlock className='w-3 h-3 mr-1' />
-                  수정 가능
-                </Badge>
-              ) : (
-                <Badge variant='outline' className='text-gray-500'>
-                  <Lock className='w-3 h-3 mr-1' />
-                  수정 불가
-                </Badge>
-              )}
+              <Badge variant="outline" className={`hidden sm:inline-flex ${canEdit ? "text-green-600 border-green-300" : "text-gray-500"}`}>
+                {canEdit ? (
+                  <><Unlock className="w-3 h-3 mr-1" />수정 가능</>
+                ) : (
+                  <><Lock className="w-3 h-3 mr-1" />수정 불가</>
+                )}
+              </Badge>
             </div>
           </div>
         </div>
       </div>
 
-      <div className='flex h-[calc(100vh-64px)]'>
-        {/* 좌측: 주문 아이템 목록 (색상별 커스텀 내역) */}
-        <div className='w-80 bg-white border-r overflow-y-auto'>
-          <div className='p-4'>
-            <div className='flex items-center gap-2 mb-4'>
-              <Eye className='w-5 h-5 text-blue-600' />
-              <h3 className='font-bold text-base'>커스텀 내역 확인</h3>
-            </div>
-            <p className='text-xs text-gray-500 mb-4'>
-              각 색상을 클릭하여 디자인 상세를 확인하세요
-            </p>
-            <div className='space-y-3'>
-              {order.items.map((item, index) => {
-                const itemLayers =
-                  editedLayers[item.id] || item.designSnapshot || [];
-                const hasDesign = itemLayers.length > 0;
-                const isEdited = !!editedLayers[item.id];
-                const isExpanded = expandedItems.has(item.id);
-                const isSelected = selectedItemIndex === index;
-
-                // 뷰별 레이어 그룹화
-                const layersByView = itemLayers.reduce(
-                  (acc, layer) => {
-                    if (!acc[layer.view]) acc[layer.view] = [];
-                    acc[layer.view].push(layer);
-                    return acc;
-                  },
-                  {} as Record<string, DesignLayer[]>,
-                );
-
-                const viewLabels: Record<string, string> = {
-                  front: "앞면",
-                  back: "뒷면",
-                  left: "좌측",
-                  right: "우측",
-                  top: "상단",
-                };
-
-                return (
-                  <div
-                    key={item.id}
-                    className={`rounded-xl border-2 overflow-hidden transition-all ${
-                      isSelected
-                        ? "border-blue-500 shadow-md"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    {/* 아이템 헤더 */}
-                    <div
-                      className={`p-3 cursor-pointer ${isSelected ? "bg-blue-50" : "bg-gray-50"}`}
-                      onClick={() => setSelectedItemIndex(index)}
-                    >
-                      <div className='flex items-center gap-3'>
-                        {/* 정보 */}
-                        <div className='flex-1 min-w-0'>
-                          <p className='font-bold text-sm truncate'>
-                            {item.productName}
-                          </p>
-                          <p className='text-xs text-gray-600 mt-0.5'>
-                            {item.colorLabel}
-                          </p>
-                          <p className='text-xs text-gray-500 mt-0.5'>
-                            사이즈: {item.size} · 수량: {item.quantity}개
-                          </p>
-                          <div className='flex items-center gap-1 mt-1'>
-                            {hasDesign && (
-                              <span className='text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded'>
-                                {itemLayers.length}개 레이어
-                              </span>
-                            )}
-                            {isEdited && (
-                              <span className='text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded'>
-                                수정됨
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* 펼침/접힘 버튼 */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setExpandedItems((prev) => {
-                              const next = new Set(prev);
-                              if (next.has(item.id)) {
-                                next.delete(item.id);
-                              } else {
-                                next.add(item.id);
-                              }
-                              return next;
-                            });
-                          }}
-                          className='p-1.5 hover:bg-white rounded-lg transition-colors'
-                        >
-                          {isExpanded ? (
-                            <ChevronUp className='w-5 h-5 text-gray-400' />
-                          ) : (
-                            <ChevronDown className='w-5 h-5 text-gray-400' />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 펼쳐진 상세 정보 */}
-                    <div
-                      className={`grid transition-all duration-300 ease-out ${
-                        isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                      }`}
-                    >
-                      <div className='overflow-hidden'>
-                        <div className='p-3 pt-0 space-y-3'>
-                          <Separator />
-
-                          {/* 뷰별 디자인 정보 */}
-                          {hasDesign ? (
-                            <div className='space-y-2'>
-                              <p className='text-xs font-medium text-gray-500'>
-                                디자인 위치:
-                              </p>
-                              <div className='flex flex-wrap gap-1'>
-                                {Object.entries(layersByView).map(
-                                  ([view, layers]) => (
-                                    <span
-                                      key={view}
-                                      className='text-xs bg-gray-100 px-2 py-1 rounded flex items-center gap-1'
-                                    >
-                                      <span>{viewLabels[view] || view}</span>
-                                      <span className='text-blue-600 font-medium'>
-                                        {layers.length}개
-                                      </span>
-                                    </span>
-                                  ),
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <p className='text-xs text-gray-400 text-center py-2'>
-                              디자인이 없습니다
-                            </p>
-                          )}
-
-                          {/* 가격 정보 */}
-                          <div className='bg-gray-50 rounded-lg p-2'>
-                            <div className='flex justify-between text-xs'>
-                              <span className='text-gray-500'>단가</span>
-                              <span>{item.unitPrice.toLocaleString()}원</span>
-                            </div>
-                            <div className='flex justify-between text-sm font-bold mt-1'>
-                              <span>소계</span>
-                              <span className='text-blue-600'>
-                                {item.totalPrice.toLocaleString()}원
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* 캔버스에서 보기 버튼 */}
-                          <Button
-                            size='sm'
-                            variant={isSelected ? "default" : "outline"}
-                            className='w-full'
-                            onClick={() => setSelectedItemIndex(index)}
-                          >
-                            <Eye className='w-4 h-4 mr-1' />
-                            {isSelected ? "현재 보는 중" : "캔버스에서 보기"}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 주문 정보 요약 */}
-          <Separator />
-          <div className='p-4 space-y-3 text-sm'>
-            <div>
-              <p className='text-gray-500'>배송지</p>
-              <p className='font-medium'>{order.shippingInfo.recipientName}</p>
-              <p className='text-gray-600 text-xs'>
-                {order.shippingInfo.address} {order.shippingInfo.addressDetail}
-              </p>
-            </div>
-            <div className='flex justify-between'>
-              <span className='text-gray-500'>총 금액</span>
-              <span className='font-bold'>
-                {order.totalAmount.toLocaleString()}원
-              </span>
-            </div>
-          </div>
-
-          {/* 후기 작성 버튼 (배송 완료 시) */}
-          {order.status === "delivered" && (
-            <>
-              <Separator />
-              <div className='p-4'>
-                <Link href={`/gallery/write?order=${order.orderNumber}`}>
-                  <Button variant='outline' className='w-full'>
-                    <MessageSquare className='w-4 h-4 mr-2' />
-                    후기 작성하기
-                  </Button>
-                </Link>
-                <p className='text-xs text-gray-500 mt-2 text-center'>
-                  상품에 대한 후기를 남겨주세요
-                </p>
-              </div>
-            </>
-          )}
+      {/* 메인 레이아웃 */}
+      <div className="flex h-[calc(100vh-64px)]">
+        {/* 좌측 사이드바 - 데스크탑만 */}
+        <div className="hidden lg:block w-80 bg-white border-r overflow-y-auto">
+          {renderItemsSidebar()}
         </div>
 
         {/* 중앙: 캔버스 */}
-        <div className='flex-1 flex flex-col'>
+        <div className="flex-1 flex flex-col">
           {/* 뷰 선택 탭 */}
-          <div className='bg-white border-b px-4 py-2'>
+          <div className="bg-white border-b px-2 sm:px-4 py-2 overflow-x-auto">
             <Tabs
               value={currentView}
               onValueChange={(v) => setCurrentView(v as HatView)}
@@ -901,11 +1112,11 @@ export default function OrderDetailPage() {
                     <TabsTrigger
                       key={view.id}
                       value={view.id}
-                      className='relative'
+                      className="relative text-xs sm:text-sm"
                     >
                       {view.label}
                       {hasDesignInView && (
-                        <span className='absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full' />
+                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full" />
                       )}
                     </TabsTrigger>
                   );
@@ -915,8 +1126,8 @@ export default function OrderDetailPage() {
           </div>
 
           {/* 캔버스 영역 */}
-          <div className='flex-1 flex items-center justify-center p-8 bg-gray-100'>
-            <div className='w-full max-w-[600px]'>
+          <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-gray-100">
+            <div className="w-full max-w-[600px]">
               <HatDesignCanvas
                 hatColor={currentItem?.color || "black"}
                 currentView={currentView}
@@ -927,7 +1138,7 @@ export default function OrderDetailPage() {
                 onLayerSelect={setSelectedLayerId}
                 selectedLayerId={selectedLayerId}
                 showSafeZone={true}
-                className='w-full rounded-xl shadow-lg bg-white'
+                className="w-full rounded-xl shadow-lg bg-white"
                 productColors={
                   currentItem?.productId
                     ? productColorsMap[currentItem.productId]
@@ -943,207 +1154,53 @@ export default function OrderDetailPage() {
               />
             </div>
           </div>
-        </div>
 
-        {/* 우측: 도구 패널 */}
-        <div className='w-72 bg-white border-l overflow-y-auto'>
-          <div className='p-4 space-y-4'>
-            {/* 모든 이미지 다운로드 버튼 */}
+          {/* 모바일 하단 플로팅 버튼들 */}
+          <div className="lg:hidden flex gap-2 p-3 bg-white border-t">
             <Button
-              onClick={handleDownloadAllImages}
-              variant='outline'
-              className='w-full'
+              variant="outline"
+              className="flex-1"
+              onClick={() => setMobileItemsOpen(true)}
             >
-              <Download className='w-4 h-4 mr-2' />
-              모든 디자인 이미지 다운로드
+              <ListOrdered className="w-4 h-4 mr-2" />
+              주문 내역 ({order.items.length})
             </Button>
-
-            {/* 주문자 첨부파일 다운로드 버튼 */}
-            {order?.attachmentFiles && order.attachmentFiles.length > 0 && (
-              <Button
-                onClick={handleDownloadAttachments}
-                variant='outline'
-                className='w-full bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100'
-              >
-                <Paperclip className='w-4 h-4 mr-2' />
-                주문자 첨부파일 ({order.attachmentFiles.length}개)
-              </Button>
-            )}
-
-            {/* 저장 버튼 */}
-            {canEdit && (
-              <Button
-                onClick={handleSave}
-                disabled={!hasChanges || saving}
-                className='w-full'
-              >
-                {saving ? (
-                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-                ) : (
-                  <Save className='w-4 h-4 mr-2' />
-                )}
-                {saving ? "저장 중..." : hasChanges ? "디자인 저장" : "저장됨"}
-              </Button>
-            )}
-
-            {/* 이미지 업로드 */}
-            {canEdit && (
-              <>
-                <Separator />
-                <div>
-                  <label className='block'>
-                    <input
-                      type='file'
-                      accept='image/*'
-                      onChange={handleImageUpload}
-                      className='hidden'
-                    />
-                    <Button variant='outline' className='w-full' asChild>
-                      <span>
-                        <Upload className='w-4 h-4 mr-2' />
-                        이미지 추가
-                      </span>
-                    </Button>
-                  </label>
-                </div>
-              </>
-            )}
-
-            {/* 선택된 레이어 도구 */}
-            {canEdit && selectedLayer && (
-              <>
-                <Separator />
-                <div className='space-y-3'>
-                  <h4 className='font-medium text-sm'>레이어 편집</h4>
-
-                  <div className='grid grid-cols-2 gap-2'>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      onClick={() => handleRotate(-45)}
-                    >
-                      <RotateCcw className='w-4 h-4 mr-1' />
-                      -45°
-                    </Button>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      onClick={() => handleRotate(45)}
-                    >
-                      <RotateCw className='w-4 h-4 mr-1' />
-                      +45°
-                    </Button>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      onClick={() => handleFlip("x")}
-                    >
-                      <FlipHorizontal className='w-4 h-4 mr-1' />
-                      좌우
-                    </Button>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      onClick={() => handleFlip("y")}
-                    >
-                      <FlipVertical className='w-4 h-4 mr-1' />
-                      상하
-                    </Button>
-                  </div>
-
-                  <Button
-                    variant='destructive'
-                    size='sm'
-                    className='w-full'
-                    onClick={() => handleLayerRemove(selectedLayerId!)}
-                  >
-                    <Trash2 className='w-4 h-4 mr-1' />
-                    삭제
-                  </Button>
-
-                  <div className='text-xs text-gray-500 bg-gray-50 p-2 rounded'>
-                    회전: {selectedLayer.rotation}°
-                    {selectedLayer.flipX && " · 좌우반전"}
-                    {selectedLayer.flipY && " · 상하반전"}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* 현재 뷰 레이어 목록 */}
-            <Separator />
-            <div>
-              <h4 className='font-medium text-sm mb-2'>
-                레이어 ({viewLayers.length})
-              </h4>
-              {viewLayers.length === 0 ? (
-                <p className='text-sm text-gray-400 text-center py-4'>
-                  이 뷰에 디자인이 없습니다
-                </p>
-              ) : (
-                <div className='space-y-2'>
-                  {viewLayers.map((layer, index) => (
-                    <div
-                      key={layer.id}
-                      className={`p-2 rounded border text-sm ${
-                        selectedLayerId === layer.id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      <div
-                        className='flex items-center gap-2 cursor-pointer'
-                        onClick={() => canEdit && setSelectedLayerId(layer.id)}
-                      >
-                        {layer.type === "image" ? (
-                          <ImageIcon className='w-4 h-4 text-gray-400' />
-                        ) : (
-                          <span className='text-xs'>Aa</span>
-                        )}
-                        <span className='truncate flex-1'>
-                          {layer.type === "image"
-                            ? `이미지 ${index + 1}`
-                            : layer.content}
-                        </span>
-                        {layer.type === "image" && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDownloadImage(layer, index);
-                            }}
-                            className='p-1 hover:bg-gray-200 rounded'
-                            title='이미지 다운로드'
-                          >
-                            <Download className='w-3 h-3 text-gray-500' />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 수정 불가 안내 */}
-            {!canEdit && (
-              <>
-                <Separator />
-                <div className='bg-yellow-50 border border-yellow-200 rounded-lg p-3'>
-                  <div className='flex items-start gap-2'>
-                    <AlertCircle className='w-4 h-4 text-yellow-600 mt-0.5' />
-                    <div className='text-sm'>
-                      <p className='font-medium text-yellow-800'>수정 불가</p>
-                      <p className='text-yellow-700 text-xs mt-1'>
-                        디자인이 확정되어 더 이상 수정할 수 없습니다.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setMobileToolsOpen(true)}
+            >
+              <Wrench className="w-4 h-4 mr-2" />
+              도구
+            </Button>
           </div>
         </div>
+
+        {/* 우측 도구 패널 - 데스크탑만 */}
+        <div className="hidden lg:block w-72 bg-white border-l overflow-y-auto">
+          {renderToolsPanel()}
+        </div>
       </div>
+
+      {/* 모바일 Sheet: 주문 아이템 */}
+      <Sheet open={mobileItemsOpen} onOpenChange={setMobileItemsOpen}>
+        <SheetContent side="left" className="w-[85vw] max-w-sm p-0 overflow-y-auto">
+          <SheetHeader className="p-4 pb-0">
+            <SheetTitle>주문 내역</SheetTitle>
+          </SheetHeader>
+          {renderItemsSidebar()}
+        </SheetContent>
+      </Sheet>
+
+      {/* 모바일 Sheet: 도구 */}
+      <Sheet open={mobileToolsOpen} onOpenChange={setMobileToolsOpen}>
+        <SheetContent side="right" className="w-[85vw] max-w-sm p-0 overflow-y-auto">
+          <SheetHeader className="p-4 pb-0">
+            <SheetTitle>도구</SheetTitle>
+          </SheetHeader>
+          {renderToolsPanel()}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
