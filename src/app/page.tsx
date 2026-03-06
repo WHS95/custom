@@ -3,9 +3,12 @@ import { getProductsByTenant } from "@/application/product-service";
 import { DEFAULT_TENANT_ID } from "@/application/tenant-service";
 import type { Product } from "@/domain/product/types";
 import Link from "next/link";
-import { Palette, Truck, Users, Star, ArrowRight, MessageCircle } from "lucide-react";
+import { Palette, Truck, Users, Star, ArrowRight, MessageCircle, Instagram } from "lucide-react";
+import { CREW_DISCOUNT_RATE } from "@/lib/pricing/crew-discount";
 
 const KAKAO_LINK = "https://open.kakao.com/me/runhouse";
+const INSTAGRAM_LINK = "https://www.instagram.com/run_house_club/";
+const RUNHOUSE_CLUB_LINK = "https://www.runhouse.club/home";
 
 const features = [
   {
@@ -15,17 +18,17 @@ const features = [
   },
   {
     icon: Users,
-    title: "러닝크루 전용 서비스",
-    description: "크루 아이덴티티에 맞는 유니폼 제작",
+    title: `등록 크루 ${Math.round(CREW_DISCOUNT_RATE * 100)}% 할인`,
+    description: "런하우스 크루 회원은 전 상품 즉시 할인",
   },
   {
     icon: Truck,
-    title: "5만원 이상 무료배송",
-    description: "빠르고 안전한 배송 서비스",
+    title: "전 상품 무료배송",
+    description: "수량에 관계없이 무료배송",
   },
   {
     icon: Star,
-    title: "대량 주문 할인",
+    title: "대량 주문 추가 할인",
     description: "수량이 많을수록 더 저렴한 단가",
   },
 ];
@@ -136,7 +139,7 @@ export default async function Home() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white">
         <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
             <div className="text-center sm:text-left">
               <p className="font-bold tracking-tighter">
                 <span className="text-blue-400">RUN</span>HOUSE CUSTOM
@@ -145,7 +148,15 @@ export default async function Home() {
                 Premium custom gear for professional crews
               </p>
             </div>
-            <div className="flex gap-6 text-sm text-gray-400">
+            <div className="flex items-center gap-6 text-sm text-gray-400">
+              <a
+                href={RUNHOUSE_CLUB_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colors"
+              >
+                RunHouse Club
+              </a>
               <Link href="/gallery" className="hover:text-white transition-colors">
                 갤러리
               </Link>
@@ -156,6 +167,15 @@ export default async function Home() {
                 className="hover:text-white transition-colors"
               >
                 문의하기
+              </a>
+              <a
+                href={INSTAGRAM_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colors"
+                aria-label="Instagram"
+              >
+                <Instagram className="w-5 h-5" />
               </a>
             </div>
           </div>

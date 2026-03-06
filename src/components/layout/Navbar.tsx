@@ -24,13 +24,16 @@ import {
   MessageCircle,
   Menu,
   Home,
-  Palette,
   Image,
   Package,
+  Instagram,
+  Globe,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const KAKAO_LINK = "https://open.kakao.com/me/runhouse";
+const INSTAGRAM_LINK = "https://www.instagram.com/run_house_club/";
+const RUNHOUSE_CLUB_LINK = "https://www.runhouse.club/home";
 
 export function Navbar() {
   const { t } = useLanguage();
@@ -207,7 +210,29 @@ export function Navbar() {
               );
             })}
 
-            {/* 문의하기 */}
+            {/* 외부 링크 */}
+            <SheetClose asChild>
+              <a
+                href={RUNHOUSE_CLUB_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-black transition-colors"
+              >
+                <Globe className="w-4 h-4" />
+                RunHouse Club
+              </a>
+            </SheetClose>
+            <SheetClose asChild>
+              <a
+                href={INSTAGRAM_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-black transition-colors"
+              >
+                <Instagram className="w-4 h-4" />
+                Instagram
+              </a>
+            </SheetClose>
             <SheetClose asChild>
               <a
                 href={KAKAO_LINK}

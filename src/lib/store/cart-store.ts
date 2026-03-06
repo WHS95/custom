@@ -117,9 +117,8 @@ export const useCartStore = create<CartState>()(
       },
 
       getShippingCost: () => {
-        const total = get().getTotalPrice();
-        // 5만원 이상 무료배송, 그 외 3000원
-        return total >= 50000 ? 0 : 3000;
+        // 전 상품 무료배송
+        return 0;
       },
 
       getGrandTotal: () => {

@@ -20,6 +20,8 @@ import {
   isAllowedPrintColor,
   type PrintColor,
 } from "@/lib/constants/print-color-palette";
+import { getCrewDiscountAmount } from "@/lib/pricing/crew-discount";
+import { getSupabaseServerClient } from "@/infrastructure/supabase/server";
 
 function hasInvalidTextLayerColor(
   items: unknown,
@@ -84,6 +86,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 크루 회원 할인 확인
+    let isCrewMember = false;
+    if (body.userId) {
+      try {
+        const supabase = await getSupabaseServerClient();
+        const { data: profile } = await supabase
+          .schema("runhousecustom")
+          .from("user_profiles")
+          .select("user_type")
+          .eq("user_id", body.userId)
+          .maybeSingle();
+        isCrewMember = profile?.user_type === "crew_staff";
+      } catch (err) {
+        console.error("크루 회원 확인 에러:", err);
+      }
+    }
+
+    // 크루 할인 적용된 아이템 가격 계산
+    let orderItems = body.items;
+    if (isCrewMember) {
+      const subtotal = orderItems.reduce(
+        (sum: number, item: { unitPrice: number; quantity: number }) =>
+          sum + item.unitPrice * item.quantity,
+        0,
+      );
+      const crewDiscount = getCrewDiscountAmount(subtotal, true);
+      if (crewDiscount > 0) {
+        // 각 아이템에 비례적으로 할인 분배
+        const discountRate = crewDiscount / subtotal;
+        orderItems = orderItems.map(
+          (item: { unitPrice: number; [key: string]: unknown }) => ({
+            ...item,
+            unitPrice: Math.floor(item.unitPrice * (1 - discountRate)),
+          }),
+        );
+      }
+    }
+
     const dto: CreateOrderDTO = {
       tenantId,
       userId: body.userId,
@@ -91,7 +131,7 @@ export async function POST(request: NextRequest) {
       customerPhone: body.customerPhone,
       customerEmail: body.customerEmail,
       shippingInfo: shippingInfo,
-      items: body.items,
+      items: orderItems,
     };
 
     const order = await createOrder(dto);

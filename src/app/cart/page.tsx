@@ -28,6 +28,9 @@ import { useDesignStore } from "@/lib/store/design-store";
 import { OrderFormData } from "@/components/cart/StepOrderForm";
 import { OrderModal } from "@/components/cart/OrderModal";
 import { CustomerSupportLink } from "@/components/cart/CustomerSupportLink";
+import { getCrewDiscountAmount, getCrewDiscountLabel } from "@/lib/pricing/crew-discount";
+import { Badge } from "@/components/ui/badge";
+import { Users as UsersIcon } from "lucide-react";
 
 interface AdminMessage {
   productId: string;
@@ -220,11 +223,17 @@ export default function CartPage() {
     }
   };
 
-  // 할인 금액 계산
+  // 수량 할인 금액 계산
   const totalDiscount = items.reduce((sum, item) => {
     const base = item.basePrice || item.unitPrice;
     return sum + (base - item.unitPrice) * item.quantity;
   }, 0);
+
+  // 크루 할인 계산
+  const isCrewMember = profile?.user_type === "crew_staff";
+  const subtotal = getTotalPrice();
+  const crewDiscount = getCrewDiscountAmount(subtotal, isCrewMember);
+  const finalTotal = subtotal - crewDiscount;
 
   if (items.length === 0) {
     return (
@@ -464,7 +473,7 @@ export default function CartPage() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between text-sm">
                   <span>상품 합계</span>
-                  <span>{getTotalPrice().toLocaleString()}원</span>
+                  <span>{subtotal.toLocaleString()}원</span>
                 </div>
                 {totalDiscount > 0 && (
                   <div className="flex justify-between text-sm text-orange-600">
@@ -472,27 +481,37 @@ export default function CartPage() {
                     <span>-{totalDiscount.toLocaleString()}원</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm">
-                  <span>배송비</span>
-                  <span>
-                    {getShippingCost() === 0
-                      ? "무료"
-                      : `${getShippingCost().toLocaleString()}원`}
-                  </span>
-                </div>
-                {getShippingCost() > 0 && (
-                  <p className="text-xs text-gray-500">
-                    {(50000 - getTotalPrice()).toLocaleString()}원 추가 시
-                    무료배송
-                  </p>
+                {crewDiscount > 0 && (
+                  <div className="flex justify-between text-sm text-purple-600">
+                    <span className="flex items-center gap-1">
+                      <UsersIcon className="w-3.5 h-3.5" />
+                      크루 할인 ({getCrewDiscountLabel()})
+                    </span>
+                    <span>-{crewDiscount.toLocaleString()}원</span>
+                  </div>
                 )}
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>배송비</span>
+                  <span>무료</span>
+                </div>
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>총 결제금액</span>
                   <span className="text-blue-600">
-                    {getGrandTotal().toLocaleString()}원
+                    {finalTotal.toLocaleString()}원
                   </span>
                 </div>
+                {isCrewMember && (
+                  <Badge variant="outline" className="w-full justify-center text-purple-600 border-purple-200 bg-purple-50">
+                    <UsersIcon className="w-3 h-3 mr-1" />
+                    크루 회원 {getCrewDiscountLabel()} 할인 적용 중
+                  </Badge>
+                )}
+                {!isCrewMember && isAuthenticated && (
+                  <p className="text-xs text-center text-gray-500">
+                    크루 회원으로 가입하면 {getCrewDiscountLabel()} 추가 할인!
+                  </p>
+                )}
 
                 {authLoading ? (
                   <Button className="w-full" size="lg" disabled>
@@ -557,14 +576,14 @@ export default function CartPage() {
             <div>
               <p className="text-xs text-gray-500">
                 총 {items.length}개 상품
-                {totalDiscount > 0 && (
+                {(totalDiscount > 0 || crewDiscount > 0) && (
                   <span className="text-orange-600 ml-1">
-                    (할인 -{totalDiscount.toLocaleString()}원)
+                    (할인 -{(totalDiscount + crewDiscount).toLocaleString()}원)
                   </span>
                 )}
               </p>
               <p className="font-bold text-lg text-blue-600">
-                {getGrandTotal().toLocaleString()}원
+                {finalTotal.toLocaleString()}원
               </p>
             </div>
             {authLoading ? (
