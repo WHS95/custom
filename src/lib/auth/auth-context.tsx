@@ -21,7 +21,7 @@ export interface UserProfile {
   tenant_id: string;
   name: string;
   phone: string;
-  user_type: "individual" | "crew_staff";
+  user_type: "individual" | "crew_staff" | "crew_pending";
   crew_name: string | null;
   default_address: {
     recipientName: string;
@@ -64,7 +64,7 @@ export interface SignUpParams {
   email: string;
   password: string;
   name: string;
-  userType: "individual" | "crew_staff";
+  userType: "individual" | "crew_staff" | "crew_pending";
   crewName?: string;
 }
 

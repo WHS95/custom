@@ -54,7 +54,8 @@ export default async function MyPage() {
         name: String(profile.name ?? ""),
         user_type: (profile.user_type ?? "individual") as
           | "individual"
-          | "crew_staff",
+          | "crew_staff"
+          | "crew_pending",
         crew_name: profile.crew_name as string | null | undefined,
       }}
       email={user.email}

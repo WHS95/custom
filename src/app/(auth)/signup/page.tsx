@@ -225,11 +225,14 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
+      // 크루 멤버는 crew_pending으로 가입 (관리자 승인 필요)
+      const actualUserType = userType === "crew_staff" ? "crew_pending" : userType;
+
       const params: SignUpParams = {
         email,
         password,
         name,
-        userType,
+        userType: actualUserType,
         crewName: userType === "crew_staff" ? crewName : undefined,
       };
 
@@ -241,6 +244,13 @@ export default function SignupPage() {
         } else {
           toast.error(error.message);
         }
+        return;
+      }
+
+      if (userType === "crew_staff" && selectedCrew) {
+        // 크루 멤버: 승인 대기 페이지로 이동
+        toast.success("회원가입이 완료되었습니다! 크루 인증을 진행해주세요.");
+        router.push(`/crew-approval/pending?crew=${encodeURIComponent(selectedCrew.name)}&email=${encodeURIComponent(email)}`);
         return;
       }
 

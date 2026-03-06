@@ -28,7 +28,7 @@ interface OrderSummary {
 
 interface UserProfileSummary {
   name: string;
-  user_type: "individual" | "crew_staff";
+  user_type: "individual" | "crew_staff" | "crew_pending";
   crew_name?: string | null;
 }
 
@@ -77,7 +77,15 @@ export function MyPageClient({ profile, email, orders }: MyPageClientProps) {
                     <div className='flex items-center gap-1 mt-1'>
                       <Users className='w-4 h-4 text-blue-600' />
                       <span className='text-sm text-blue-600 font-medium'>
-                        {profile.crew_name} 운영진
+                        {profile.crew_name} 크루 (10% 할인)
+                      </span>
+                    </div>
+                  )}
+                  {profile.user_type === "crew_pending" && profile.crew_name && (
+                    <div className='flex items-center gap-1 mt-1'>
+                      <Users className='w-4 h-4 text-amber-500' />
+                      <span className='text-sm text-amber-600 font-medium'>
+                        {profile.crew_name} (승인 대기중)
                       </span>
                     </div>
                   )}

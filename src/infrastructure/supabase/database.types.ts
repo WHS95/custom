@@ -313,7 +313,7 @@ export interface Database {
           tenant_id: string;
           name: string;
           phone: string;
-          user_type: "individual" | "crew_staff";
+          user_type: "individual" | "crew_staff" | "crew_pending";
           crew_name: string | null;
           default_address: Json | null;
           marketing_agreed: boolean;
@@ -327,7 +327,7 @@ export interface Database {
           tenant_id?: string;
           name: string;
           phone: string;
-          user_type?: "individual" | "crew_staff";
+          user_type?: "individual" | "crew_staff" | "crew_pending";
           crew_name?: string | null;
           default_address?: Json | null;
           marketing_agreed?: boolean;
@@ -341,7 +341,7 @@ export interface Database {
           tenant_id?: string;
           name?: string;
           phone?: string;
-          user_type?: "individual" | "crew_staff";
+          user_type?: "individual" | "crew_staff" | "crew_pending";
           crew_name?: string | null;
           default_address?: Json | null;
           marketing_agreed?: boolean;
@@ -416,7 +416,7 @@ export interface Database {
         | "shipped"
         | "delivered"
         | "cancelled";
-      user_type: "individual" | "crew_staff";
+      user_type: "individual" | "crew_staff" | "crew_pending";
     };
   };
 }
