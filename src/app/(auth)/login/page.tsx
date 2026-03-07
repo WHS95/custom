@@ -15,14 +15,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Loader2, Mail, Lock, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Loader2, Mail, Lock, ArrowLeft, Eye, EyeOff, MessageCircle } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
-  const { signIn, isLoading: authLoading } = useAuth();
+  const { signIn, signInWithKakao, isLoading: authLoading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -197,6 +198,31 @@ function LoginForm() {
                   )}
                 </Button>
               </form>
+
+              {/* 구분선 */}
+              <div className="relative my-6">
+                <Separator />
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-xs text-gray-400">
+                  또는
+                </span>
+              </div>
+
+              {/* 카카오 로그인 */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full bg-[#FEE500] hover:bg-[#FDD835] border-[#FEE500] text-[#3C1E1E] font-semibold h-11"
+                onClick={async () => {
+                  const { error } = await signInWithKakao();
+                  if (error) {
+                    toast.error("카카오 로그인에 실패했습니다.");
+                  }
+                }}
+                disabled={isLoading}
+              >
+                <MessageCircle className="w-5 h-5 mr-2" />
+                카카오로 시작하기
+              </Button>
 
               {/* 회원가입 링크 */}
               <div className="mt-6 text-center text-sm text-gray-600">

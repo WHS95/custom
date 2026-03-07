@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { User, Session, AuthError } from "@supabase/supabase-js";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
 
 /**
@@ -47,10 +47,12 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  needsOnboarding: boolean;
 
   // 액션
   signUp: (params: SignUpParams) => Promise<{ error: AuthError | Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signInWithKakao: () => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
@@ -80,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   const supabase = getSupabaseBrowserClient();
 
@@ -222,6 +225,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   /**
+   * 카카오 OAuth 로그인
+   */
+  const signInWithKakao = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "kakao",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    return { error };
+  };
+
+  /**
    * 로그아웃
    */
   const signOut = async () => {
@@ -287,14 +304,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // 로그인은 되어 있지만 프로필이 없는 경우 (OAuth 최초 로그인)
+  const needsOnboarding = !!user && !profile && !isLoading;
+
+  // 프로필 없는 유저 → 온보딩 페이지로 리다이렉트
+  useEffect(() => {
+    if (needsOnboarding && pathname !== "/onboarding") {
+      router.push("/onboarding");
+    }
+  }, [needsOnboarding, pathname, router]);
+
   const value: AuthContextType = {
     user,
     profile,
     session,
     isLoading,
     isAuthenticated: !!user,
+    needsOnboarding,
     signUp,
     signIn,
+    signInWithKakao,
     signOut,
     resetPassword,
     updatePassword,
