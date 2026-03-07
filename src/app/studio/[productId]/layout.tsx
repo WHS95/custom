@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { getProductById } from "@/application/product-service";
 
@@ -6,9 +7,11 @@ interface Props {
   children: React.ReactNode;
 }
 
+const getCachedProduct = cache(getProductById);
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { productId } = await params;
-  const product = await getProductById(productId);
+  const product = await getCachedProduct(productId);
 
   if (!product) {
     return { title: "스튜디오 | RunHouse Custom" };
