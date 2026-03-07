@@ -42,14 +42,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ crews: [] });
     }
 
-    return NextResponse.json({
-      crews: data.map((crew) => ({
-        id: crew.id,
-        name: crew.name,
-        logoUrl: crew.logo_image_url,
-        instagram: crew.instagram,
-      })),
-    });
+    return NextResponse.json(
+      {
+        crews: data.map((crew) => ({
+          id: crew.id,
+          name: crew.name,
+          logoUrl: crew.logo_image_url,
+          instagram: crew.instagram,
+        })),
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+        },
+      }
+    );
   } catch (error) {
     console.error("크루 검색 에러:", error);
     return NextResponse.json({ crews: [] });

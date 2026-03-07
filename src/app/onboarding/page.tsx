@@ -382,13 +382,33 @@ export default function OnboardingPage() {
                     </p>
                   ) : crewQuery && !isSearchingCrew && crewResults.length === 0 ? (
                     <p className="text-xs text-amber-600">
-                      검색 결과가 없습니다. RunHouse에 크루를 먼저 등록해주세요.
+                      검색 결과가 없습니다. 크루 등록은{" "}
+                      <a
+                        href="https://www.runhouse.club/register"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline font-medium"
+                      >
+                        runhouse.club/register
+                      </a>
+                      {" "}에서 신청해주세요.
                     </p>
                   ) : (
                     <p className="text-xs text-gray-500">
                       RunHouse에 등록된 러닝크루를 검색하세요
                     </p>
                   )}
+                  <a
+                    href="https://www.runhouse.club/register"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 mt-1 transition-colors"
+                  >
+                    우리 크루가 아직 등록되지 않았나요?
+                    <svg className="w-3 h-3 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
                 </div>
               )}
 
