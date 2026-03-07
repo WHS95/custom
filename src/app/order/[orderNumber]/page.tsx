@@ -2,33 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Package,
-  Save,
-  RotateCcw,
-  RotateCw,
-  FlipHorizontal,
-  FlipVertical,
-  Trash2,
-  Upload,
-  AlertCircle,
   Loader2,
-  ArrowLeft,
-  Lock,
-  Unlock,
-  Image as ImageIcon,
-  MessageSquare,
-  Download,
-  ChevronDown,
-  ChevronUp,
-  Eye,
-  Layers,
-  Paperclip,
   ListOrdered,
   Wrench,
 } from "lucide-react";
@@ -39,7 +17,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import Link from "next/link";
 import { toast } from "sonner";
 import {
   useStudioConfig,
@@ -47,7 +24,6 @@ import {
   ProductColor,
 } from "@/lib/store/studio-context";
 import {
-  ORDER_STATUS_LABELS,
   type OrderStatus,
   type AttachmentFile,
 } from "@/domain/order";
@@ -56,6 +32,9 @@ import {
   DesignLayer,
   getDefaultLayerPosition,
 } from "@/components/shared/HatDesignCanvas";
+import OrderItemsSidebar from "@/components/order/OrderItemsSidebar";
+import OrderToolsPanel from "@/components/order/OrderToolsPanel";
+import OrderHeader from "@/components/order/OrderHeader";
 
 interface OrderItem {
   id: string;
@@ -90,16 +69,6 @@ interface OrderDetail {
   attachmentFiles?: AttachmentFile[];
   createdAt: string;
 }
-
-const STATUS_COLORS: Record<OrderStatus, string> = {
-  pending: "bg-yellow-100 text-yellow-700",
-  design_confirmed: "bg-blue-100 text-blue-700",
-  preparing: "bg-purple-100 text-purple-700",
-  in_production: "bg-orange-100 text-orange-700",
-  shipped: "bg-cyan-100 text-cyan-700",
-  delivered: "bg-green-100 text-green-700",
-  cancelled: "bg-gray-100 text-gray-700",
-};
 
 const VIEWS: { id: HatView; label: string }[] = [
   { id: "front", label: "정면" },
@@ -686,430 +655,68 @@ export default function OrderDetailPage() {
     );
   }
 
-  // 좌측 사이드바 - 주문 아이템 목록
-  const renderItemsSidebar = () => {
-    const sidebarViewLabels: Record<string, string> = {
-      front: "앞면",
-      back: "뒷면",
-      left: "좌측",
-      right: "우측",
-      top: "상단",
-    };
-
-    return (
-      <>
-        <div className="p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Eye className="w-5 h-5 text-blue-600" />
-            <h3 className="font-bold text-base">커스텀 내역 확인</h3>
-          </div>
-          <p className="text-xs text-gray-500 mb-4">
-            각 색상을 클릭하여 디자인 상세를 확인하세요
-          </p>
-          <div className="space-y-3">
-            {order.items.map((item, index) => {
-              const itemLayers =
-                editedLayers[item.id] || item.designSnapshot || [];
-              const hasDesign = itemLayers.length > 0;
-              const isEdited = !!editedLayers[item.id];
-              const isExpanded = expandedItems.has(item.id);
-              const isSelected = selectedItemIndex === index;
-
-              const layersByView = itemLayers.reduce(
-                (acc, layer) => {
-                  if (!acc[layer.view]) acc[layer.view] = [];
-                  acc[layer.view].push(layer);
-                  return acc;
-                },
-                {} as Record<string, DesignLayer[]>,
-              );
-
-              return (
-                <div
-                  key={item.id}
-                  className={`rounded-xl border-2 overflow-hidden transition-all ${
-                    isSelected
-                      ? "border-blue-500 shadow-md"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <div
-                    className={`p-3 cursor-pointer ${isSelected ? "bg-blue-50" : "bg-gray-50"}`}
-                    onClick={() => {
-                      setSelectedItemIndex(index);
-                      setMobileItemsOpen(false);
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm truncate">
-                          {item.productName}
-                        </p>
-                        <p className="text-xs text-gray-600 mt-0.5">
-                          {item.colorLabel}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          사이즈: {item.size} · 수량: {item.quantity}개
-                        </p>
-                        <div className="flex items-center gap-1 mt-1">
-                          {hasDesign && (
-                            <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
-                              {itemLayers.length}개 레이어
-                            </span>
-                          )}
-                          {isEdited && (
-                            <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
-                              수정됨
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setExpandedItems((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(item.id)) {
-                              next.delete(item.id);
-                            } else {
-                              next.add(item.id);
-                            }
-                            return next;
-                          });
-                        }}
-                        className="p-1.5 hover:bg-white rounded-lg transition-colors"
-                      >
-                        {isExpanded ? (
-                          <ChevronUp className="w-5 h-5 text-gray-400" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-gray-400" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`grid transition-all duration-300 ease-out ${
-                      isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                    }`}
-                  >
-                    <div className="overflow-hidden">
-                      <div className="p-3 pt-0 space-y-3">
-                        <Separator />
-                        {hasDesign ? (
-                          <div className="space-y-2">
-                            <p className="text-xs font-medium text-gray-500">
-                              디자인 위치:
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {Object.entries(layersByView).map(
-                                ([view, layers]) => (
-                                  <span
-                                    key={view}
-                                    className="text-xs bg-gray-100 px-2 py-1 rounded flex items-center gap-1"
-                                  >
-                                    <span>{sidebarViewLabels[view] || view}</span>
-                                    <span className="text-blue-600 font-medium">
-                                      {layers.length}개
-                                    </span>
-                                  </span>
-                                ),
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-gray-400 text-center py-2">
-                            디자인이 없습니다
-                          </p>
-                        )}
-
-                        <div className="bg-gray-50 rounded-lg p-2">
-                          <div className="flex justify-between text-xs">
-                            <span className="text-gray-500">단가</span>
-                            <span>{item.unitPrice.toLocaleString()}원</span>
-                          </div>
-                          <div className="flex justify-between text-sm font-bold mt-1">
-                            <span>소계</span>
-                            <span className="text-blue-600">
-                              {item.totalPrice.toLocaleString()}원
-                            </span>
-                          </div>
-                        </div>
-
-                        <Button
-                          size="sm"
-                          variant={isSelected ? "default" : "outline"}
-                          className="w-full"
-                          onClick={() => {
-                            setSelectedItemIndex(index);
-                            setMobileItemsOpen(false);
-                          }}
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          {isSelected ? "현재 보는 중" : "캔버스에서 보기"}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <Separator />
-        <div className="p-4 space-y-3 text-sm">
-          <div>
-            <p className="text-gray-500">배송지</p>
-            <p className="font-medium">{order.shippingInfo.recipientName}</p>
-            <p className="text-gray-600 text-xs">
-              {order.shippingInfo.address} {order.shippingInfo.addressDetail}
-            </p>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">총 금액</span>
-            <span className="font-bold">
-              {order.totalAmount.toLocaleString()}원
-            </span>
-          </div>
-        </div>
-
-        {order.status === "delivered" && (
-          <>
-            <Separator />
-            <div className="p-4">
-              <Link href={`/gallery/write?order=${order.orderNumber}`}>
-                <Button variant="outline" className="w-full">
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  후기 작성하기
-                </Button>
-              </Link>
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                상품에 대한 후기를 남겨주세요
-              </p>
-            </div>
-          </>
-        )}
-      </>
-    );
+  const handleSelectItem = (index: number) => {
+    setSelectedItemIndex(index);
+    setMobileItemsOpen(false);
   };
 
-  // 우측 도구 패널
-  const renderToolsPanel = () => (
-    <div className="p-4 space-y-4">
-      <Button
-        onClick={handleDownloadAllImages}
-        variant="outline"
-        className="w-full"
-      >
-        <Download className="w-4 h-4 mr-2" />
-        모든 디자인 이미지 다운로드
-      </Button>
+  const handleToggleExpand = (itemId: string) => {
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  };
 
-      {order?.attachmentFiles && order.attachmentFiles.length > 0 && (
-        <Button
-          onClick={handleDownloadAttachments}
-          variant="outline"
-          className="w-full bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100"
-        >
-          <Paperclip className="w-4 h-4 mr-2" />
-          주문자 첨부파일 ({order.attachmentFiles.length}개)
-        </Button>
-      )}
+  const sidebarProps = {
+    order,
+    editedLayers,
+    selectedItemIndex,
+    expandedItems,
+    onSelectItem: handleSelectItem,
+    onToggleExpand: handleToggleExpand,
+  };
 
-      {canEdit && (
-        <Button
-          onClick={handleSave}
-          disabled={!hasChanges || saving}
-          className="w-full"
-        >
-          {saving ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Save className="w-4 h-4 mr-2" />
-          )}
-          {saving ? "저장 중..." : hasChanges ? "디자인 저장" : "저장됨"}
-        </Button>
-      )}
-
-      {canEdit && (
-        <>
-          <Separator />
-          <div>
-            <label className="block">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              <Button variant="outline" className="w-full" asChild>
-                <span>
-                  <Upload className="w-4 h-4 mr-2" />
-                  이미지 추가
-                </span>
-              </Button>
-            </label>
-          </div>
-        </>
-      )}
-
-      {canEdit && selectedLayer && (
-        <>
-          <Separator />
-          <div className="space-y-3">
-            <h4 className="font-medium text-sm">레이어 편집</h4>
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" size="sm" onClick={() => handleRotate(-45)}>
-                <RotateCcw className="w-4 h-4 mr-1" />
-                -45°
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => handleRotate(45)}>
-                <RotateCw className="w-4 h-4 mr-1" />
-                +45°
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => handleFlip("x")}>
-                <FlipHorizontal className="w-4 h-4 mr-1" />
-                좌우
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => handleFlip("y")}>
-                <FlipVertical className="w-4 h-4 mr-1" />
-                상하
-              </Button>
-            </div>
-            <Button
-              variant="destructive"
-              size="sm"
-              className="w-full"
-              onClick={() => handleLayerRemove(selectedLayerId!)}
-            >
-              <Trash2 className="w-4 h-4 mr-1" />
-              삭제
-            </Button>
-            <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-              회전: {selectedLayer.rotation}°
-              {selectedLayer.flipX && " · 좌우반전"}
-              {selectedLayer.flipY && " · 상하반전"}
-            </div>
-          </div>
-        </>
-      )}
-
-      <Separator />
-      <div>
-        <h4 className="font-medium text-sm mb-2">
-          레이어 ({viewLayers.length})
-        </h4>
-        {viewLayers.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">
-            이 뷰에 디자인이 없습니다
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {viewLayers.map((layer, index) => (
-              <div
-                key={layer.id}
-                className={`p-2 rounded border text-sm ${
-                  selectedLayerId === layer.id
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <div
-                  className="flex items-center gap-2 cursor-pointer"
-                  onClick={() => canEdit && setSelectedLayerId(layer.id)}
-                >
-                  {layer.type === "image" ? (
-                    <ImageIcon className="w-4 h-4 text-gray-400" />
-                  ) : (
-                    <span className="text-xs">Aa</span>
-                  )}
-                  <span className="truncate flex-1">
-                    {layer.type === "image"
-                      ? `이미지 ${index + 1}`
-                      : layer.content}
-                  </span>
-                  {layer.type === "image" && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownloadImage(layer, index);
-                      }}
-                      className="p-1 hover:bg-gray-200 rounded"
-                      title="이미지 다운로드"
-                    >
-                      <Download className="w-3 h-3 text-gray-500" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {!canEdit && (
-        <>
-          <Separator />
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-yellow-800">수정 불가</p>
-                <p className="text-yellow-700 text-xs mt-1">
-                  디자인이 확정되어 더 이상 수정할 수 없습니다.
-                </p>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
+  const toolsPanelProps = {
+    canEdit,
+    hasChanges,
+    saving,
+    viewLayers,
+    selectedLayerId,
+    selectedLayer,
+    hasAttachments: !!(order.attachmentFiles && order.attachmentFiles.length > 0),
+    attachmentCount: order.attachmentFiles?.length || 0,
+    onSave: handleSave,
+    onImageUpload: handleImageUpload,
+    onRotate: handleRotate,
+    onFlip: handleFlip,
+    onLayerRemove: handleLayerRemove,
+    onLayerSelect: setSelectedLayerId,
+    onDownloadAllImages: handleDownloadAllImages,
+    onDownloadAttachments: handleDownloadAttachments,
+    onDownloadImage: handleDownloadImage,
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
       {/* 상단 헤더 */}
-      <div className="bg-white border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-4">
-              <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => router.back()}>
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => router.back()}>
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                돌아가기
-              </Button>
-              <div>
-                <h1 className="font-bold text-sm sm:text-lg">{order.orderNumber}</h1>
-                <p className="text-xs sm:text-sm text-gray-500">
-                  {order.customerName} ·{" "}
-                  {order.shippingInfo.organizationName || "개인"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Badge className={`text-xs sm:text-sm ${STATUS_COLORS[order.status]}`}>
-                {ORDER_STATUS_LABELS[order.status]}
-              </Badge>
-              <Badge variant="outline" className={`hidden sm:inline-flex ${canEdit ? "text-green-600 border-green-300" : "text-gray-500"}`}>
-                {canEdit ? (
-                  <><Unlock className="w-3 h-3 mr-1" />수정 가능</>
-                ) : (
-                  <><Lock className="w-3 h-3 mr-1" />수정 불가</>
-                )}
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </div>
+      <OrderHeader
+        orderNumber={order.orderNumber}
+        customerName={order.customerName}
+        organizationName={order.shippingInfo.organizationName}
+        status={order.status}
+        canEdit={canEdit}
+      />
 
       {/* 메인 레이아웃 */}
       <div className="flex h-[calc(100vh-64px)]">
         {/* 좌측 사이드바 - 데스크탑만 */}
         <div className="hidden lg:block w-80 bg-white border-r overflow-y-auto">
-          {renderItemsSidebar()}
+          <OrderItemsSidebar {...sidebarProps} />
         </div>
 
         {/* 중앙: 캔버스 */}
@@ -1195,7 +802,7 @@ export default function OrderDetailPage() {
 
         {/* 우측 도구 패널 - 데스크탑만 */}
         <div className="hidden lg:block w-72 bg-white border-l overflow-y-auto">
-          {renderToolsPanel()}
+          <OrderToolsPanel {...toolsPanelProps} />
         </div>
       </div>
 
@@ -1205,7 +812,7 @@ export default function OrderDetailPage() {
           <SheetHeader className="p-4 pb-0">
             <SheetTitle>주문 내역</SheetTitle>
           </SheetHeader>
-          {renderItemsSidebar()}
+          <OrderItemsSidebar {...sidebarProps} />
         </SheetContent>
       </Sheet>
 
@@ -1215,7 +822,7 @@ export default function OrderDetailPage() {
           <SheetHeader className="p-4 pb-0">
             <SheetTitle>도구</SheetTitle>
           </SheetHeader>
-          {renderToolsPanel()}
+          <OrderToolsPanel {...toolsPanelProps} />
         </SheetContent>
       </Sheet>
     </div>
