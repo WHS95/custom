@@ -159,9 +159,20 @@ export default function OnboardingPage() {
       await refreshProfile();
 
       if (userType === "crew_staff" && selectedCrew) {
-        toast.success("프로필이 생성되었습니다! 크루 인증을 진행해주세요.");
+        // Slack 알림 발송 (fire-and-forget)
+        fetch("/api/crew-approval/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            crewName: selectedCrew.name,
+            userName: name.trim(),
+            email: user.email || "",
+          }),
+        }).catch(() => {});
+
+        toast.success("프로필이 생성되었습니다! 크루 인증 요청이 전송되었습니다.");
         router.push(
-          `/crew-approval/pending?crew=${encodeURIComponent(selectedCrew.name)}&email=${encodeURIComponent(user.email || "")}`
+          `/crew-approval/pending?crew=${encodeURIComponent(selectedCrew.name)}`
         );
       } else {
         toast.success("환영합니다! 프로필이 생성되었습니다.");
