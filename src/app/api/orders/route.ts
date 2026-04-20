@@ -16,6 +16,7 @@ import {
 import { getTenantById } from "@/application/tenant-service";
 import type { CreateOrderDTO, ShippingInfo } from "@/domain/order";
 import { notifyNewOrder } from "@/lib/slack";
+import { notifyNewOrderByEmail } from "@/lib/order-email";
 import {
   isAllowedPrintColor,
   type PrintColor,
@@ -144,6 +145,16 @@ export async function POST(request: NextRequest) {
       order.items.length,
       shippingInfo.organizationName,
     ).catch((err) => console.error("[Slack] 신규 주문 알림 실패:", err));
+
+    notifyNewOrderByEmail({
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      customerEmail: order.customerEmail ?? null,
+      organizationName: shippingInfo.organizationName,
+      totalAmount: order.totalAmount,
+      itemCount: order.items.length,
+    }).catch((err) => console.error("[Email] 신규 주문 메일 실패:", err));
 
     return NextResponse.json({
       success: true,
