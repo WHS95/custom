@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useAuth, SignUpParams } from "@/lib/auth/auth-context";
+import { useAuth } from "@/lib/auth/auth-context";
+import type { SignUpParams } from "@/lib/auth/types";
 import { Button } from "@/components/ui/button";
+import { EmailInput } from "@/components/ui/email-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,7 +19,6 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
   Loader2,
@@ -34,7 +35,6 @@ import {
   EyeOff,
   BadgeCheck,
   Search,
-  MessageCircle,
 } from "lucide-react";
 
 interface CrewSearchResult {
@@ -48,7 +48,7 @@ type UserType = "individual" | "crew_staff";
 
 export default function SignupPage() {
   const router = useRouter();
-  const { signUp, signInWithKakao, isLoading: authLoading } = useAuth();
+  const { signUp, isLoading: authLoading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -241,23 +241,29 @@ export default function SignupPage() {
       const { error } = await signUp(params);
 
       if (error) {
-        if (error.message.includes("already registered")) {
-          toast.error("이미 가입된 이메일입니다.");
-        } else {
-          toast.error(error.message);
-        }
+        toast.error(error.message);
         return;
       }
 
       if (userType === "crew_staff" && selectedCrew) {
+        fetch("/api/crew-approval/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            crewName: selectedCrew.name,
+            userName: name.trim(),
+            email,
+          }),
+        }).catch(() => {});
+
         // 크루 멤버: 승인 대기 페이지로 이동
         toast.success("회원가입이 완료되었습니다! 크루 인증을 진행해주세요.");
         router.push(`/crew-approval/pending?crew=${encodeURIComponent(selectedCrew.name)}&email=${encodeURIComponent(email)}`);
         return;
       }
 
-      toast.success("회원가입이 완료되었습니다! 이메일 인증을 확인해주세요.");
-      router.push("/login");
+      toast.success("회원가입이 완료되었습니다.");
+      router.push("/");
     } catch (error) {
       console.error("회원가입 에러:", error);
       toast.error("회원가입 중 오류가 발생했습니다.");
@@ -351,13 +357,12 @@ export default function SignupPage() {
                   </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
+                    <EmailInput
                       id="email"
-                      type="email"
                       placeholder="example@email.com"
                       value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
+                      onChange={(nextEmail) => {
+                        setEmail(nextEmail);
                         setEmailCheckResult(null);
                       }}
                       className={`pl-10 pr-10 ${
@@ -367,7 +372,6 @@ export default function SignupPage() {
                             : "border-red-500 focus-visible:ring-red-500"
                           : ""
                       }`}
-                      autoComplete="email"
                       disabled={isLoading}
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -689,32 +693,6 @@ export default function SignupPage() {
                   )}
                 </Button>
               </form>
-
-              {/* 구분선 */}
-              <div className="relative my-6">
-                <Separator />
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-xs text-gray-400">
-                  또는
-                </span>
-              </div>
-
-              {/* 카카오 로그인 */}
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full bg-[#FEE500] hover:bg-[#FDD835] border-[#FEE500] text-[#3C1E1E] font-semibold h-11"
-                onClick={async () => {
-                  const { error } = await signInWithKakao();
-                  if (error) {
-                    toast.error("카카오 로그인에 실패했습니다.");
-                  }
-                }}
-                disabled={isLoading}
-              >
-                <MessageCircle className="w-5 h-5 mr-2" />
-                카카오로 시작하기
-              </Button>
-
               {/* 로그인 링크 */}
               <div className="mt-6 text-center text-sm text-gray-600">
                 이미 계정이 있으신가요?{" "}

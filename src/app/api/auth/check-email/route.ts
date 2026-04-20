@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/infrastructure/supabase/client";
+import { findAuthUserByEmail } from "@/lib/auth/server-auth";
+import { normalizeEmail } from "@/lib/auth/session";
 
 /**
  * 이메일 중복 체크 API
@@ -25,23 +26,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Service Role 클라이언트로 auth.users 조회
-    const supabase = createServerSupabaseClient();
-
-    const { data, error } = await supabase.auth.admin.listUsers();
-
-    if (error) {
-      console.error("이메일 체크 에러:", error);
-      return NextResponse.json(
-        { error: "이메일 확인 중 오류가 발생했습니다." },
-        { status: 500 },
-      );
-    }
-
-    // 이메일이 이미 존재하는지 확인
-    const exists = data.users.some(
-      (user) => user.email?.toLowerCase() === email.toLowerCase(),
-    );
+    const existingUser = await findAuthUserByEmail(normalizeEmail(email));
+    const exists = !!existingUser;
 
     return NextResponse.json({
       available: !exists,

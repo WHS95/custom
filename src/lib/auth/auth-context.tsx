@@ -5,69 +5,36 @@ import {
   useContext,
   useEffect,
   useState,
-  useCallback,
   type ReactNode,
 } from "react";
-import { User, Session, AuthError } from "@supabase/supabase-js";
 import { useRouter, usePathname } from "next/navigation";
-import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
-
-/**
- * 사용자 프로필 타입
- */
-export interface UserProfile {
-  id: string;
-  user_id: string;
-  tenant_id: string;
-  name: string;
-  phone: string;
-  user_type: "individual" | "crew_staff" | "crew_pending";
-  crew_name: string | null;
-  default_address: {
-    recipientName: string;
-    phone: string;
-    zipCode: string;
-    address: string;
-    addressDetail: string;
-    memo?: string;
-  } | null;
-  marketing_agreed: boolean;
-  marketing_agreed_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
+import { getAuthStrategy } from "@/lib/auth/strategies/email-password-strategy";
+import type {
+  AuthSession,
+  AuthUser,
+  SignUpParams,
+  UserProfile,
+} from "@/lib/auth/types";
 
 /**
  * 인증 컨텍스트 타입
  */
 interface AuthContextType {
   // 상태
-  user: User | null;
+  user: AuthUser | null;
   profile: UserProfile | null;
-  session: Session | null;
+  session: AuthSession | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   needsOnboarding: boolean;
 
   // 액션
-  signUp: (params: SignUpParams) => Promise<{ error: AuthError | Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-  signInWithKakao: () => Promise<{ error: AuthError | null }>;
+  signUp: (params: SignUpParams) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
-  updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (password: string) => Promise<{ error: Error | null }>;
   refreshProfile: () => Promise<void>;
-}
-
-/**
- * 회원가입 파라미터
- */
-export interface SignUpParams {
-  email: string;
-  password: string;
-  name: string;
-  userType: "individual" | "crew_staff" | "crew_pending";
-  crewName?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -77,70 +44,38 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
  * 애플리케이션 전체에서 인증 상태를 관리
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const authStrategy = getAuthStrategy();
 
-  const supabase = getSupabaseBrowserClient();
-
-  /**
-   * 사용자 프로필 가져오기
-   */
-  const fetchProfile = useCallback(
-    async (userId: string) => {
-      try {
-        const { data, error } = await supabase
-          .schema("runhousecustom")
-          .from("user_profiles")
-          .select("*")
-          .eq("user_id", userId)
-          .maybeSingle();
-
-        if (error) {
-          console.error("프로필 조회 에러:", error);
-          return null;
-        }
-
-        return data as UserProfile | null;
-      } catch (error) {
-        console.error("프로필 조회 에러:", error);
-        return null;
-      }
-    },
-    [supabase]
-  );
-
-  /**
-   * 프로필 새로고침
-   */
-  const refreshProfile = useCallback(async () => {
-    if (user) {
-      const profileData = await fetchProfile(user.id);
-      setProfile(profileData);
+  const refreshProfile = async () => {
+    try {
+      const authState = await authStrategy.getSession();
+      setSession(authState.session);
+      setUser(authState.user);
+      setProfile(authState.profile);
+    } catch (error) {
+      console.error("세션 새로고침 에러:", error);
+      setSession(null);
+      setUser(null);
+      setProfile(null);
     }
-  }, [user, fetchProfile]);
+  };
 
   /**
    * 초기 세션 로드 및 리스너 설정
    */
   useEffect(() => {
-    // 현재 세션 확인
     const initSession = async () => {
       try {
-        const {
-          data: { session: currentSession },
-        } = await supabase.auth.getSession();
-
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-
-        if (currentSession?.user) {
-          const profileData = await fetchProfile(currentSession.user.id);
-          setProfile(profileData);
-        }
+        const authState = await authStrategy.getSession();
+        setSession(authState.session);
+        setUser(authState.user);
+        setProfile(authState.profile);
       } catch (error) {
         console.error("세션 초기화 에러:", error);
       } finally {
@@ -149,33 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     initSession();
-
-    // 인증 상태 변경 리스너
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, newSession) => {
-      console.log("Auth state changed:", event);
-      
-      setSession(newSession);
-      setUser(newSession?.user ?? null);
-
-      if (newSession?.user) {
-        // 비동기 작업을 별도로 실행하여 이벤트 핸들러 블로킹 방지
-        fetchProfile(newSession.user.id).then((profileData) => {
-          setProfile(profileData);
-        });
-      } else {
-        setProfile(null);
-      }
-
-      // 라우터 새로고침으로 서버 컴포넌트 갱신
-      router.refresh();
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabase, fetchProfile, router]);
+  }, [authStrategy]);
 
   /**
    * 회원가입
@@ -184,26 +93,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { email, password, name, userType, crewName } = params;
 
     try {
-      // 1. Supabase Auth에 사용자 생성
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { error } = await authStrategy.signUp({
         email,
         password,
-        options: {
-          data: {
-            name,
-            user_type: userType,
-            crew_name: crewName,
-          },
-        },
+        name,
+        userType,
+        crewName,
       });
 
-      if (authError) {
-        return { error: authError };
+      if (error) {
+        return { error };
       }
 
-      if (!authData.user) {
-        return { error: new Error("사용자 생성에 실패했습니다.") };
-      }
+      await refreshProfile();
+      router.refresh();
 
       return { error: null };
     } catch (error) {
@@ -216,24 +119,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * 로그인
    */
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await authStrategy.signIn(email, password);
 
-    return { error };
-  };
-
-  /**
-   * 카카오 OAuth 로그인
-   */
-  const signInWithKakao = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "kakao",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    if (!error) {
+      await refreshProfile();
+      router.refresh();
+    }
 
     return { error };
   };
@@ -243,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      await authStrategy.signOut();
       setUser(null);
       setProfile(null);
       setSession(null);
@@ -258,11 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * 비밀번호 재설정 이메일 발송
    */
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-
-    return { error };
+    return authStrategy.resetPassword(email);
   };
 
   /**
@@ -270,37 +157,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const updatePassword = async (password: string) => {
     try {
-      console.log("Attempting to update password...");
-
-      // 세션 확인
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      if (!currentSession) {
-        console.error("No active session found");
-        return { error: { message: "로그인이 필요합니다.", name: "AuthError", status: 401 } as AuthError };
-      }
-      console.log("Session found for user:", currentSession.user.id);
-
-      // updateUser 호출 with timeout
-      const timeoutPromise = new Promise<{ error: AuthError; data: null }>((_, reject) => 
-        setTimeout(() => reject(new Error("Request timeout")), 30000)
-      );
-
-      const updatePromise = supabase.auth.updateUser({ password });
-      
-      console.log("Calling updateUser...");
-      const result = await Promise.race([updatePromise, timeoutPromise]);
-      console.log("updateUser completed:", result);
-
-      if (result.error) {
-        console.error("Password update failed:", result.error);
-      } else {
-        console.log("Password update success:", result.data);
-      }
-      
-      return { error: result.error };
+      return await authStrategy.updatePassword(password);
     } catch (err) {
       console.error("비밀번호 변경 예외:", err);
-      return { error: err as AuthError };
+      return { error: err as Error };
     }
   };
 
@@ -323,7 +183,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     needsOnboarding,
     signUp,
     signIn,
-    signInWithKakao,
     signOut,
     resetPassword,
     updatePassword,

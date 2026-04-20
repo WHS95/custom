@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
-import { getSupabaseClient } from "@/infrastructure/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +22,6 @@ import {
 
 export default function ProfilePage() {
   const { user, profile, isLoading: authLoading, refreshProfile, updatePassword } = useAuth();
-  const supabase = getSupabaseClient();
 
   // 폼 상태
   const [name, setName] = useState("");
@@ -84,13 +82,13 @@ export default function ProfilePage() {
     setIsSaving(true);
 
     try {
-      const { error } = await supabase
-        .schema("runhousecustom")
-        .from("user_profiles")
-        .update({
+      const response = await fetch("/api/auth/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           name: name.trim(),
-          crew_name: profile.user_type === "crew_staff" ? crewName.trim() : null,
-          default_address: address.recipientName
+          crewName,
+          defaultAddress: address.recipientName
             ? {
                 recipientName: address.recipientName,
                 phone: address.phone.replace(/-/g, ""),
@@ -100,11 +98,12 @@ export default function ProfilePage() {
                 memo: address.memo,
               }
             : null,
-        })
-        .eq("user_id", user.id);
+        }),
+      });
 
-      if (error) {
-        throw error;
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "프로필 저장에 실패했습니다.");
       }
 
       await refreshProfile();

@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth/auth-context";
-import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,7 +38,6 @@ interface CrewSearchResult {
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, isLoading: authLoading, refreshProfile } = useAuth();
-  const supabase = getSupabaseBrowserClient();
 
   const [name, setName] = useState("");
   const [userType, setUserType] = useState<UserType>("individual");
@@ -54,12 +52,13 @@ export default function OnboardingPage() {
   const [showCrewDropdown, setShowCrewDropdown] = useState(false);
   const crewDropdownRef = useRef<HTMLDivElement>(null);
 
-  // 카카오에서 가져온 이름 자동 채우기
   useEffect(() => {
     if (user?.user_metadata?.full_name) {
       setName(user.user_metadata.full_name);
     } else if (user?.user_metadata?.name) {
       setName(user.user_metadata.name);
+    } else if (user?.email) {
+      setName(user.email.split("@")[0]);
     }
   }, [user]);
 
@@ -139,20 +138,19 @@ export default function OnboardingPage() {
     try {
       const actualUserType = userType === "crew_staff" ? "crew_pending" : "individual";
 
-      const { error } = await supabase
-        .schema("runhousecustom")
-        .from("user_profiles")
-        .insert({
-          user_id: user.id,
+      const response = await fetch("/api/auth/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           name: name.trim(),
-          phone: "",
-          user_type: actualUserType,
-          crew_name: userType === "crew_staff" ? crewName : null,
-        });
+          userType: actualUserType,
+          crewName: userType === "crew_staff" ? crewName : null,
+        }),
+      });
 
-      if (error) {
-        console.error("프로필 생성 에러:", error);
-        toast.error("프로필 생성에 실패했습니다.");
+      if (!response.ok) {
+        const data = await response.json();
+        toast.error(data.error || "프로필 생성에 실패했습니다.");
         return;
       }
 

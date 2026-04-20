@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
+import { EmailInput } from "@/components/ui/email-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -15,15 +16,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Loader2, Mail, Lock, ArrowLeft, Eye, EyeOff, MessageCircle } from "lucide-react";
+import { Loader2, Mail, Lock, ArrowLeft, Eye, EyeOff } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
-  const { signIn, signInWithKakao, isLoading: authLoading } = useAuth();
+  const { signIn, isLoading: authLoading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,13 +44,7 @@ function LoginForm() {
       const { error } = await signIn(email, password);
 
       if (error) {
-        if (error.message.includes("Invalid login credentials")) {
-          toast.error("이메일 또는 비밀번호가 일치하지 않습니다.");
-        } else if (error.message.includes("Email not confirmed")) {
-          toast.error("이메일 인증이 필요합니다. 메일함을 확인해주세요.");
-        } else {
-          toast.error(error.message);
-        }
+        toast.error(error.message);
         return;
       }
 
@@ -135,14 +129,12 @@ function LoginForm() {
                   <Label htmlFor="email">이메일</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
+                    <EmailInput
                       id="email"
-                      type="email"
                       placeholder="example@email.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={setEmail}
                       className="pl-10"
-                      autoComplete="email"
                       disabled={isLoading}
                     />
                   </div>
@@ -152,12 +144,9 @@ function LoginForm() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">비밀번호</Label>
-                    <Link
-                      href="/forgot-password"
-                      className="text-sm text-blue-600 hover:underline"
-                    >
-                      비밀번호 찾기
-                    </Link>
+                    <span className="text-sm text-gray-400">
+                      비밀번호는 로그인 후 프로필에서 변경
+                    </span>
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -198,32 +187,6 @@ function LoginForm() {
                   )}
                 </Button>
               </form>
-
-              {/* 구분선 */}
-              <div className="relative my-6">
-                <Separator />
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-xs text-gray-400">
-                  또는
-                </span>
-              </div>
-
-              {/* 카카오 로그인 */}
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full bg-[#FEE500] hover:bg-[#FDD835] border-[#FEE500] text-[#3C1E1E] font-semibold h-11"
-                onClick={async () => {
-                  const { error } = await signInWithKakao();
-                  if (error) {
-                    toast.error("카카오 로그인에 실패했습니다.");
-                  }
-                }}
-                disabled={isLoading}
-              >
-                <MessageCircle className="w-5 h-5 mr-2" />
-                카카오로 시작하기
-              </Button>
-
               {/* 회원가입 링크 */}
               <div className="mt-6 text-center text-sm text-gray-600">
                 아직 계정이 없으신가요?{" "}
