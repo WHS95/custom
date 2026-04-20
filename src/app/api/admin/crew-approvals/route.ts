@@ -8,9 +8,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/infrastructure/supabase/database.types";
 
 function getAdminClient() {
-  return createClient(
+  return createClient<Database, "runhousecustom">(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
@@ -50,17 +51,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "조회 실패" }, { status: 500 });
     }
 
-    // auth에서 이메일 가져오기
     const userIds = (data || []).map((p) => p.user_id);
-    const profiles = await Promise.all(
-      userIds.map(async (userId) => {
-        const { data: authData } = await supabase.auth.admin.getUserById(userId);
-        return { userId, email: authData?.user?.email || "" };
-      })
-    );
+    const { data: authUsers, error: authUsersError } = await supabase
+      .from("customer_auth_users")
+      .select("id, email")
+      .in("id", userIds);
+
+    if (authUsersError) {
+      console.error("사용자 이메일 조회 에러:", authUsersError);
+      return NextResponse.json({ error: "조회 실패" }, { status: 500 });
+    }
 
     const emailMap = Object.fromEntries(
-      profiles.map((p) => [p.userId, p.email])
+      ((authUsers as Array<{ id: string; email: string }> | null) ?? []).map((p) => [
+        p.id,
+        p.email,
+      ])
     );
 
     return NextResponse.json({
