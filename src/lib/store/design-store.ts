@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 import { HatView } from "./studio-context";
 
 /**
@@ -389,19 +390,21 @@ export const useDesignStore = create<DesignState>((set, get) => {
  * 현재 색상의 현재 뷰 레이어만 가져오는 셀렉터 (단일 구독)
  */
 export const useCurrentViewLayers = () => {
-  return useDesignStore((state) => {
-    const colorLayers = state.layersByColor[state.selectedColor] || [];
-    return colorLayers.filter((layer) => layer.view === state.currentView);
-  });
+  return useDesignStore(
+    useShallow((state) => {
+      const colorLayers = state.layersByColor[state.selectedColor] || [];
+      return colorLayers.filter((layer) => layer.view === state.currentView);
+    }),
+  );
 };
 
 /**
  * 현재 색상의 모든 레이어 가져오기 (단일 구독)
  */
 export const useCurrentColorLayers = () => {
-  return useDesignStore((state) => {
-    return state.layersByColor[state.selectedColor] || [];
-  });
+  return useDesignStore(
+    useShallow((state) => state.layersByColor[state.selectedColor] || []),
+  );
 };
 
 /**
@@ -418,9 +421,11 @@ export const useSelectedLayer = () => {
  * 디자인이 있는 색상 목록 가져오기 (단일 구독)
  */
 export const useColorsWithDesign = () => {
-  return useDesignStore((state) => {
-    return Object.keys(state.layersByColor).filter(
-      (color) => state.layersByColor[color].length > 0,
-    );
-  });
+  return useDesignStore(
+    useShallow((state) =>
+      Object.keys(state.layersByColor).filter(
+        (color) => state.layersByColor[color].length > 0,
+      ),
+    ),
+  );
 };
