@@ -26,10 +26,20 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       style={
         {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
+          // 시스템 ink 알약 토스트
+          "--normal-bg": "var(--ink)",
+          "--normal-text": "var(--canvas)",
+          "--normal-border": "transparent",
+          "--success-bg": "var(--ink)",
+          "--success-text": "var(--canvas)",
+          "--success-border": "var(--success)",
+          "--error-bg": "var(--ink)",
+          "--error-text": "var(--canvas)",
+          "--error-border": "var(--danger)",
+          "--info-bg": "var(--ink)",
+          "--info-text": "var(--canvas)",
+          "--info-border": "var(--info)",
+          "--border-radius": "30px",
         } as React.CSSProperties
       }
       {...props}

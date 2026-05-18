@@ -2,12 +2,21 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Textarea — Input과 동일한 underline 패턴, 최소 높이 96px
+ */
 function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
   return (
     <textarea
       data-slot="textarea"
       className={cn(
-        "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "field-sizing-content min-h-24 w-full bg-transparent px-0 py-3 text-base text-ink",
+        "border-0 border-b border-hairline rounded-none",
+        "placeholder:text-mute selection:bg-ink selection:text-canvas",
+        "outline-none transition-colors resize-y",
+        "focus-visible:border-b-2 focus-visible:border-ink",
+        "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+        "aria-invalid:border-b-2 aria-invalid:border-danger",
         className
       )}
       {...props}

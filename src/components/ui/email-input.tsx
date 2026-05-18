@@ -149,7 +149,7 @@ export const EmailInput = forwardRef<HTMLInputElement, EmailInputProps>(
         />
 
         {showSuggestions ? (
-          <div className="absolute top-full z-50 mt-1 w-full overflow-hidden rounded-md border bg-white shadow-sm animate-[fadeIn_0.12s_ease-out]">
+          <div className="absolute top-full z-50 mt-1 w-full overflow-hidden rounded-none border border-hairline bg-canvas animate-[fadeIn_0.12s_ease-out]">
             <div className="py-1">
               {suggestions.map((item, index) => (
                 <button
@@ -159,12 +159,12 @@ export const EmailInput = forwardRef<HTMLInputElement, EmailInputProps>(
                   onClick={() => selectSuggestion(item.domain)}
                   className={cn(
                     "flex w-full items-center px-3 py-2 text-left text-sm transition-colors",
-                    "hover:bg-gray-50",
-                    index === selectedIndex && "bg-gray-50",
+                    "hover:bg-soft-cloud",
+                    index === selectedIndex && "bg-soft-cloud",
                   )}
                 >
-                  <span className="truncate text-gray-500">{beforeAt}</span>
-                  <span className="truncate font-medium text-gray-900">{item.domain}</span>
+                  <span className="truncate text-mute">{beforeAt}</span>
+                  <span className="truncate font-medium text-ink">{item.domain}</span>
                 </button>
               ))}
             </div>
