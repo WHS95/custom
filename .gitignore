@@ -55,6 +55,7 @@ next-env.d.ts
 *.md
 !CLAUDE.md
 !docs/supabase-order-email.md
+!docs/design-system/**/*.md
 *.webp
 
 # 임시 파일
