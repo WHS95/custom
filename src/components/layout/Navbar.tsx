@@ -18,7 +18,6 @@ import { Separator } from "@/components/ui/separator";
 import {
   ShoppingCart,
   User,
-  LogIn,
   LogOut,
   Users,
   MessageCircle,
@@ -158,14 +157,12 @@ export function Navbar() {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Button asChild variant="ghost" size="sm" className="gap-1">
-                <Link href="/login">
-                  <LogIn className="w-4 h-4" />
-                  <span className="hidden sm:inline">로그인</span>
-                </Link>
-              </Button>
-              <Button asChild size="sm" className="hidden sm:inline-flex">
-                <Link href="/signup">회원가입</Link>
+              <Button asChild size="sm" className="gap-1">
+                <a href="/api/sso/initiate">
+                  <Users className="w-4 h-4 text-[#C7FF00]" />
+                  <span className="hidden sm:inline">크루 로그인</span>
+                  <span className="sm:hidden">로그인</span>
+                </a>
               </Button>
             </div>
           )}
@@ -291,13 +288,11 @@ export function Navbar() {
             ) : (
               <div className="flex flex-col gap-2">
                 <SheetClose asChild>
-                  <Button asChild className="w-full">
-                    <Link href="/login">로그인</Link>
-                  </Button>
-                </SheetClose>
-                <SheetClose asChild>
-                  <Button asChild variant="outline" className="w-full">
-                    <Link href="/signup">회원가입</Link>
+                  <Button asChild className="w-full gap-2">
+                    <a href="/api/sso/initiate">
+                      <Users className="w-4 h-4 text-[#C7FF00]" />
+                      크루로 로그인
+                    </a>
                   </Button>
                 </SheetClose>
               </div>

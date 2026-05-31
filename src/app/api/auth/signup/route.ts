@@ -45,6 +45,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Fix D-1: block stub SSO email domain squatting
+    if (email.toLowerCase().endsWith("@runhouse-sso.internal")) {
+      return NextResponse.json(
+        { error: "사용할 수 없는 이메일 형식입니다." },
+        { status: 400 },
+      );
+    }
+
     if (password.length < 6) {
       return NextResponse.json(
         { error: "비밀번호는 최소 6자 이상이어야 합니다." },

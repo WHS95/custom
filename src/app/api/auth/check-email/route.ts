@@ -26,6 +26,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Fix D-1: block stub SSO email domain squatting
+    if (email.toLowerCase().endsWith("@runhouse-sso.internal")) {
+      return NextResponse.json(
+        { error: "사용할 수 없는 이메일 형식입니다." },
+        { status: 400 },
+      );
+    }
+
     const existingUser = await findAuthUserByEmail(normalizeEmail(email));
     const exists = !!existingUser;
 

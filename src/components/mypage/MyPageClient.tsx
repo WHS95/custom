@@ -48,8 +48,16 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   cancelled: "bg-gray-100 text-gray-700",
 };
 
+/** SSO stub 이메일은 사용자에게 노출하지 않음 */
+function displayEmail(email?: string): string | undefined {
+  if (!email) return undefined;
+  if (email.endsWith("@runhouse-sso.internal")) return undefined;
+  return email;
+}
+
 export function MyPageClient({ profile, email, orders }: MyPageClientProps) {
   const { signOut } = useAuth();
+  const visibleEmail = displayEmail(email);
 
   const orderStats = {
     pending: orders.filter((o) => o.status === "pending").length,
@@ -72,7 +80,7 @@ export function MyPageClient({ profile, email, orders }: MyPageClientProps) {
                 </div>
                 <div>
                   <h1 className='text-xl font-bold'>{profile.name}</h1>
-                  <p className='text-gray-500'>{email}</p>
+                  {visibleEmail && <p className='text-gray-500'>{visibleEmail}</p>}
                   {profile.user_type === "crew_staff" && profile.crew_name && (
                     <div className='flex items-center gap-1 mt-1'>
                       <Users className='w-4 h-4 text-blue-600' />

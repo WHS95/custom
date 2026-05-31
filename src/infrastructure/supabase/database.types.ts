@@ -685,6 +685,27 @@ export type Database = {
           },
         ]
       }
+      used_sso_tokens: {
+        Row: {
+          jti: string
+          aud: string
+          exp: string
+          used_at: string
+        }
+        Insert: {
+          jti: string
+          aud: string
+          exp: string
+          used_at?: string
+        }
+        Update: {
+          jti?: string
+          aud?: string
+          exp?: string
+          used_at?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           created_at: string

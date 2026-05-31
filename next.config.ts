@@ -52,6 +52,16 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Fix E: suppress Referer header on SSO callback to prevent token leakage
+      {
+        source: "/sso/:path*",
+        headers: [
+          {
+            key: "Referrer-Policy",
+            value: "no-referrer",
+          },
+        ],
+      },
     ];
   },
 

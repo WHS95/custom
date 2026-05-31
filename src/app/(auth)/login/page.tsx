@@ -1,13 +1,8 @@
 "use client";
 
-import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import Link from "next/link";
-import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
-import { EmailInput } from "@/components/ui/email-input";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -15,66 +10,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
-import { Loader2, Mail, Lock, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Loader2, ArrowLeft, Users, ShieldCheck } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
-function LoginForm() {
-  const router = useRouter();
+const SSO_ERROR_MESSAGES: Record<string, string> = {
+  sso_missing_params: "SSO 파라미터가 누락되었습니다. 다시 시도해 주세요.",
+  sso_state_mismatch: "보안 검증에 실패했습니다. 다시 시도해 주세요.",
+  sso_token_invalid: "인증 토큰이 유효하지 않거나 만료되었습니다. 다시 시도해 주세요.",
+  sso_account_error: "크루 계정 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+};
+
+function LoginContent() {
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/";
-  const { signIn, isLoading: authLoading } = useAuth();
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!email || !password) {
-      toast.error("이메일과 비밀번호를 입력해주세요.");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const { error } = await signIn(email, password);
-
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
-
-      toast.success("로그인되었습니다.");
-      router.push(redirect);
-    } catch (error) {
-      console.error("로그인 에러:", error);
-      toast.error("로그인 중 오류가 발생했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex">
-        <div className="hidden lg:flex lg:w-1/2 bg-ink items-center justify-center" />
-        <div className="flex-1 flex items-center justify-center px-4">
-          <div className="w-full max-w-md space-y-4">
-            <Skeleton className="h-8 w-32" />
-            <Skeleton className="h-[400px] w-full" />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const errorKey = searchParams.get("error");
+  const errorMessage = errorKey ? (SSO_ERROR_MESSAGES[errorKey] ?? "로그인 중 오류가 발생했습니다.") : null;
 
   return (
     <div className="min-h-screen flex">
-      {/* 왼쪽 브랜드 패널 — Cartographic Dark */}
+      {/* 왼쪽 브랜드 패널 */}
       <div className="hidden lg:flex lg:w-1/2 bg-ink items-center justify-center relative overflow-hidden">
         <div className="relative text-canvas text-center px-12 max-w-lg">
           <p className="text-kicker text-[#C7FF00] mb-6">· CREW IDENTITY ·</p>
@@ -92,7 +45,7 @@ function LoginForm() {
         </div>
       </div>
 
-      {/* 오른쪽 폼 영역 */}
+      {/* 오른쪽 로그인 영역 */}
       <div className="flex-1 flex items-center justify-center px-4 py-8 bg-canvas">
         <div className="w-full max-w-md">
           {/* 모바일 브랜드 헤더 */}
@@ -117,86 +70,57 @@ function LoginForm() {
 
           <Card className="border border-hairline">
             <CardHeader className="text-center pb-2">
-              <CardTitle className="text-2xl font-bold text-ink">로그인</CardTitle>
+              <CardTitle className="text-2xl font-bold text-ink">크루 로그인</CardTitle>
               <CardDescription className="text-mute">
-                RunHouse Custom에 오신 것을 환영합니다
+                RunHouse에 등록된 러닝크루로 로그인하세요
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* 이메일 */}
-                <div className="space-y-2">
-                  <Label htmlFor="email">이메일</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone" />
-                    <EmailInput
-                      id="email"
-                      placeholder="example@email.com"
-                      value={email}
-                      onChange={setEmail}
-                      className="pl-10"
-                      disabled={isLoading}
-                    />
-                  </div>
+            <CardContent className="space-y-4">
+              {errorMessage && (
+                <div className="p-3 rounded-[4px] bg-danger/10 border border-danger/20 text-sm text-danger">
+                  {errorMessage}
                 </div>
+              )}
 
-                {/* 비밀번호 */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">비밀번호</Label>
-                    <span className="text-sm text-stone">
-                      비밀번호는 로그인 후 프로필에서 변경
-                    </span>
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone" />
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="비밀번호 입력"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10"
-                      autoComplete="current-password"
-                      disabled={isLoading}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone hover:text-ink transition-colors"
-                      tabIndex={-1}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
+              {/* 크루 SSO 로그인 버튼 */}
+              <Button
+                asChild
+                className="w-full gap-2 bg-ink text-canvas hover:bg-ink/90"
+                size="lg"
+              >
+                <a href="/api/sso/initiate">
+                  <Users className="w-5 h-5 text-[#C7FF00]" />
+                  크루로 로그인
+                </a>
+              </Button>
+
+              {/* 혜택 안내 */}
+              <div className="rounded-[4px] border border-hairline bg-soft-cloud p-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm text-ink">
+                  <ShieldCheck className="w-4 h-4 text-[#C7FF00] flex-shrink-0" />
+                  <span className="font-medium">크루 계정 혜택</span>
                 </div>
-
-                {/* 로그인 버튼 */}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      로그인 중...
-                    </>
-                  ) : (
-                    "로그인"
-                  )}
-                </Button>
-              </form>
-              {/* 회원가입 링크 */}
-              <div className="mt-6 text-center text-sm text-mute">
-                아직 계정이 없으신가요?{" "}
-                <Link
-                  href="/signup"
-                  className="text-ink underline underline-offset-4 font-medium"
-                >
-                  회원가입
-                </Link>
+                <ul className="space-y-1.5 text-sm text-mute pl-6">
+                  <li>· RunHouse 등록 크루 즉시 10% 할인</li>
+                  <li>· 주문·디자인 이력 크루 계정에 귀속</li>
+                  <li>· 별도 회원가입 불필요</li>
+                </ul>
               </div>
+
+              <p className="text-xs text-center text-mute">
+                RunHouse 크루 인스타그램 핸들 + PIN으로 로그인합니다.
+                <br />
+                크루 등록은{" "}
+                <a
+                  href="https://www.runhouse.club"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-ink transition-colors"
+                >
+                  RunHouse 지도
+                </a>
+                에서 신청하세요.
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -214,7 +138,7 @@ export default function LoginPage() {
         </div>
       }
     >
-      <LoginForm />
+      <LoginContent />
     </Suspense>
   );
 }
