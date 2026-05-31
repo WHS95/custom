@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerSupabaseClient, SCHEMA_NAME } from "@/infrastructure/supabase"
 import { uploadOrderAttachment } from "@/infrastructure/supabase/storage"
 import type { AttachmentFile } from "@/domain/order"
+import type { Json } from "@/infrastructure/supabase/database.types"
 
 // 허용 파일 확장자
 const ALLOWED_EXTENSIONS = [".ai", ".eps", ".pdf", ".psd"]
@@ -79,7 +80,7 @@ export async function POST(
     }
 
     // 기존 첨부파일 + 새 파일 개수 확인
-    const existingFiles = (order.attachment_files || []) as AttachmentFile[]
+    const existingFiles = (order.attachment_files || []) as unknown as AttachmentFile[]
     if (existingFiles.length + files.length > MAX_FILES) {
       return NextResponse.json(
         { error: `첨부파일은 최대 ${MAX_FILES}개까지 가능합니다. (현재: ${existingFiles.length}개)` },
@@ -115,7 +116,7 @@ export async function POST(
     const { error: updateError } = await supabase
       .schema(SCHEMA_NAME)
       .from("orders")
-      .update({ attachment_files: allFiles })
+      .update({ attachment_files: allFiles as unknown as Json })
       .eq("id", order.id)
 
     if (updateError) {
@@ -165,7 +166,7 @@ export async function GET(
       )
     }
 
-    const files = (order.attachment_files || []) as AttachmentFile[]
+    const files = (order.attachment_files || []) as unknown as AttachmentFile[]
 
     return NextResponse.json({
       success: true,

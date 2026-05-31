@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { DesignLayer } from "./design-store";
+import type { Json } from "@/infrastructure/supabase/database.types";
 import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
 import type { PriceTier } from "@/domain/product/types";
 import { getUnitPrice } from "@/lib/pricing/price-calculator";
@@ -69,6 +70,18 @@ interface CartState {
 const generateId = () =>
   `cart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+// DB 동기화 디바운스 (2초 내 변경 묶어서 처리)
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+const debouncedSync = () => {
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    const state = useCartStore.getState();
+    if (state.userId) {
+      state.syncToDB();
+    }
+  }, 2000);
+};
+
 // 디자인 레이어 비교 (간단한 비교 - 실제로는 더 정교한 비교 필요할 수 있음)
 const areDesignsEqual = (
   layers1: DesignLayer[],
@@ -117,9 +130,8 @@ export const useCartStore = create<CartState>()(
       },
 
       getShippingCost: () => {
-        const total = get().getTotalPrice();
-        // 5만원 이상 무료배송, 그 외 3000원
-        return total >= 50000 ? 0 : 3000;
+        // 전 상품 무료배송
+        return 0;
       },
 
       getGrandTotal: () => {
@@ -160,10 +172,8 @@ export const useCartStore = create<CartState>()(
           return { items: [...state.items, newItem] };
         });
 
-        // DB 동기화 (로그인 상태인 경우)
-        if (get().userId) {
-          get().syncToDB();
-        }
+        // DB 동기화 (로그인 상태인 경우, 디바운스 적용)
+        debouncedSync();
 
         return { merged, newQuantity };
       },
@@ -187,10 +197,7 @@ export const useCartStore = create<CartState>()(
           }),
         }));
 
-        // DB 동기화
-        if (get().userId) {
-          get().syncToDB();
-        }
+        debouncedSync();
       },
 
       updateItemDesign: (id, designLayers) => {
@@ -200,10 +207,7 @@ export const useCartStore = create<CartState>()(
           ),
         }));
 
-        // DB 동기화
-        if (get().userId) {
-          get().syncToDB();
-        }
+        debouncedSync();
       },
 
       removeItem: (id) => {
@@ -211,16 +215,13 @@ export const useCartStore = create<CartState>()(
           items: state.items.filter((item) => item.id !== id),
         }));
 
-        // DB 동기화
-        if (get().userId) {
-          get().syncToDB();
-        }
+        debouncedSync();
       },
 
       clearCart: () => {
         set({ items: [] });
 
-        // DB 동기화 (장바구니 비우기)
+        // 장바구니 비우기는 즉시 동기화
         if (get().userId) {
           get().syncToDB();
         }
@@ -282,7 +283,7 @@ export const useCartStore = create<CartState>()(
               colorLabel: item.color_label,
               size: item.size,
               quantity: item.quantity,
-              designLayers: item.design_layers as DesignLayer[],
+              designLayers: item.design_layers as unknown as DesignLayer[],
               unitPrice: item.unit_price,
               basePrice:
                 ((item as Record<string, unknown>).base_price as number) ||
@@ -355,7 +356,7 @@ export const useCartStore = create<CartState>()(
               size: item.size,
               quantity: item.quantity,
               unit_price: item.unitPrice,
-              design_layers: item.designLayers,
+              design_layers: item.designLayers as unknown as Json,
             }));
 
             const { error } = await supabase

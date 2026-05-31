@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 import { HatView } from "./studio-context";
 
 /**
@@ -108,10 +109,17 @@ const cloneLayers = (
 };
 
 export const useDesignStore = create<DesignState>((set, get) => {
-  // 히스토리에 현재 상태 저장 (변경 전 호출)
+  // 히스토리에 현재 상태 저장 (변경된 색상만 패치 저장으로 메모리 절약)
   const pushHistory = () => {
-    const { layersByColor, history } = get();
-    const newHistory = [...history, cloneLayers(layersByColor)];
+    const { layersByColor, selectedColor, history } = get();
+    // 변경된 색상의 레이어만 shallow copy, 나머지는 참조 공유
+    const snapshot: Record<string, DesignLayer[]> = {};
+    for (const key in layersByColor) {
+      snapshot[key] = key === selectedColor
+        ? layersByColor[key].map((l) => ({ ...l }))
+        : layersByColor[key];
+    }
+    const newHistory = [...history, snapshot];
     if (newHistory.length > MAX_HISTORY) {
       newHistory.shift();
     }
@@ -379,44 +387,45 @@ export const useDesignStore = create<DesignState>((set, get) => {
 });
 
 /**
- * 현재 색상의 현재 뷰 레이어만 가져오는 셀렉터
+ * 현재 색상의 현재 뷰 레이어만 가져오는 셀렉터 (단일 구독)
  */
 export const useCurrentViewLayers = () => {
-  const layersByColor = useDesignStore((state) => state.layersByColor);
-  const selectedColor = useDesignStore((state) => state.selectedColor);
-  const currentView = useDesignStore((state) => state.currentView);
-
-  const colorLayers = layersByColor[selectedColor] || [];
-  return colorLayers.filter((layer) => layer.view === currentView);
+  return useDesignStore(
+    useShallow((state) => {
+      const colorLayers = state.layersByColor[state.selectedColor] || [];
+      return colorLayers.filter((layer) => layer.view === state.currentView);
+    }),
+  );
 };
 
 /**
- * 현재 색상의 모든 레이어 가져오기
+ * 현재 색상의 모든 레이어 가져오기 (단일 구독)
  */
 export const useCurrentColorLayers = () => {
-  const layersByColor = useDesignStore((state) => state.layersByColor);
-  const selectedColor = useDesignStore((state) => state.selectedColor);
-  return layersByColor[selectedColor] || [];
+  return useDesignStore(
+    useShallow((state) => state.layersByColor[state.selectedColor] || []),
+  );
 };
 
 /**
- * 선택된 레이어 가져오기
+ * 선택된 레이어 가져오기 (단일 구독)
  */
 export const useSelectedLayer = () => {
-  const layersByColor = useDesignStore((state) => state.layersByColor);
-  const selectedColor = useDesignStore((state) => state.selectedColor);
-  const selectedLayerId = useDesignStore((state) => state.selectedLayerId);
-
-  const colorLayers = layersByColor[selectedColor] || [];
-  return colorLayers.find((layer) => layer.id === selectedLayerId) || null;
+  return useDesignStore((state) => {
+    const colorLayers = state.layersByColor[state.selectedColor] || [];
+    return colorLayers.find((layer) => layer.id === state.selectedLayerId) || null;
+  });
 };
 
 /**
- * 디자인이 있는 색상 목록 가져오기
+ * 디자인이 있는 색상 목록 가져오기 (단일 구독)
  */
 export const useColorsWithDesign = () => {
-  const layersByColor = useDesignStore((state) => state.layersByColor);
-  return Object.keys(layersByColor).filter(
-    (color) => layersByColor[color].length > 0,
+  return useDesignStore(
+    useShallow((state) =>
+      Object.keys(state.layersByColor).filter(
+        (color) => state.layersByColor[color].length > 0,
+      ),
+    ),
   );
 };

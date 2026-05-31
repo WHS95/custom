@@ -109,13 +109,13 @@ const STATUS_ICONS: Record<OrderStatus, React.ElementType> = {
 }
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
-  pending: "bg-yellow-100 text-yellow-700",
-  design_confirmed: "bg-blue-100 text-blue-700",
-  preparing: "bg-purple-100 text-purple-700",
-  in_production: "bg-orange-100 text-orange-700",
-  shipped: "bg-cyan-100 text-cyan-700",
-  delivered: "bg-green-100 text-green-700",
-  cancelled: "bg-gray-100 text-gray-700",
+  pending: "bg-soft-cloud text-ink",
+  design_confirmed: "bg-info/10 text-info",
+  preparing: "bg-soft-cloud text-ink",
+  in_production: "bg-soft-cloud text-ink",
+  shipped: "bg-info/10 text-info",
+  delivered: "bg-success/10 text-success",
+  cancelled: "bg-soft-cloud text-mute",
 }
 
 function DashboardContent() {
@@ -158,24 +158,23 @@ function DashboardContent() {
   }
 
   const handleOrderClick = (orderNumber: string) => {
-    // 주문 상세 페이지로 이동 (스튜디오 뷰)
     router.push(`/order/${orderNumber}`)
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-canvas">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-2">주문 조회</h1>
-          <p className="text-gray-600">전화번호로 주문 내역을 확인하세요.</p>
+          <h1 className="text-2xl font-bold text-ink mb-2">주문 조회</h1>
+          <p className="text-mute">전화번호로 주문 내역을 확인하세요.</p>
         </div>
 
         {/* 검색 폼 */}
-        <Card className="mb-6">
+        <Card className="mb-6 border border-hairline">
           <CardContent className="pt-6">
             <div className="flex gap-3">
               <div className="relative flex-1">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone" />
                 <Input
                   type="tel"
                   placeholder="전화번호를 입력하세요 (예: 010-1234-5678)"
@@ -195,11 +194,11 @@ function DashboardContent() {
 
         {/* 검색 결과 */}
         {searched && orders.length === 0 && !loading && (
-          <Card className="text-center py-12">
+          <Card className="text-center py-12 border border-hairline">
             <CardContent>
-              <Package className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500">주문 내역이 없습니다.</p>
-              <p className="text-sm text-gray-400 mt-1">
+              <Package className="w-12 h-12 mx-auto text-hairline mb-4" />
+              <p className="text-mute">주문 내역이 없습니다.</p>
+              <p className="text-sm text-stone mt-1">
                 전화번호를 다시 확인해주세요.
               </p>
             </CardContent>
@@ -209,7 +208,7 @@ function DashboardContent() {
         {/* 주문 목록 */}
         {orders.length > 0 && (
           <div className="space-y-4">
-            <h2 className="font-semibold text-gray-700">
+            <h2 className="font-semibold text-ink">
               총 {orders.length}건의 주문
             </h2>
             {orders.map((order) => {
@@ -219,16 +218,16 @@ function DashboardContent() {
               return (
                 <Card
                   key={order.id}
-                  className="cursor-pointer hover:border-blue-300 transition-colors"
+                  className="cursor-pointer border border-hairline hover:border-ink/30 transition-colors"
                   onClick={() => handleOrderClick(order.orderNumber)}
                 >
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <p className="font-mono font-bold text-lg">
+                        <p className="font-mono font-bold text-lg text-ink">
                           {order.orderNumber}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-mute">
                           {new Date(order.createdAt).toLocaleDateString("ko-KR", {
                             year: "numeric",
                             month: "long",
@@ -245,13 +244,13 @@ function DashboardContent() {
                     {/* 진행률 바 */}
                     {order.status !== "cancelled" && (
                       <div className="mb-4">
-                        <div className="flex justify-between text-xs text-gray-500 mb-1">
+                        <div className="flex justify-between text-xs text-mute mb-1">
                           <span>진행률</span>
-                          <span>{progress}%</span>
+                          <span className="font-mono">{progress}%</span>
                         </div>
-                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="w-full h-2 bg-soft-cloud rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-blue-500 transition-all duration-500"
+                            className="h-full bg-ink transition-all duration-500"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
@@ -259,14 +258,14 @@ function DashboardContent() {
                     )}
 
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-mute">
                         {order.itemCount}개 상품
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold">
+                        <span className="font-bold text-ink">
                           {order.totalAmount.toLocaleString()}원
                         </span>
-                        <ArrowRight className="w-4 h-4 text-gray-400" />
+                        <ArrowRight className="w-4 h-4 text-mute" />
                       </div>
                     </div>
                   </CardContent>
@@ -282,7 +281,7 @@ function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">로딩 중...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-mute">로딩 중...</div>}>
       <DashboardContent />
     </Suspense>
   )

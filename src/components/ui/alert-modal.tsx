@@ -34,26 +34,28 @@ interface AlertModalProps {
   closeLabel?: string
 }
 
+// 모든 상태 모달은 동일한 흑백 chrome (soft-cloud 원형 배경 + 시맨틱 텍스트 색)
+// 시스템 정책상 배경 색 분리는 사용하지 않음 — 아이콘과 텍스트 색만 시맨틱으로.
 const alertConfig: Record<AlertType, { icon: typeof AlertCircle; iconColor: string; bgColor: string }> = {
   error: {
     icon: AlertCircle,
-    iconColor: "text-red-500",
-    bgColor: "bg-red-50",
+    iconColor: "text-danger",
+    bgColor: "bg-soft-cloud",
   },
   warning: {
     icon: AlertTriangle,
-    iconColor: "text-amber-500",
-    bgColor: "bg-amber-50",
+    iconColor: "text-ink",
+    bgColor: "bg-soft-cloud",
   },
   info: {
     icon: Info,
-    iconColor: "text-blue-500",
-    bgColor: "bg-blue-50",
+    iconColor: "text-info",
+    bgColor: "bg-soft-cloud",
   },
   success: {
     icon: CheckCircle,
-    iconColor: "text-green-500",
-    bgColor: "bg-green-50",
+    iconColor: "text-success",
+    bgColor: "bg-soft-cloud",
   },
 }
 

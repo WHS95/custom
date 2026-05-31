@@ -16,10 +16,13 @@ import {
 import { getTenantById } from "@/application/tenant-service";
 import type { CreateOrderDTO, ShippingInfo } from "@/domain/order";
 import { notifyNewOrder } from "@/lib/slack";
+import { notifyNewOrderByEmail } from "@/lib/order-email";
 import {
   isAllowedPrintColor,
   type PrintColor,
 } from "@/lib/constants/print-color-palette";
+import { getCrewDiscountAmount } from "@/lib/pricing/crew-discount";
+import { getSupabaseServerClient } from "@/infrastructure/supabase/server";
 
 function hasInvalidTextLayerColor(
   items: unknown,
@@ -84,6 +87,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 크루 회원 할인 확인
+    let isCrewMember = false;
+    if (body.userId) {
+      try {
+        const supabase = await getSupabaseServerClient();
+        const { data: profile } = await supabase
+          .schema("runhousecustom")
+          .from("user_profiles")
+          .select("user_type")
+          .eq("user_id", body.userId)
+          .maybeSingle();
+        isCrewMember = profile?.user_type === "crew_staff";
+      } catch (err) {
+        console.error("크루 회원 확인 에러:", err);
+      }
+    }
+
+    // 크루 할인 적용된 아이템 가격 계산
+    let orderItems = body.items;
+    if (isCrewMember) {
+      const subtotal = orderItems.reduce(
+        (sum: number, item: { unitPrice: number; quantity: number }) =>
+          sum + item.unitPrice * item.quantity,
+        0,
+      );
+      const crewDiscount = getCrewDiscountAmount(subtotal, true);
+      if (crewDiscount > 0) {
+        // 각 아이템에 비례적으로 할인 분배
+        const discountRate = crewDiscount / subtotal;
+        orderItems = orderItems.map(
+          (item: { unitPrice: number; [key: string]: unknown }) => ({
+            ...item,
+            unitPrice: Math.floor(item.unitPrice * (1 - discountRate)),
+          }),
+        );
+      }
+    }
+
     const dto: CreateOrderDTO = {
       tenantId,
       userId: body.userId,
@@ -91,7 +132,7 @@ export async function POST(request: NextRequest) {
       customerPhone: body.customerPhone,
       customerEmail: body.customerEmail,
       shippingInfo: shippingInfo,
-      items: body.items,
+      items: orderItems,
     };
 
     const order = await createOrder(dto);
@@ -104,6 +145,16 @@ export async function POST(request: NextRequest) {
       order.items.length,
       shippingInfo.organizationName,
     ).catch((err) => console.error("[Slack] 신규 주문 알림 실패:", err));
+
+    notifyNewOrderByEmail({
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      customerEmail: order.customerEmail ?? null,
+      organizationName: shippingInfo.organizationName,
+      totalAmount: order.totalAmount,
+      itemCount: order.items.length,
+    }).catch((err) => console.error("[Email] 신규 주문 메일 실패:", err));
 
     return NextResponse.json({
       success: true,
@@ -144,6 +195,10 @@ export async function GET(request: NextRequest) {
     const detail = searchParams.get("detail") === "true";
 
     if (isAdmin) {
+      // 페이지네이션 파라미터
+      const page = parseInt(searchParams.get("page") || "1");
+      const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
+
       // 관리자용 전체 조회
       const orders = await getOrdersForAdmin({
         status: status as
@@ -155,10 +210,14 @@ export async function GET(request: NextRequest) {
           | "delivered"
           | "cancelled"
           | undefined,
+        page,
+        limit,
       });
 
       return NextResponse.json({
         success: true,
+        page,
+        limit,
         orders: orders.map((order) => ({
           id: order.id,
           orderNumber: order.orderNumber,

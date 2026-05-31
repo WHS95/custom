@@ -1,155 +1,129 @@
 "use client";
 
-import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import Link from "next/link";
-import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import { Loader2, Mail, Lock, ArrowLeft } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Loader2, ArrowLeft, Users, ShieldCheck } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
-function LoginForm() {
-  const router = useRouter();
+const SSO_ERROR_MESSAGES: Record<string, string> = {
+  sso_missing_params: "SSO 파라미터가 누락되었습니다. 다시 시도해 주세요.",
+  sso_state_mismatch: "보안 검증에 실패했습니다. 다시 시도해 주세요.",
+  sso_token_invalid: "인증 토큰이 유효하지 않거나 만료되었습니다. 다시 시도해 주세요.",
+  sso_account_error: "크루 계정 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+};
+
+function LoginContent() {
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/";
-  const { signIn, isLoading: authLoading } = useAuth();
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!email || !password) {
-      toast.error("이메일과 비밀번호를 입력해주세요.");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const { error } = await signIn(email, password);
-
-      if (error) {
-        if (error.message.includes("Invalid login credentials")) {
-          toast.error("이메일 또는 비밀번호가 일치하지 않습니다.");
-        } else if (error.message.includes("Email not confirmed")) {
-          toast.error("이메일 인증이 필요합니다. 메일함을 확인해주세요.");
-        } else {
-          toast.error(error.message);
-        }
-        return;
-      }
-
-      toast.success("로그인되었습니다.");
-      router.push(redirect);
-    } catch (error) {
-      console.error("로그인 에러:", error);
-      toast.error("로그인 중 오류가 발생했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-      </div>
-    );
-  }
+  const errorKey = searchParams.get("error");
+  const errorMessage = errorKey ? (SSO_ERROR_MESSAGES[errorKey] ?? "로그인 중 오류가 발생했습니다.") : null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md">
-        {/* 뒤로가기 */}
-        <Link
-          href="/"
-          className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          홈으로 돌아가기
-        </Link>
+    <div className="min-h-screen flex">
+      {/* 왼쪽 브랜드 패널 */}
+      <div className="hidden lg:flex lg:w-1/2 bg-ink items-center justify-center relative overflow-hidden">
+        <div className="relative text-canvas text-center px-12 max-w-lg">
+          <p className="text-kicker text-[#C7FF00] mb-6">· CREW IDENTITY ·</p>
+          <h1 className="font-bold tracking-[0.08em] uppercase text-3xl mb-4">
+            RUN HOUSE{" "}
+            <span className="inline-block px-2 py-1 bg-[#C7FF00] text-[#0B0C0A] text-sm font-extrabold tracking-[0.15em] rounded-[4px] align-middle ml-1">
+              CUSTOM
+            </span>
+          </h1>
+          <p className="text-base text-stone leading-relaxed">
+            나만의 러닝 크루 아이덴티티를 만들어보세요.
+            <br />
+            커스텀 모자부터 의류까지.
+          </p>
+        </div>
+      </div>
 
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">로그인</CardTitle>
-            <CardDescription>
-              RunHouse Custom에 오신 것을 환영합니다
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* 이메일 */}
-              <div className="space-y-2">
-                <Label htmlFor="email">이메일</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="example@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    autoComplete="email"
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
+      {/* 오른쪽 로그인 영역 */}
+      <div className="flex-1 flex items-center justify-center px-4 py-8 bg-canvas">
+        <div className="w-full max-w-md">
+          {/* 모바일 브랜드 헤더 */}
+          <div className="lg:hidden text-center mb-8">
+            <Link href="/" className="inline-block">
+              <h1 className="font-bold tracking-[0.08em] uppercase text-xl">
+                <span className="text-ink">RUN HOUSE</span>{" "}
+                <span className="px-1.5 py-0.5 bg-[#C7FF00] text-[#0B0C0A] text-[9px] font-extrabold tracking-[0.15em] rounded-[4px] align-middle">
+                  CUSTOM
+                </span>
+              </h1>
+            </Link>
+          </div>
 
-              {/* 비밀번호 */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">비밀번호</Label>
-                  <Link
-                    href="/forgot-password"
-                    className="text-sm text-blue-600 hover:underline"
-                  >
-                    비밀번호 찾기
-                  </Link>
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="비밀번호 입력"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                    autoComplete="current-password"
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
+          <Link
+            href="/"
+            className="inline-flex items-center text-sm text-mute hover:text-ink mb-6 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            홈으로 돌아가기
+          </Link>
 
-              {/* 로그인 버튼 */}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    로그인 중...
-                  </>
-                ) : (
-                  "로그인"
-                )}
+          <Card className="border border-hairline">
+            <CardHeader className="text-center pb-2">
+              <CardTitle className="text-2xl font-bold text-ink">크루 로그인</CardTitle>
+              <CardDescription className="text-mute">
+                RunHouse에 등록된 러닝크루로 로그인하세요
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {errorMessage && (
+                <div className="p-3 rounded-[4px] bg-danger/10 border border-danger/20 text-sm text-danger">
+                  {errorMessage}
+                </div>
+              )}
+
+              {/* 크루 SSO 로그인 버튼 */}
+              <Button
+                asChild
+                className="w-full gap-2 bg-ink text-canvas hover:bg-ink/90"
+                size="lg"
+              >
+                <a href="/api/sso/initiate">
+                  <Users className="w-5 h-5 text-[#C7FF00]" />
+                  크루로 로그인
+                </a>
               </Button>
-            </form>
 
-            {/* 회원가입 링크 */}
-            <div className="mt-6 text-center text-sm text-gray-600">
-              아직 계정이 없으신가요?{" "}
-              <Link href="/signup" className="text-blue-600 hover:underline font-medium">
-                회원가입
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+              {/* 혜택 안내 */}
+              <div className="rounded-[4px] border border-hairline bg-soft-cloud p-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm text-ink">
+                  <ShieldCheck className="w-4 h-4 text-[#C7FF00] flex-shrink-0" />
+                  <span className="font-medium">크루 계정 혜택</span>
+                </div>
+                <ul className="space-y-1.5 text-sm text-mute pl-6">
+                  <li>· RunHouse 등록 크루 즉시 10% 할인</li>
+                  <li>· 주문·디자인 이력 크루 계정에 귀속</li>
+                  <li>· 별도 회원가입 불필요</li>
+                </ul>
+              </div>
+
+              <p className="text-xs text-center text-mute">
+                RunHouse 크루 인스타그램 핸들 + PIN으로 로그인합니다.
+                <br />
+                크루 등록은{" "}
+                <a
+                  href="https://www.runhouse.club"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-ink transition-colors"
+                >
+                  RunHouse 지도
+                </a>
+                에서 신청하세요.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
@@ -160,11 +134,11 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+          <Loader2 className="w-8 h-8 animate-spin text-mute" />
         </div>
       }
     >
-      <LoginForm />
+      <LoginContent />
     </Suspense>
   );
 }

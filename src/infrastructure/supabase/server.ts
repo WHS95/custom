@@ -9,6 +9,10 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "./database.types";
 import { SCHEMA_NAME } from "./client";
+import {
+  getCurrentAuthUser,
+  getCurrentAuthUserProfile,
+} from "@/lib/auth/server-auth";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -82,39 +86,12 @@ export async function getSupabaseRouteClient() {
  * 현재 로그인한 사용자 정보 가져오기
  */
 export async function getCurrentUser() {
-  const supabase = await getSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    return null;
-  }
-
-  return user;
+  return getCurrentAuthUser();
 }
 
 /**
  * 현재 로그인한 사용자의 프로필 정보 가져오기
  */
 export async function getCurrentUserProfile() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return null;
-  }
-
-  const supabase = await getSupabaseServerClient();
-  const { data: profile, error } = await supabase
-    .from("user_profiles")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
-
-  if (error) {
-    console.error("프로필 조회 에러:", error);
-    return null;
-  }
-
-  return profile;
+  return getCurrentAuthUserProfile();
 }

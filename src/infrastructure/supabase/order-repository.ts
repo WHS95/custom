@@ -220,10 +220,14 @@ export class SupabaseOrderRepository implements IOrderRepository {
   }
 
   /**
-   * 필터로 주문 목록 조회
+   * 필터로 주문 목록 조회 (페이지네이션 지원)
    */
   async findAll(filter: OrderFilter): Promise<Order[]> {
     const client = this.getClient()
+
+    const page = filter.page || 1
+    const limit = Math.min(filter.limit || 50, 100) // 최대 100건
+    const offset = (page - 1) * limit
 
     let query = client
       .from('orders')
@@ -253,7 +257,9 @@ export class SupabaseOrderRepository implements IOrderRepository {
       query = query.lte('created_at', filter.dateTo.toISOString())
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false })
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
     if (error || !data) return []
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -418,6 +424,26 @@ export class SupabaseOrderRepository implements IOrderRepository {
       memo: h.memo || undefined,
       createdAt: new Date(h.created_at),
     }))
+  }
+
+  /**
+   * 상태별 주문 건수 조회 (전체 데이터 로드 없이 카운트만)
+   */
+  async countByStatus(tenantId: string, status: OrderStatus): Promise<number> {
+    const client = this.getClient()
+
+    const { count, error } = await client
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('status', status)
+
+    if (error) {
+      console.error(`주문 카운트 실패 (${status}):`, error)
+      return 0
+    }
+
+    return count || 0
   }
 
   /**

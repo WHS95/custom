@@ -2,12 +2,18 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * RunHouse Custom 디자인 시스템 — Card
+ *
+ * flat 컨테이너: rounded-none, border-0, shadow-none.
+ * 구획이 필요할 때는 호출처에서 1px hairline 보더를 명시적으로 추가.
+ */
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card"
       className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
+        "bg-canvas text-ink flex flex-col gap-6 rounded-none border-0 shadow-none py-6",
         className
       )}
       {...props}
@@ -32,7 +38,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-title"
-      className={cn("leading-none font-semibold", className)}
+      className={cn("leading-tight font-semibold text-ink", className)}
       {...props}
     />
   )
@@ -42,7 +48,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn("text-mute text-sm", className)}
       {...props}
     />
   )

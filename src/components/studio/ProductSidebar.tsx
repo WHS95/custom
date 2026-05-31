@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,7 @@ import {
 } from "@/lib/store/design-store";
 import { useCartStore, CartItem } from "@/lib/store/cart-store";
 import { toast } from "sonner";
+import posthog from "posthog-js";
 import type { PriceTier } from "@/domain/product/types";
 import { getUnitPrice, getDiscountRate } from "@/lib/pricing/price-calculator";
 import { PricingTableModal } from "./PricingTableModal";
@@ -85,20 +86,27 @@ export function ProductSidebar({
   const updateItemQuantity = useCartStore((state) => state.updateItemQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
 
-  const selectedColorData = colors.find((c) => c.id === selectedColor);
+  const selectedColorData = useMemo(
+    () => colors.find((c) => c.id === selectedColor),
+    [colors, selectedColor],
+  );
 
   // 현재 색상에 디자인이 있는지 확인
   const hasCurrentDesign = currentColorLayers.length > 0;
 
   // 디자인이 있는 색상들
-  const colorsWithDesign = Object.keys(layersByColor).filter(
-    (color) => layersByColor[color] && layersByColor[color].length > 0,
+  const colorsWithDesign = useMemo(
+    () =>
+      Object.keys(layersByColor).filter(
+        (color) => layersByColor[color] && layersByColor[color].length > 0,
+      ),
+    [layersByColor],
   );
 
   /**
    * 장바구니에 현재 디자인 추가
    */
-  const handleAddToCart = () => {
+  const handleAddToCart = useCallback(() => {
     if (!hasCurrentDesign) {
       toast.error("디자인을 먼저 추가해주세요", {
         description:
@@ -121,6 +129,13 @@ export function ProductSidebar({
       priceTiers: priceTiers || undefined,
     });
 
+    // Analytics: track add-to-cart (no amounts — Phase 2)
+    posthog.capture("hat_added_to_cart", {
+      product_id: productId || "custom-hat",
+      color: selectedColor,
+      quantity: quantity,
+    });
+
     if (result.merged) {
       toast.success(
         `${selectedColorData?.label} / ${selectedSize} 수량이 ${result.newQuantity}개로 변경됨`,
@@ -132,24 +147,24 @@ export function ProductSidebar({
     }
 
     setQuantity(1);
-  };
+  }, [hasCurrentDesign, addToCart, productId, displayName, selectedColor, selectedColorData, selectedSize, quantity, currentColorLayers, currentUnitPrice, basePrice, priceTiers]);
 
   /**
    * 장바구니 아이템 클릭 시 해당 디자인으로 이동
    */
-  const handleCartItemClick = (item: CartItem) => {
+  const handleCartItemClick = useCallback((item: CartItem) => {
     onColorChange(item.color);
     setSelectedColor(item.color);
 
     toast.info(`${item.colorLabel} 디자인으로 이동했습니다`, {
       description: `사이즈: ${item.size} / 수량: ${item.quantity}개`,
     });
-  };
+  }, [onColorChange, setSelectedColor]);
 
   /**
    * 장바구니 아이템 수량 변경
    */
-  const handleQuantityChange = (
+  const handleQuantityChange = useCallback((
     itemId: string,
     newQuantity: number,
     e: React.MouseEvent,
@@ -161,16 +176,16 @@ export function ProductSidebar({
     } else {
       updateItemQuantity(itemId, newQuantity);
     }
-  };
+  }, [removeItem, updateItemQuantity]);
 
   /**
    * 장바구니 아이템 삭제
    */
-  const handleRemoveItem = (itemId: string, e: React.MouseEvent) => {
+  const handleRemoveItem = useCallback((itemId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     removeItem(itemId);
     toast.info("아이템이 삭제되었습니다");
-  };
+  }, [removeItem]);
 
   const totalCartItems = getTotalItems();
   const totalCartPrice = getTotalPrice();
