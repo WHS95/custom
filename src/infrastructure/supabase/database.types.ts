@@ -1,484 +1,796 @@
-/**
- * Supabase Database Types
- *
- * 스키마: runhousecustom
- * 이 파일은 supabase gen types로 자동 생성할 수도 있음
- */
-
 export type Json =
   | string
   | number
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[];
+  | Json[]
 
-export interface Database {
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.3 (519615d)"
+  }
   runhousecustom: {
     Tables: {
-      tenants: {
-        Row: {
-          id: string;
-          name: string;
-          slug: string;
-          logo_url: string | null;
-          contact_email: string;
-          contact_phone: string | null;
-          settings: Json;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          name: string;
-          slug: string;
-          logo_url?: string | null;
-          contact_email: string;
-          contact_phone?: string | null;
-          settings?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          name?: string;
-          slug?: string;
-          logo_url?: string | null;
-          contact_email?: string;
-          contact_phone?: string | null;
-          settings?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      customers: {
-        Row: {
-          id: string;
-          tenant_id: string;
-          name: string;
-          email: string | null;
-          phone: string;
-          organization_name: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          tenant_id: string;
-          name: string;
-          email?: string | null;
-          phone: string;
-          organization_name?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          tenant_id?: string;
-          name?: string;
-          email?: string | null;
-          phone?: string;
-          organization_name?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      customer_auth_users: {
-        Row: {
-          id: string;
-          email: string;
-          password_hash: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          email: string;
-          password_hash: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          email?: string;
-          password_hash?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
       customer_auth_sessions: {
         Row: {
-          id: string;
-          user_id: string;
-          token_hash: string;
-          expires_at: string;
-          created_at: string;
-        };
+          created_at: string
+          expires_at: string
+          id: string
+          token_hash: string
+          user_id: string
+        }
         Insert: {
-          id?: string;
-          user_id: string;
-          token_hash: string;
-          expires_at: string;
-          created_at?: string;
-        };
+          created_at?: string
+          expires_at: string
+          id?: string
+          token_hash: string
+          user_id: string
+        }
         Update: {
-          id?: string;
-          user_id?: string;
-          token_hash?: string;
-          expires_at?: string;
-          created_at?: string;
-        };
-      };
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_auth_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "customer_auth_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_auth_users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          password_hash: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          password_hash: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          password_hash?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_password_reset_tokens: {
         Row: {
-          id: string;
-          user_id: string;
-          token_hash: string;
-          expires_at: string;
-          used_at: string | null;
-          created_at: string;
-        };
+          created_at: string
+          expires_at: string
+          id: string
+          token_hash: string
+          used_at: string | null
+          user_id: string
+        }
         Insert: {
-          id?: string;
-          user_id: string;
-          token_hash: string;
-          expires_at: string;
-          used_at?: string | null;
-          created_at?: string;
-        };
+          created_at?: string
+          expires_at: string
+          id?: string
+          token_hash: string
+          used_at?: string | null
+          user_id: string
+        }
         Update: {
-          id?: string;
-          user_id?: string;
-          token_hash?: string;
-          expires_at?: string;
-          used_at?: string | null;
-          created_at?: string;
-        };
-      };
-      orders: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token_hash?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_password_reset_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "customer_auth_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
         Row: {
-          id: string;
-          order_number: string;
-          tenant_id: string;
-          customer_id: string | null;
-          user_id: string | null;
-          customer_name: string;
-          customer_phone: string;
-          customer_email: string | null;
-          shipping_info: Json;
-          subtotal: number;
-          shipping_cost: number;
-          total_amount: number;
-          status: string;
-          admin_memo: string | null;
-          tracking_info: Json | null;
-          created_at: string;
-          updated_at: string;
-        };
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          organization_name: string | null
+          phone: string
+          tenant_id: string
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          order_number: string;
-          tenant_id: string;
-          customer_id?: string | null;
-          user_id?: string | null;
-          customer_name: string;
-          customer_phone: string;
-          customer_email?: string | null;
-          shipping_info: Json;
-          subtotal: number;
-          shipping_cost: number;
-          total_amount: number;
-          status?: string;
-          admin_memo?: string | null;
-          tracking_info?: Json | null;
-          created_at?: string;
-          updated_at?: string;
-        };
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          organization_name?: string | null
+          phone: string
+          tenant_id: string
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          order_number?: string;
-          tenant_id?: string;
-          customer_id?: string | null;
-          user_id?: string | null;
-          customer_name?: string;
-          customer_phone?: string;
-          customer_email?: string | null;
-          shipping_info?: Json;
-          subtotal?: number;
-          shipping_cost?: number;
-          total_amount?: number;
-          status?: string;
-          admin_memo?: string | null;
-          tracking_info?: Json | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          organization_name?: string | null
+          phone?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
-          id: string;
-          order_id: string;
-          product_id: string;
-          product_name: string;
-          color: string;
-          color_label: string;
-          size: string;
-          quantity: number;
-          unit_price: number;
-          total_price: number;
-          design_snapshot: Json;
-          created_at: string;
-        };
+          color: string
+          color_label: string
+          created_at: string
+          design_snapshot: Json
+          id: string
+          order_id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          size: string
+          total_price: number
+          unit_price: number
+        }
         Insert: {
-          id?: string;
-          order_id: string;
-          product_id: string;
-          product_name: string;
-          color: string;
-          color_label: string;
-          size: string;
-          quantity: number;
-          unit_price: number;
-          total_price: number;
-          design_snapshot: Json;
-          created_at?: string;
-        };
+          color: string
+          color_label: string
+          created_at?: string
+          design_snapshot: Json
+          id?: string
+          order_id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          size: string
+          total_price: number
+          unit_price: number
+        }
         Update: {
-          id?: string;
-          order_id?: string;
-          product_id?: string;
-          product_name?: string;
-          color?: string;
-          color_label?: string;
-          size?: string;
-          quantity?: number;
-          unit_price?: number;
-          total_price?: number;
-          design_snapshot?: Json;
-          created_at?: string;
-        };
-      };
+          color?: string
+          color_label?: string
+          created_at?: string
+          design_snapshot?: Json
+          id?: string
+          order_id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          size?: string
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_list_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_status_history: {
         Row: {
-          id: string;
-          order_id: string;
-          from_status: string | null;
-          to_status: string;
-          changed_by: string;
-          memo: string | null;
-          created_at: string;
-        };
+          changed_by: string
+          created_at: string
+          from_status:
+            | Database["runhousecustom"]["Enums"]["order_status"]
+            | null
+          id: string
+          memo: string | null
+          order_id: string
+          to_status: Database["runhousecustom"]["Enums"]["order_status"]
+        }
         Insert: {
-          id?: string;
-          order_id: string;
-          from_status?: string | null;
-          to_status: string;
-          changed_by: string;
-          memo?: string | null;
-          created_at?: string;
-        };
+          changed_by: string
+          created_at?: string
+          from_status?:
+            | Database["runhousecustom"]["Enums"]["order_status"]
+            | null
+          id?: string
+          memo?: string | null
+          order_id: string
+          to_status: Database["runhousecustom"]["Enums"]["order_status"]
+        }
         Update: {
-          id?: string;
-          order_id?: string;
-          from_status?: string | null;
-          to_status?: string;
-          changed_by?: string;
-          memo?: string | null;
-          created_at?: string;
-        };
-      };
-      products: {
+          changed_by?: string
+          created_at?: string
+          from_status?:
+            | Database["runhousecustom"]["Enums"]["order_status"]
+            | null
+          id?: string
+          memo?: string | null
+          order_id?: string
+          to_status?: Database["runhousecustom"]["Enums"]["order_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_list_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
         Row: {
-          id: string;
-          tenant_id: string;
-          name: string;
-          slug: string;
-          description: string | null;
-          category: string;
-          base_price: number;
-          price_tiers: Json | null;
-          images: Json;
-          variants: Json;
-          is_active: boolean;
-          sort_order: number;
-          created_at: string;
-          updated_at: string;
-        };
+          admin_memo: string | null
+          attachment_files: Json | null
+          created_at: string
+          customer_email: string | null
+          customer_id: string | null
+          customer_name: string
+          customer_phone: string
+          id: string
+          order_number: string
+          shipping_cost: number
+          shipping_info: Json
+          status: Database["runhousecustom"]["Enums"]["order_status"]
+          subtotal: number
+          tenant_id: string
+          total_amount: number
+          updated_at: string
+          user_id: string | null
+        }
         Insert: {
-          id?: string;
-          tenant_id: string;
-          name: string;
-          slug: string;
-          description?: string | null;
-          category?: string;
-          base_price: number;
-          price_tiers?: Json | null;
-          images?: Json;
-          variants?: Json;
-          is_active?: boolean;
-          sort_order?: number;
-          created_at?: string;
-          updated_at?: string;
-        };
+          admin_memo?: string | null
+          attachment_files?: Json | null
+          created_at?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name: string
+          customer_phone: string
+          id?: string
+          order_number: string
+          shipping_cost: number
+          shipping_info: Json
+          status?: Database["runhousecustom"]["Enums"]["order_status"]
+          subtotal: number
+          tenant_id: string
+          total_amount: number
+          updated_at?: string
+          user_id?: string | null
+        }
         Update: {
-          id?: string;
-          tenant_id?: string;
-          name?: string;
-          slug?: string;
-          description?: string | null;
-          category?: string;
-          base_price?: number;
-          price_tiers?: Json | null;
-          images?: Json;
-          variants?: Json;
-          is_active?: boolean;
-          sort_order?: number;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
+          admin_memo?: string | null
+          attachment_files?: Json | null
+          created_at?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string
+          customer_phone?: string
+          id?: string
+          order_number?: string
+          shipping_cost?: number
+          shipping_info?: Json
+          status?: Database["runhousecustom"]["Enums"]["order_status"]
+          subtotal?: number
+          tenant_id?: string
+          total_amount?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "customer_auth_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_customizable_areas: {
         Row: {
-          id: string;
-          product_id: string;
-          view_name: string;
-          display_name: string;
-          zone_x: number;
-          zone_y: number;
-          zone_width: number;
-          zone_height: number;
-          image_url: string | null;
-          is_enabled: boolean;
-          sort_order: number;
-        };
+          color_id: string | null
+          created_at: string
+          display_name: string
+          id: string
+          image_url: string | null
+          is_enabled: boolean
+          product_id: string
+          sort_order: number
+          view_name: string
+          zone_height: number
+          zone_width: number
+          zone_x: number
+          zone_y: number
+        }
         Insert: {
-          id?: string;
-          product_id: string;
-          view_name: string;
-          display_name: string;
-          zone_x: number;
-          zone_y: number;
-          zone_width: number;
-          zone_height: number;
-          image_url?: string | null;
-          is_enabled?: boolean;
-          sort_order?: number;
-        };
+          color_id?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          image_url?: string | null
+          is_enabled?: boolean
+          product_id: string
+          sort_order?: number
+          view_name: string
+          zone_height: number
+          zone_width: number
+          zone_x: number
+          zone_y: number
+        }
         Update: {
-          id?: string;
-          product_id?: string;
-          view_name?: string;
-          display_name?: string;
-          zone_x?: number;
-          zone_y?: number;
-          zone_width?: number;
-          zone_height?: number;
-          image_url?: string | null;
-          is_enabled?: boolean;
-          sort_order?: number;
-        };
-      };
-      user_profiles: {
+          color_id?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          image_url?: string | null
+          is_enabled?: boolean
+          product_id?: string
+          sort_order?: number
+          view_name?: string
+          zone_height?: number
+          zone_width?: number
+          zone_x?: number
+          zone_y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_customizable_areas_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
         Row: {
-          id: string;
-          user_id: string;
-          tenant_id: string;
-          name: string;
-          phone: string;
-          user_type: "individual" | "crew_staff" | "crew_pending";
-          crew_name: string | null;
-          default_address: Json | null;
-          marketing_agreed: boolean;
-          marketing_agreed_at: string | null;
-          created_at: string;
-          updated_at: string;
-        };
+          admin_message: string | null
+          base_price: number
+          category: string
+          created_at: string
+          description: string | null
+          detail_image_url: string | null
+          id: string
+          images: Json | null
+          is_active: boolean
+          name: string
+          price_tiers: Json | null
+          slug: string
+          sort_order: number
+          tenant_id: string
+          updated_at: string
+          variants: Json | null
+        }
         Insert: {
-          id?: string;
-          user_id: string;
-          tenant_id?: string;
-          name: string;
-          phone: string;
-          user_type?: "individual" | "crew_staff" | "crew_pending";
-          crew_name?: string | null;
-          default_address?: Json | null;
-          marketing_agreed?: boolean;
-          marketing_agreed_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
+          admin_message?: string | null
+          base_price: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          detail_image_url?: string | null
+          id?: string
+          images?: Json | null
+          is_active?: boolean
+          name: string
+          price_tiers?: Json | null
+          slug: string
+          sort_order?: number
+          tenant_id: string
+          updated_at?: string
+          variants?: Json | null
+        }
         Update: {
-          id?: string;
-          user_id?: string;
-          tenant_id?: string;
-          name?: string;
-          phone?: string;
-          user_type?: "individual" | "crew_staff" | "crew_pending";
-          crew_name?: string | null;
-          default_address?: Json | null;
-          marketing_agreed?: boolean;
-          marketing_agreed_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
+          admin_message?: string | null
+          base_price?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          detail_image_url?: string | null
+          id?: string
+          images?: Json | null
+          is_active?: boolean
+          name?: string
+          price_tiers?: Json | null
+          slug?: string
+          sort_order?: number
+          tenant_id?: string
+          updated_at?: string
+          variants?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          admin_memo: string | null
+          approved_at: string | null
+          author_name: string
+          author_type: string
+          content: string
+          created_at: string
+          id: string
+          images: Json | null
+          is_featured: boolean
+          order_id: string | null
+          organization_name: string | null
+          rating: number
+          sort_order: number
+          status: Database["runhousecustom"]["Enums"]["review_status"]
+          tenant_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_memo?: string | null
+          approved_at?: string | null
+          author_name: string
+          author_type?: string
+          content: string
+          created_at?: string
+          id?: string
+          images?: Json | null
+          is_featured?: boolean
+          order_id?: string | null
+          organization_name?: string | null
+          rating: number
+          sort_order?: number
+          status?: Database["runhousecustom"]["Enums"]["review_status"]
+          tenant_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_memo?: string | null
+          approved_at?: string | null
+          author_name?: string
+          author_type?: string
+          content?: string
+          created_at?: string
+          id?: string
+          images?: Json | null
+          is_featured?: boolean
+          order_id?: string | null
+          organization_name?: string | null
+          rating?: number
+          sort_order?: number
+          status?: Database["runhousecustom"]["Enums"]["review_status"]
+          tenant_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_list_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_admins: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          is_active: boolean
+          last_login_at: string | null
+          password_hash: string
+          tenant_id: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          password_hash: string
+          tenant_id: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          password_hash?: string
+          tenant_id?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_admins_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          contact_email: string
+          contact_phone: string | null
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          settings: Json
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          contact_email: string
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          settings?: Json
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          settings?: Json
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_carts: {
         Row: {
-          id: string;
-          user_id: string;
-          tenant_id: string;
-          product_id: string;
-          product_name: string;
-          color: string;
-          color_label: string;
-          size: string;
-          quantity: number;
-          unit_price: number;
-          design_layers: Json;
-          created_at: string;
-          updated_at: string;
-        };
+          color: string
+          color_label: string
+          created_at: string
+          design_layers: Json
+          id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          size: string
+          tenant_id: string
+          unit_price: number
+          updated_at: string
+          user_id: string
+        }
         Insert: {
-          id?: string;
-          user_id: string;
-          tenant_id?: string;
-          product_id: string;
-          product_name: string;
-          color: string;
-          color_label: string;
-          size: string;
-          quantity?: number;
-          unit_price: number;
-          design_layers?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
+          color: string
+          color_label: string
+          created_at?: string
+          design_layers?: Json
+          id?: string
+          product_id: string
+          product_name: string
+          quantity?: number
+          size: string
+          tenant_id?: string
+          unit_price: number
+          updated_at?: string
+          user_id: string
+        }
         Update: {
-          id?: string;
-          user_id?: string;
-          tenant_id?: string;
-          product_id?: string;
-          product_name?: string;
-          color?: string;
-          color_label?: string;
-          size?: string;
-          quantity?: number;
-          unit_price?: number;
-          design_layers?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-    };
+          color?: string
+          color_label?: string
+          created_at?: string
+          design_layers?: Json
+          id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          size?: string
+          tenant_id?: string
+          unit_price?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_carts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_carts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "customer_auth_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          created_at: string
+          crew_name: string | null
+          default_address: Json | null
+          id: string
+          marketing_agreed: boolean
+          marketing_agreed_at: string | null
+          name: string
+          phone: string
+          tenant_id: string
+          updated_at: string
+          user_id: string
+          user_type: Database["runhousecustom"]["Enums"]["user_type"]
+        }
+        Insert: {
+          created_at?: string
+          crew_name?: string | null
+          default_address?: Json | null
+          id?: string
+          marketing_agreed?: boolean
+          marketing_agreed_at?: string | null
+          name: string
+          phone?: string
+          tenant_id?: string
+          updated_at?: string
+          user_id: string
+          user_type?: Database["runhousecustom"]["Enums"]["user_type"]
+        }
+        Update: {
+          created_at?: string
+          crew_name?: string | null
+          default_address?: Json | null
+          id?: string
+          marketing_agreed?: boolean
+          marketing_agreed_at?: string | null
+          name?: string
+          phone?: string
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+          user_type?: Database["runhousecustom"]["Enums"]["user_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "customer_auth_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
     Views: {
-      [_ in never]: never;
-    };
+      crew_stats: {
+        Row: {
+          crew_name: string | null
+          member_count: number | null
+          order_count: number | null
+          total_amount: number | null
+        }
+        Relationships: []
+      }
+      order_list_view: {
+        Row: {
+          admin_memo: string | null
+          created_at: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          id: string | null
+          item_count: number | null
+          order_number: string | null
+          organization_name: string | null
+          recipient_name: string | null
+          shipping_cost: number | null
+          status: Database["runhousecustom"]["Enums"]["order_status"] | null
+          subtotal: number | null
+          tenant_id: string | null
+          tenant_name: string | null
+          total_amount: number | null
+          total_quantity: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
     Functions: {
-      get_today_order_count: {
-        Args: { p_tenant_id: string };
-        Returns: number;
-      };
-    };
+      generate_order_number: { Args: { p_tenant_id: string }; Returns: string }
+      get_today_order_count: { Args: { p_tenant_id: string }; Returns: number }
+    }
     Enums: {
       order_status:
         | "pending"
@@ -487,8 +799,147 @@ export interface Database {
         | "in_production"
         | "shipped"
         | "delivered"
-        | "cancelled";
-      user_type: "individual" | "crew_staff" | "crew_pending";
-    };
-  };
+        | "cancelled"
+      review_status: "pending" | "approved" | "rejected"
+      user_type: "individual" | "crew_staff" | "crew_pending"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 }
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  runhousecustom: {
+    Enums: {
+      order_status: [
+        "pending",
+        "design_confirmed",
+        "preparing",
+        "in_production",
+        "shipped",
+        "delivered",
+        "cancelled",
+      ],
+      review_status: ["pending", "approved", "rejected"],
+      user_type: ["individual", "crew_staff", "crew_pending"],
+    },
+  },
+} as const

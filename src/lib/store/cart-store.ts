@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { DesignLayer } from "./design-store";
+import type { Json } from "@/infrastructure/supabase/database.types";
 import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
 import type { PriceTier } from "@/domain/product/types";
 import { getUnitPrice } from "@/lib/pricing/price-calculator";
@@ -282,7 +283,7 @@ export const useCartStore = create<CartState>()(
               colorLabel: item.color_label,
               size: item.size,
               quantity: item.quantity,
-              designLayers: item.design_layers as DesignLayer[],
+              designLayers: item.design_layers as unknown as DesignLayer[],
               unitPrice: item.unit_price,
               basePrice:
                 ((item as Record<string, unknown>).base_price as number) ||
@@ -355,7 +356,7 @@ export const useCartStore = create<CartState>()(
               size: item.size,
               quantity: item.quantity,
               unit_price: item.unitPrice,
-              design_layers: item.designLayers,
+              design_layers: item.designLayers as unknown as Json,
             }));
 
             const { error } = await supabase

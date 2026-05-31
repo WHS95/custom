@@ -29,7 +29,10 @@ export default function ForgotPasswordPage() {
     setPreviewUrl(null);
 
     try {
-      const { error, meta } = await resetPassword(email);
+      const { error, meta } = (await resetPassword(email)) as {
+        error: Error | null;
+        meta?: { previewUrl?: string };
+      };
 
       if (error) {
         toast.error(error.message);
