@@ -3,6 +3,8 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { ChevronDown } from "lucide-react";
+import { useEffect } from "react";
+import posthog from "posthog-js";
 import type { ProductWithAreas } from "@/domain/product/types";
 
 const StudioLayout = dynamic(
@@ -25,6 +27,11 @@ interface StudioClientProps {
 }
 
 export function StudioClient({ product, mode }: StudioClientProps) {
+  // Analytics: track studio open
+  useEffect(() => {
+    posthog.capture("hat_studio_opened", { product_id: product.id });
+  }, [product.id]);
+
   const scrollToDetail = () => {
     const detailSection = document.getElementById("product-detail-section");
     if (detailSection) {

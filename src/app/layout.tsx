@@ -6,6 +6,7 @@ import { LanguageProvider } from "@/lib/i18n/language-context";
 import { Navbar } from "@/components/layout/Navbar";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import { CartSync } from "@/components/cart/CartSync";
+import PostHogProvider from "@/components/shared/PostHogProvider";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://runhouse-custom.vercel.app";
@@ -52,18 +53,20 @@ export default function RootLayout({
         className='font-sans antialiased bg-canvas text-ink'
         suppressHydrationWarning
       >
-        <AuthProvider>
-          <LanguageProvider>
-            <StudioConfigProvider>
-              <CartSync />
-              <div className='min-h-screen flex flex-col'>
-                <Navbar />
-                <main className='flex-1 bg-canvas'>{children}</main>
-              </div>
-              <Toaster />
-            </StudioConfigProvider>
-          </LanguageProvider>
-        </AuthProvider>
+        <PostHogProvider>
+          <AuthProvider>
+            <LanguageProvider>
+              <StudioConfigProvider>
+                <CartSync />
+                <div className='min-h-screen flex flex-col'>
+                  <Navbar />
+                  <main className='flex-1 bg-canvas'>{children}</main>
+                </div>
+                <Toaster />
+              </StudioConfigProvider>
+            </LanguageProvider>
+          </AuthProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

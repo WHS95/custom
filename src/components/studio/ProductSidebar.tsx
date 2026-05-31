@@ -23,6 +23,7 @@ import {
 } from "@/lib/store/design-store";
 import { useCartStore, CartItem } from "@/lib/store/cart-store";
 import { toast } from "sonner";
+import posthog from "posthog-js";
 import type { PriceTier } from "@/domain/product/types";
 import { getUnitPrice, getDiscountRate } from "@/lib/pricing/price-calculator";
 import { PricingTableModal } from "./PricingTableModal";
@@ -126,6 +127,13 @@ export function ProductSidebar({
       unitPrice: currentUnitPrice,
       basePrice: basePrice,
       priceTiers: priceTiers || undefined,
+    });
+
+    // Analytics: track add-to-cart (no amounts — Phase 2)
+    posthog.capture("hat_added_to_cart", {
+      product_id: productId || "custom-hat",
+      color: selectedColor,
+      quantity: quantity,
     });
 
     if (result.merged) {

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import posthog from "posthog-js";
 import {
   ArrowLeft,
   Trash2,
@@ -130,6 +131,12 @@ export default function CartPage() {
 
     fetchAdminMessages();
   }, [items]);
+
+  // Analytics: open order modal (hat_order_started)
+  const handleOpenOrderModal = () => {
+    posthog.capture("hat_order_started");
+    setOrderModalOpen(true);
+  };
 
   const handleQuantityChange = (id: string, delta: number) => {
     const item = items.find((i) => i.id === id);
@@ -530,7 +537,7 @@ export default function CartPage() {
                     <Button
                       className="w-full"
                       size="lg"
-                      onClick={() => setOrderModalOpen(true)}
+                      onClick={handleOpenOrderModal}
                       disabled={isLoadingMessages}
                     >
                       {isLoadingMessages ? (
@@ -592,7 +599,7 @@ export default function CartPage() {
               </Button>
             ) : isAuthenticated ? (
               <Button
-                onClick={() => setOrderModalOpen(true)}
+                onClick={handleOpenOrderModal}
                 disabled={isLoadingMessages}
                 className="px-8"
               >

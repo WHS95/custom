@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import posthog from "posthog-js";
 import {
   Loader2,
   User,
@@ -110,6 +111,11 @@ export default function OnboardingPage() {
     setCrewName(crew.name);
     setCrewQuery(crew.name);
     setShowCrewDropdown(false);
+
+    // Cross-app identity: identify by Instagram handle when crew is known
+    if (crew.instagram) {
+      posthog.identify(crew.instagram, { crew_name: crew.name });
+    }
   }, []);
 
   const handleClearCrew = useCallback(() => {
