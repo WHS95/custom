@@ -57,7 +57,7 @@ export function Navbar() {
   ];
 
   return (
-    <header className="border-b sticky top-0 bg-white/80 backdrop-blur-md z-50">
+    <header className="border-b border-hairline sticky top-0 bg-canvas/85 backdrop-blur-md z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* 왼쪽: 햄버거 + 로고 */}
         <div className="flex items-center gap-2">
@@ -74,23 +74,23 @@ export function Navbar() {
 
           <Link
             href="/"
-            className="flex items-center gap-2 font-bold text-xl tracking-tighter hover:opacity-80 transition"
+            className="flex items-center gap-2 font-bold tracking-[0.08em] uppercase hover:opacity-80 transition"
           >
-            <span className="text-primary">RUN</span>HOUSE
-            <span className="px-1.5 py-0.5 rounded text-xs bg-black text-white font-medium">
+            <span className="text-ink">RUN HOUSE</span>
+            <span className="px-1.5 py-0.5 bg-[#C7FF00] text-[#0B0C0A] text-[9px] font-extrabold tracking-[0.15em] rounded-[4px]">
               CUSTOM
             </span>
           </Link>
         </div>
 
         {/* 데스크탑 네비게이션 */}
-        <nav className="hidden md:flex gap-6 text-sm font-medium text-gray-600">
+        <nav className="hidden md:flex gap-6 text-sm font-medium text-mute">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`hover:text-black transition-colors ${
-                pathname === link.href ? "text-black font-semibold" : ""
+              className={`hover:text-ink transition-colors ${
+                pathname === link.href ? "text-ink font-semibold" : ""
               }`}
             >
               {link.label}
@@ -117,7 +117,7 @@ export function Navbar() {
             <Link href="/cart">
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-ink text-canvas text-xs rounded-full flex items-center justify-center">
                   {cartCount > 99 ? "99+" : cartCount}
                 </span>
               )}
@@ -135,7 +135,7 @@ export function Navbar() {
               <Link href="/mypage">
                 <Button variant="ghost" size="sm" className="gap-2">
                   {profile?.user_type === "crew_staff" ? (
-                    <Users className="w-4 h-4 text-blue-600" />
+                    <Users className="w-4 h-4 text-[#C7FF00]" />
                   ) : (
                     <User className="w-4 h-4" />
                   )}
@@ -153,7 +153,7 @@ export function Navbar() {
                 title="로그아웃"
                 className="hidden sm:inline-flex"
               >
-                <LogOut className="w-4 h-4 text-gray-500" />
+                <LogOut className="w-4 h-4 text-mute" />
               </Button>
             </div>
           ) : (
@@ -177,9 +177,9 @@ export function Navbar() {
         <SheetContent side="left" className="w-72 p-0">
           <SheetHeader className="p-5 pb-3">
             <SheetTitle className="text-left">
-              <span className="font-bold text-lg tracking-tighter">
-                <span className="text-primary">RUN</span>HOUSE{" "}
-                <span className="px-1.5 py-0.5 rounded text-xs bg-black text-white font-medium align-middle">
+              <span className="font-bold tracking-[0.08em] uppercase">
+                <span className="text-ink">RUN HOUSE</span>{" "}
+                <span className="px-1.5 py-0.5 bg-[#C7FF00] text-[#0B0C0A] text-[9px] font-extrabold tracking-[0.15em] rounded-[4px] align-middle">
                   CUSTOM
                 </span>
               </span>
@@ -199,8 +199,8 @@ export function Navbar() {
                     href={link.href}
                     className={`flex items-center gap-3 px-5 py-3 text-sm font-medium transition-colors ${
                       isActive
-                        ? "bg-gray-100 text-black"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-black"
+                        ? "bg-soft-cloud text-ink"
+                        : "text-mute hover:bg-soft-cloud hover:text-ink"
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -216,7 +216,7 @@ export function Navbar() {
                 href={RUNHOUSE_CLUB_LINK}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-black transition-colors"
+                className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-mute hover:bg-soft-cloud hover:text-ink transition-colors"
               >
                 <Globe className="w-4 h-4" />
                 RunHouse Club
@@ -227,7 +227,7 @@ export function Navbar() {
                 href={INSTAGRAM_LINK}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-black transition-colors"
+                className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-mute hover:bg-soft-cloud hover:text-ink transition-colors"
               >
                 <Instagram className="w-4 h-4" />
                 Instagram
@@ -238,7 +238,7 @@ export function Navbar() {
                 href={KAKAO_LINK}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-black transition-colors"
+                className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-mute hover:bg-soft-cloud hover:text-ink transition-colors"
               >
                 <MessageCircle className="w-4 h-4" />
                 문의하기
@@ -253,19 +253,19 @@ export function Navbar() {
             {isAuthenticated ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-soft-cloud flex items-center justify-center">
                     {profile?.user_type === "crew_staff" ? (
-                      <Users className="w-5 h-5 text-blue-600" />
+                      <Users className="w-5 h-5 text-[#C7FF00]" />
                     ) : (
-                      <User className="w-5 h-5 text-gray-600" />
+                      <User className="w-5 h-5 text-mute" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
+                    <p className="text-sm font-medium truncate text-ink">
                       {profile?.name ?? "내 계정"}
                     </p>
                     {profile?.user_type === "crew_staff" && (
-                      <p className="text-xs text-blue-600">러닝크루 운영진</p>
+                      <p className="text-kicker text-[#C7FF00]">러닝크루 운영진</p>
                     )}
                   </div>
                 </div>
@@ -282,7 +282,7 @@ export function Navbar() {
                       await signOut();
                       setMobileOpen(false);
                     }}
-                    className="text-gray-500"
+                    className="text-mute"
                   >
                     <LogOut className="w-4 h-4" />
                   </Button>
