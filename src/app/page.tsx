@@ -43,20 +43,20 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-blue-500 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-1/4 w-72 h-72 bg-purple-500 rounded-full blur-3xl" />
-        </div>
-        <div className="relative container mx-auto px-4 py-20 sm:py-28 lg:py-36">
+      {/* Hero — RunHouse Cartographic Dark DNA: ink 배경 + lime 액센트 */}
+      <section className="relative bg-ink text-canvas overflow-hidden">
+        <div className="container mx-auto px-4 py-[72px] sm:py-[72px] lg:py-[96px]">
           <div className="max-w-2xl">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
+            {/* Kicker — JetBrains Mono, RunHouse cartographic 시그니처 */}
+            <p className="text-kicker text-[#C7FF00] mb-4">
+              · CUSTOM · CREW GEAR ·
+            </p>
+            <h1 className="font-display text-[48px] sm:text-[64px] lg:text-[96px] leading-[0.9] uppercase tracking-[0]">
               Create Your
               <br />
-              <span className="text-blue-400">Crew&apos;s Identity</span>
+              Crew&apos;s Identity
             </h1>
-            <p className="mt-6 text-lg sm:text-xl text-gray-300 leading-relaxed max-w-lg">
+            <p className="mt-6 text-base sm:text-lg text-stone leading-relaxed max-w-lg">
               나만의 러닝크루를 위한 프리미엄 커스텀 굿즈.
               <br />
               모자부터 의류까지, 직접 디자인하세요.
@@ -64,14 +64,14 @@ export default async function Home() {
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Link
                 href="#products"
-                className="inline-flex items-center justify-center gap-2 bg-white text-black font-semibold px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors"
+                className="inline-flex items-center justify-center gap-2 bg-[#C7FF00] text-[#0B0C0A] font-bold px-8 py-3 h-12 rounded-[4px] hover:brightness-95 transition-all active:scale-[0.98]"
               >
                 상품 둘러보기
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 href="/gallery"
-                className="inline-flex items-center justify-center gap-2 border border-white/30 text-white font-medium px-6 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                className="inline-flex items-center justify-center gap-2 border border-canvas/20 text-canvas font-medium px-8 py-3 h-12 rounded-[4px] hover:bg-canvas/5 transition-colors"
               >
                 갤러리 보기
               </Link>
@@ -80,19 +80,19 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Feature Highlights */}
-      <section className="bg-white border-b">
-        <div className="container mx-auto px-4 py-12 sm:py-16">
+      {/* Feature Highlights — Nike 시스템, 밝은 표면 */}
+      <section className="bg-canvas border-b border-hairline">
+        <div className="container mx-auto px-4 py-12 sm:py-[48px]">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {features.map((feature) => {
               const Icon = feature.icon;
               return (
                 <div key={feature.title} className="text-center sm:text-left">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gray-100 mb-3">
-                    <Icon className="w-6 h-6 text-gray-700" />
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-soft-cloud mb-3">
+                    <Icon className="w-6 h-6 text-ink" />
                   </div>
-                  <h3 className="font-semibold text-sm sm:text-base">{feature.title}</h3>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                  <h3 className="font-medium text-sm sm:text-base text-ink">{feature.title}</h3>
+                  <p className="text-xs sm:text-sm text-mute mt-1">
                     {feature.description}
                   </p>
                 </div>
@@ -102,32 +102,32 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Products Section */}
-      <section id="products" className="bg-gray-50/50">
-        <div className="container mx-auto px-4 py-12 sm:py-16">
+      {/* Products Section — 쇼핑 영역, 기존 유지 */}
+      <section id="products" className="bg-soft-cloud">
+        <div className="container mx-auto px-4 py-12 sm:py-[48px]">
           <div className="mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold">상품 목록</h2>
-            <p className="text-gray-500 mt-2">커스텀하고 싶은 상품을 선택하세요</p>
+            <h2 className="text-[32px] font-bold text-ink leading-[1.2]">상품 목록</h2>
+            <p className="text-mute mt-2">커스텀하고 싶은 상품을 선택하세요</p>
           </div>
           <ProductGrid products={products} />
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="bg-white border-t">
-        <div className="container mx-auto px-4 py-12 sm:py-16">
+      <section className="bg-canvas border-t border-hairline">
+        <div className="container mx-auto px-4 py-12 sm:py-[48px]">
           <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-xl sm:text-2xl font-bold mb-3">
+            <h2 className="text-xl sm:text-2xl font-bold text-ink mb-3">
               주문이 궁금하신가요?
             </h2>
-            <p className="text-gray-500 mb-6">
+            <p className="text-mute mb-6">
               대량 주문, 커스텀 상담 등 무엇이든 편하게 문의해주세요.
             </p>
             <a
               href={KAKAO_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-[#FEE500] text-black font-semibold px-6 py-3 rounded-lg hover:bg-[#FDD800] transition-colors"
+              className="inline-flex items-center gap-2 bg-[#FEE500] text-ink font-medium px-8 py-3 h-12 rounded-[30px] hover:bg-[#FDD800] transition-colors"
             >
               <MessageCircle className="w-5 h-5" />
               카카오톡으로 문의하기
@@ -136,35 +136,38 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white">
+      {/* Footer — ink 배경, 브랜드 시그니처 */}
+      <footer className="bg-ink text-canvas">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
             <div className="text-center sm:text-left">
-              <p className="font-bold tracking-tighter">
-                <span className="text-blue-400">RUN</span>HOUSE CUSTOM
+              <p className="font-bold tracking-[0.12em] uppercase text-canvas">
+                RUN HOUSE{" "}
+                <span className="inline-block px-1.5 py-0.5 bg-[#C7FF00] text-[#0B0C0A] text-[9px] font-extrabold tracking-[0.15em] rounded-[4px] align-middle ml-1">
+                  CUSTOM
+                </span>
               </p>
-              <p className="text-sm text-gray-400 mt-1">
-                Premium custom gear for professional crews
+              <p className="text-kicker text-stone mt-2">
+                · Premium custom gear for professional crews ·
               </p>
             </div>
-            <div className="flex items-center gap-6 text-sm text-gray-400">
+            <div className="flex items-center gap-6 text-sm text-stone">
               <a
                 href={RUNHOUSE_CLUB_LINK}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
+                className="hover:text-canvas transition-colors"
               >
                 RunHouse Club
               </a>
-              <Link href="/gallery" className="hover:text-white transition-colors">
+              <Link href="/gallery" className="hover:text-canvas transition-colors">
                 갤러리
               </Link>
               <a
                 href={KAKAO_LINK}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
+                className="hover:text-canvas transition-colors"
               >
                 문의하기
               </a>
@@ -172,12 +175,17 @@ export default async function Home() {
                 href={INSTAGRAM_LINK}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
+                className="hover:text-canvas transition-colors"
                 aria-label="Instagram"
               >
                 <Instagram className="w-5 h-5" />
               </a>
             </div>
+          </div>
+          <div className="mt-6 pt-4 border-t border-canvas/10 text-center">
+            <p className="text-utility-xs text-stone">
+              © {new Date().getFullYear()} RunHouse Custom. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>
