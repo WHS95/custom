@@ -49,16 +49,16 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <Card className="w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center bg-ink px-4">
+      <Card className="w-full max-w-sm border border-canvas/10 bg-canvas">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <div className="p-3 bg-black rounded-full">
-                <Lock className="w-6 h-6 text-white" />
+            <div className="p-3 bg-[#C7FF00] rounded-[4px]">
+              <Lock className="w-6 h-6 text-[#0B0C0A]" />
             </div>
           </div>
-          <CardTitle className="text-2xl text-center">Admin Login</CardTitle>
-          <CardDescription className="text-center">
+          <CardTitle className="text-2xl text-center text-ink">Admin Login</CardTitle>
+          <CardDescription className="text-center text-mute">
             테넌트 관리자 계정으로 로그인하세요
           </CardDescription>
         </CardHeader>
@@ -87,7 +87,7 @@ export default function AdminLoginPage() {
             </div>
             <Button
               type="submit"
-              className="w-full bg-black hover:bg-gray-800"
+              className="w-full"
               disabled={isLoading}
             >
               {isLoading ? (

@@ -17,19 +17,19 @@ export default function CrewApprovalPendingPage() {
   const crewName = searchParams.get("crew") || "";
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-canvas flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
-        <Card className="shadow-lg border-0">
+        <Card className="border border-hairline">
           <CardHeader className="text-center pb-4">
-            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Clock className="w-8 h-8 text-amber-600" />
+            <div className="w-16 h-16 bg-[#C7FF00]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Clock className="w-8 h-8 text-[#C7FF00]" />
             </div>
-            <CardTitle className="text-2xl font-bold">
+            <CardTitle className="text-2xl font-bold text-ink">
               크루 인증 대기중
             </CardTitle>
             {crewName && (
-              <CardDescription className="text-base">
-                <span className="font-semibold text-black">{crewName}</span> 크루
+              <CardDescription className="text-base text-mute">
+                <span className="font-semibold text-ink">{crewName}</span> 크루
               </CardDescription>
             )}
           </CardHeader>
@@ -37,20 +37,20 @@ export default function CrewApprovalPendingPage() {
           <CardContent className="space-y-6">
             <div className="space-y-3">
               <div className="flex gap-3 items-start">
-                <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-gray-700">
+                <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-charcoal">
                   크루 인증 요청이 자동으로 전송되었습니다
                 </p>
               </div>
               <div className="flex gap-3 items-start">
-                <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-gray-700">
-                  관리자 확인 후 승인되면 자동으로 <span className="font-semibold">10% 할인</span>이 적용됩니다
+                <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-charcoal">
+                  관리자 확인 후 승인되면 자동으로 <span className="font-semibold text-ink">10% 할인</span>이 적용됩니다
                 </p>
               </div>
               <div className="flex gap-3 items-start">
-                <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-gray-700">
+                <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-charcoal">
                   승인 전에도 일반 회원으로 서비스 이용 가능합니다
                 </p>
               </div>

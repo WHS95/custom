@@ -157,7 +157,6 @@ export default function OnboardingPage() {
       await refreshProfile();
 
       if (userType === "crew_staff" && selectedCrew) {
-        // Slack 알림 발송 (fire-and-forget)
         fetch("/api/crew-approval/notify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -187,28 +186,28 @@ export default function OnboardingPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-mute" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-canvas flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         {/* 브랜드 헤더 */}
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold tracking-tighter">
-            <span className="text-primary">RUN</span>HOUSE{" "}
-            <span className="px-1.5 py-0.5 rounded text-xs bg-black text-white font-medium align-middle">
+          <h1 className="font-bold tracking-[0.08em] uppercase text-xl">
+            <span className="text-ink">RUN HOUSE</span>{" "}
+            <span className="px-1.5 py-0.5 bg-[#C7FF00] text-[#0B0C0A] text-[9px] font-extrabold tracking-[0.15em] rounded-[4px] align-middle">
               CUSTOM
             </span>
           </h1>
         </div>
 
-        <Card className="shadow-lg border-0">
+        <Card className="border border-hairline">
           <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl font-bold">프로필 설정</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-2xl font-bold text-ink">프로필 설정</CardTitle>
+            <CardDescription className="text-mute">
               서비스 이용을 위해 간단한 정보를 입력해주세요
             </CardDescription>
           </CardHeader>
@@ -217,10 +216,10 @@ export default function OnboardingPage() {
               {/* 이름 */}
               <div className="space-y-2">
                 <Label htmlFor="name">
-                  이름 <span className="text-red-500">*</span>
+                  이름 <span className="text-danger">*</span>
                 </Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone" />
                   <Input
                     id="name"
                     type="text"
@@ -241,48 +240,48 @@ export default function OnboardingPage() {
                     type="button"
                     onClick={() => setUserType("individual")}
                     disabled={isSubmitting}
-                    className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 ${
+                    className={`relative p-4 rounded-[4px] border text-left transition-all duration-200 ${
                       userType === "individual"
-                        ? "border-blue-500 bg-blue-50 shadow-sm"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        ? "border-ink bg-soft-cloud"
+                        : "border-hairline hover:border-ink/30 hover:bg-soft-cloud"
                     }`}
                   >
                     {userType === "individual" && (
-                      <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                        <Check className="w-3 h-3 text-white" />
+                      <div className="absolute top-2 right-2 w-5 h-5 bg-ink rounded-full flex items-center justify-center">
+                        <Check className="w-3 h-3 text-canvas" />
                       </div>
                     )}
                     <User
                       className={`w-6 h-6 mb-2 ${
-                        userType === "individual" ? "text-blue-600" : "text-gray-500"
+                        userType === "individual" ? "text-ink" : "text-mute"
                       }`}
                     />
-                    <p className="font-medium text-sm">일반 개인</p>
-                    <p className="text-xs text-gray-500 mt-1">개인 고객으로 이용</p>
+                    <p className="font-medium text-sm text-ink">일반 개인</p>
+                    <p className="text-xs text-mute mt-1">개인 고객으로 이용</p>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setUserType("crew_staff")}
                     disabled={isSubmitting}
-                    className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 ${
+                    className={`relative p-4 rounded-[4px] border text-left transition-all duration-200 ${
                       userType === "crew_staff"
-                        ? "border-blue-500 bg-blue-50 shadow-sm"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        ? "border-ink bg-soft-cloud"
+                        : "border-hairline hover:border-ink/30 hover:bg-soft-cloud"
                     }`}
                   >
                     {userType === "crew_staff" && (
-                      <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                        <Check className="w-3 h-3 text-white" />
+                      <div className="absolute top-2 right-2 w-5 h-5 bg-ink rounded-full flex items-center justify-center">
+                        <Check className="w-3 h-3 text-canvas" />
                       </div>
                     )}
                     <Users
                       className={`w-6 h-6 mb-2 ${
-                        userType === "crew_staff" ? "text-blue-600" : "text-gray-500"
+                        userType === "crew_staff" ? "text-[#C7FF00]" : "text-mute"
                       }`}
                     />
-                    <p className="font-medium text-sm">러닝크루 멤버</p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="font-medium text-sm text-ink">러닝크루 멤버</p>
+                    <p className="text-xs text-mute mt-1">
                       등록 크루 회원 10% 할인
                     </p>
                   </button>
@@ -293,11 +292,11 @@ export default function OnboardingPage() {
               {userType === "crew_staff" && (
                 <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
                   <Label>
-                    러닝크루 이름 <span className="text-red-500">*</span>
+                    러닝크루 이름 <span className="text-danger">*</span>
                   </Label>
                   <div className="relative" ref={crewDropdownRef}>
                     {selectedCrew ? (
-                      <div className="flex items-center gap-3 p-2.5 rounded-md border border-green-300 bg-green-50">
+                      <div className="flex items-center gap-3 p-2.5 rounded-[4px] border border-success bg-success/5">
                         {selectedCrew.logoUrl ? (
                           <Image
                             src={selectedCrew.logoUrl}
@@ -307,8 +306,8 @@ export default function OnboardingPage() {
                             className="rounded-full object-cover"
                           />
                         ) : (
-                          <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                            <Building className="w-3.5 h-3.5 text-green-600" />
+                          <div className="w-7 h-7 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
+                            <Building className="w-3.5 h-3.5 text-success" />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
@@ -316,13 +315,13 @@ export default function OnboardingPage() {
                             <span className="text-sm font-medium truncate">
                               {selectedCrew.name}
                             </span>
-                            <BadgeCheck className="w-4 h-4 text-green-600 flex-shrink-0" />
+                            <BadgeCheck className="w-4 h-4 text-success flex-shrink-0" />
                           </div>
                         </div>
                         <button
                           type="button"
                           onClick={handleClearCrew}
-                          className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-green-100 transition-colors"
+                          className="text-xs text-mute hover:text-ink px-2 py-1 rounded-[4px] hover:bg-soft-cloud transition-colors"
                           disabled={isSubmitting}
                         >
                           변경
@@ -330,7 +329,7 @@ export default function OnboardingPage() {
                       </div>
                     ) : (
                       <>
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone" />
                         <Input
                           type="text"
                           placeholder="크루 이름을 검색하세요"
@@ -348,19 +347,19 @@ export default function OnboardingPage() {
                           autoComplete="off"
                         />
                         {isSearchingCrew && (
-                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
+                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-stone" />
                         )}
                       </>
                     )}
 
                     {showCrewDropdown && crewResults.length > 0 && (
-                      <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-canvas border border-hairline rounded-[4px] max-h-48 overflow-y-auto">
                         {crewResults.map((crew) => (
                           <button
                             key={crew.id}
                             type="button"
                             onClick={() => handleSelectCrew(crew)}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-blue-50 transition-colors"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-soft-cloud transition-colors"
                           >
                             {crew.logoUrl ? (
                               <Image
@@ -371,26 +370,26 @@ export default function OnboardingPage() {
                                 className="rounded-full object-cover"
                               />
                             ) : (
-                              <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                <Building className="w-3 h-3 text-gray-400" />
+                              <div className="w-6 h-6 rounded-full bg-soft-cloud flex items-center justify-center flex-shrink-0">
+                                <Building className="w-3 h-3 text-mute" />
                               </div>
                             )}
                             <span className="text-sm font-medium truncate">
                               {crew.name}
                             </span>
-                            <BadgeCheck className="w-4 h-4 text-blue-500 flex-shrink-0 ml-auto" />
+                            <BadgeCheck className="w-4 h-4 text-[#C7FF00] flex-shrink-0 ml-auto" />
                           </button>
                         ))}
                       </div>
                     )}
                   </div>
                   {selectedCrew ? (
-                    <p className="text-xs text-green-600 flex items-center gap-1">
+                    <p className="text-xs text-success flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
                       등록된 크루입니다. 승인 후 10% 할인 혜택이 적용됩니다!
                     </p>
                   ) : crewQuery && !isSearchingCrew && crewResults.length === 0 ? (
-                    <p className="text-xs text-amber-600">
+                    <p className="text-xs text-[#C7FF00]">
                       검색 결과가 없습니다. 크루 등록은{" "}
                       <a
                         href="https://www.runhouse.club/register"
@@ -403,7 +402,7 @@ export default function OnboardingPage() {
                       {" "}에서 신청해주세요.
                     </p>
                   ) : (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-mute">
                       RunHouse에 등록된 러닝크루를 검색하세요
                     </p>
                   )}
@@ -411,7 +410,7 @@ export default function OnboardingPage() {
                     href="https://www.runhouse.club/register"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 mt-1 transition-colors"
+                    className="inline-flex items-center text-xs text-ink underline underline-offset-4 mt-1 transition-colors"
                   >
                     우리 크루가 아직 등록되지 않았나요?
                     <svg className="w-3 h-3 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
