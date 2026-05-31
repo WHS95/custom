@@ -275,11 +275,11 @@ export default function SignupPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex">
-        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-gray-900 to-black items-center justify-center" />
+        <div className="hidden lg:flex lg:w-1/2 bg-ink items-center justify-center" />
         <div className="flex-1 flex items-center justify-center px-4">
           <div className="w-full max-w-md space-y-4">
             <Skeleton className="h-8 w-32" />
-            <Skeleton className="h-[600px] w-full rounded-xl" />
+            <Skeleton className="h-[600px] w-full" />
           </div>
         </div>
       </div>
@@ -288,28 +288,28 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex">
-      {/* 왼쪽 브랜드 패널 (데스크탑) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-gray-900 via-gray-800 to-black items-center justify-center relative overflow-hidden sticky top-0 h-screen">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-1/3 left-1/3 w-72 h-72 bg-blue-500 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/3 right-1/4 w-56 h-56 bg-purple-500 rounded-full blur-3xl" />
-        </div>
-        <div className="relative text-white text-center px-12 max-w-lg">
-          <h1 className="text-4xl font-bold tracking-tight mb-4">
-            <span className="text-blue-400">RUN</span>HOUSE CUSTOM
+      {/* 왼쪽 브랜드 패널 — Cartographic Dark */}
+      <div className="hidden lg:flex lg:w-1/2 bg-ink items-center justify-center relative overflow-hidden sticky top-0 h-screen">
+        <div className="relative text-canvas text-center px-12 max-w-lg">
+          <p className="text-kicker text-[#C7FF00] mb-6">· JOIN THE CREW ·</p>
+          <h1 className="font-bold tracking-[0.08em] uppercase text-3xl mb-4">
+            RUN HOUSE{" "}
+            <span className="inline-block px-2 py-1 bg-[#C7FF00] text-[#0B0C0A] text-sm font-extrabold tracking-[0.15em] rounded-[4px] align-middle ml-1">
+              CUSTOM
+            </span>
           </h1>
-          <p className="text-lg text-gray-300 leading-relaxed mb-8">
+          <p className="text-base text-stone leading-relaxed mb-8">
             나만의 러닝 크루 아이덴티티를 만들어보세요.
           </p>
-          <div className="space-y-4 text-left">
+          <div className="space-y-4 text-left max-w-xs mx-auto">
             {[
               "크루 로고를 직접 디자인",
               "다양한 색상과 스타일 선택",
               "등록 크루 회원 즉시 10% 할인",
             ].map((feature) => (
-              <div key={feature} className="flex items-center gap-3 text-gray-300">
-                <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                  <Check className="w-3.5 h-3.5 text-blue-400" />
+              <div key={feature} className="flex items-center gap-3 text-stone">
+                <div className="w-6 h-6 rounded-[4px] bg-[#C7FF00]/10 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-3.5 h-3.5 text-[#C7FF00]" />
                 </div>
                 <span className="text-sm">{feature}</span>
               </div>
@@ -319,14 +319,14 @@ export default function SignupPage() {
       </div>
 
       {/* 오른쪽 폼 영역 */}
-      <div className="flex-1 flex items-center justify-center px-4 py-8 bg-gray-50">
+      <div className="flex-1 flex items-center justify-center px-4 py-8 bg-canvas">
         <div className="w-full max-w-md">
           {/* 모바일 브랜드 헤더 */}
           <div className="lg:hidden text-center mb-6">
             <Link href="/" className="inline-block">
-              <h1 className="text-2xl font-bold tracking-tighter">
-                <span className="text-primary">RUN</span>HOUSE{" "}
-                <span className="px-1.5 py-0.5 rounded text-xs bg-black text-white font-medium align-middle">
+              <h1 className="font-bold tracking-[0.08em] uppercase text-xl">
+                <span className="text-ink">RUN HOUSE</span>{" "}
+                <span className="px-1.5 py-0.5 bg-[#C7FF00] text-[#0B0C0A] text-[9px] font-extrabold tracking-[0.15em] rounded-[4px] align-middle">
                   CUSTOM
                 </span>
               </h1>
@@ -335,16 +335,16 @@ export default function SignupPage() {
 
           <Link
             href="/"
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors"
+            className="inline-flex items-center text-sm text-mute hover:text-ink mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             홈으로 돌아가기
           </Link>
 
-          <Card className="shadow-lg border-0">
+          <Card className="border border-hairline">
             <CardHeader className="text-center pb-2">
-              <CardTitle className="text-2xl font-bold">회원가입</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-2xl font-bold text-ink">회원가입</CardTitle>
+              <CardDescription className="text-mute">
                 RunHouse Custom 멤버가 되어보세요
               </CardDescription>
             </CardHeader>
@@ -353,10 +353,10 @@ export default function SignupPage() {
                 {/* 이메일 */}
                 <div className="space-y-2">
                   <Label htmlFor="email">
-                    이메일 <span className="text-red-500">*</span>
+                    이메일 <span className="text-danger">*</span>
                   </Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone" />
                     <EmailInput
                       id="email"
                       placeholder="example@email.com"
@@ -368,20 +368,20 @@ export default function SignupPage() {
                       className={`pl-10 pr-10 ${
                         emailCheckResult
                           ? emailCheckResult.available
-                            ? "border-green-500 focus-visible:ring-green-500"
-                            : "border-red-500 focus-visible:ring-red-500"
+                            ? "border-success focus-visible:ring-success"
+                            : "border-danger focus-visible:ring-danger"
                           : ""
                       }`}
                       disabled={isLoading}
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       {isCheckingEmail ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                        <Loader2 className="w-4 h-4 animate-spin text-stone" />
                       ) : emailCheckResult ? (
                         emailCheckResult.available ? (
-                          <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          <CheckCircle2 className="w-4 h-4 text-success" />
                         ) : (
-                          <AlertCircle className="w-4 h-4 text-red-500" />
+                          <AlertCircle className="w-4 h-4 text-danger" />
                         )
                       ) : null}
                     </div>
@@ -390,8 +390,8 @@ export default function SignupPage() {
                     <p
                       className={`text-xs flex items-center gap-1 ${
                         emailCheckResult.available
-                          ? "text-green-600"
-                          : "text-red-500"
+                          ? "text-success"
+                          : "text-danger"
                       }`}
                     >
                       {emailCheckResult.message}
@@ -402,10 +402,10 @@ export default function SignupPage() {
                 {/* 비밀번호 */}
                 <div className="space-y-2">
                   <Label htmlFor="password">
-                    비밀번호 <span className="text-red-500">*</span>
+                    비밀번호 <span className="text-danger">*</span>
                   </Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone" />
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
@@ -419,7 +419,7 @@ export default function SignupPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone hover:text-ink transition-colors"
                       tabIndex={-1}
                     >
                       {showPassword ? (
@@ -435,10 +435,10 @@ export default function SignupPage() {
                 {/* 비밀번호 확인 */}
                 <div className="space-y-2">
                   <Label htmlFor="passwordConfirm">
-                    비밀번호 확인 <span className="text-red-500">*</span>
+                    비밀번호 확인 <span className="text-danger">*</span>
                   </Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone" />
                     <Input
                       id="passwordConfirm"
                       type={showPasswordConfirm ? "text" : "password"}
@@ -452,7 +452,7 @@ export default function SignupPage() {
                     <button
                       type="button"
                       onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone hover:text-ink transition-colors"
                       tabIndex={-1}
                     >
                       {showPasswordConfirm ? (
@@ -466,8 +466,8 @@ export default function SignupPage() {
                     <p
                       className={`text-xs flex items-center gap-1 ${
                         password === passwordConfirm
-                          ? "text-green-600"
-                          : "text-red-500"
+                          ? "text-success"
+                          : "text-danger"
                       }`}
                     >
                       {password === passwordConfirm ? (
@@ -488,10 +488,10 @@ export default function SignupPage() {
                 {/* 이름 */}
                 <div className="space-y-2">
                   <Label htmlFor="name">
-                    이름 <span className="text-red-500">*</span>
+                    이름 <span className="text-danger">*</span>
                   </Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone" />
                     <Input
                       id="name"
                       type="text"
@@ -508,33 +508,33 @@ export default function SignupPage() {
                 {/* 회원 유형 선택 */}
                 <div className="space-y-3">
                   <Label>
-                    회원 유형 <span className="text-red-500">*</span>
+                    회원 유형 <span className="text-danger">*</span>
                   </Label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setUserType("individual")}
                       disabled={isLoading}
-                      className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 ${
+                      className={`relative p-4 rounded-[4px] border text-left transition-all duration-200 ${
                         userType === "individual"
-                          ? "border-blue-500 bg-blue-50 shadow-sm"
-                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                          ? "border-ink bg-soft-cloud"
+                          : "border-hairline hover:border-ink/30 hover:bg-soft-cloud"
                       }`}
                     >
                       {userType === "individual" && (
-                        <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                          <Check className="w-3 h-3 text-white" />
+                        <div className="absolute top-2 right-2 w-5 h-5 bg-ink rounded-full flex items-center justify-center">
+                          <Check className="w-3 h-3 text-canvas" />
                         </div>
                       )}
                       <User
                         className={`w-6 h-6 mb-2 ${
                           userType === "individual"
-                            ? "text-blue-600"
-                            : "text-gray-500"
+                            ? "text-ink"
+                            : "text-mute"
                         }`}
                       />
-                      <p className="font-medium text-sm">일반 개인</p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="font-medium text-sm text-ink">일반 개인</p>
+                      <p className="text-xs text-mute mt-1">
                         개인 고객으로 가입
                       </p>
                     </button>
@@ -543,26 +543,26 @@ export default function SignupPage() {
                       type="button"
                       onClick={() => setUserType("crew_staff")}
                       disabled={isLoading}
-                      className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 ${
+                      className={`relative p-4 rounded-[4px] border text-left transition-all duration-200 ${
                         userType === "crew_staff"
-                          ? "border-blue-500 bg-blue-50 shadow-sm"
-                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                          ? "border-ink bg-soft-cloud"
+                          : "border-hairline hover:border-ink/30 hover:bg-soft-cloud"
                       }`}
                     >
                       {userType === "crew_staff" && (
-                        <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                          <Check className="w-3 h-3 text-white" />
+                        <div className="absolute top-2 right-2 w-5 h-5 bg-ink rounded-full flex items-center justify-center">
+                          <Check className="w-3 h-3 text-canvas" />
                         </div>
                       )}
                       <Users
                         className={`w-6 h-6 mb-2 ${
                           userType === "crew_staff"
-                            ? "text-blue-600"
-                            : "text-gray-500"
+                            ? "text-[#C7FF00]"
+                            : "text-mute"
                         }`}
                       />
-                      <p className="font-medium text-sm">러닝크루 멤버</p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="font-medium text-sm text-ink">러닝크루 멤버</p>
+                      <p className="text-xs text-mute mt-1">
                         등록 크루 회원 10% 할인
                       </p>
                     </button>
@@ -573,12 +573,12 @@ export default function SignupPage() {
                 {userType === "crew_staff" && (
                   <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
                     <Label htmlFor="crewName">
-                      러닝크루 이름 <span className="text-red-500">*</span>
+                      러닝크루 이름 <span className="text-danger">*</span>
                     </Label>
                     <div className="relative" ref={crewDropdownRef}>
                       {selectedCrew ? (
                         // 선택된 크루 표시
-                        <div className="flex items-center gap-3 p-2.5 rounded-md border border-green-300 bg-green-50">
+                        <div className="flex items-center gap-3 p-2.5 rounded-[4px] border border-success bg-success/5">
                           {selectedCrew.logoUrl ? (
                             <Image
                               src={selectedCrew.logoUrl}
@@ -588,20 +588,20 @@ export default function SignupPage() {
                               className="rounded-full object-cover"
                             />
                           ) : (
-                            <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                              <Building className="w-3.5 h-3.5 text-green-600" />
+                            <div className="w-7 h-7 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
+                              <Building className="w-3.5 h-3.5 text-success" />
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5">
                               <span className="text-sm font-medium truncate">{selectedCrew.name}</span>
-                              <BadgeCheck className="w-4 h-4 text-green-600 flex-shrink-0" />
+                              <BadgeCheck className="w-4 h-4 text-success flex-shrink-0" />
                             </div>
                           </div>
                           <button
                             type="button"
                             onClick={handleClearCrew}
-                            className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-green-100 transition-colors"
+                            className="text-xs text-mute hover:text-ink px-2 py-1 rounded-[4px] hover:bg-soft-cloud transition-colors"
                             disabled={isLoading}
                           >
                             변경
@@ -610,7 +610,7 @@ export default function SignupPage() {
                       ) : (
                         // 검색 입력
                         <>
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone" />
                           <Input
                             id="crewName"
                             type="text"
@@ -629,20 +629,20 @@ export default function SignupPage() {
                             autoComplete="off"
                           />
                           {isSearchingCrew && (
-                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
+                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-stone" />
                           )}
                         </>
                       )}
 
                       {/* 검색 결과 드롭다운 */}
                       {showCrewDropdown && crewResults.length > 0 && (
-                        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-canvas border border-hairline rounded-[4px] max-h-48 overflow-y-auto">
                           {crewResults.map((crew) => (
                             <button
                               key={crew.id}
                               type="button"
                               onClick={() => handleSelectCrew(crew)}
-                              className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-blue-50 transition-colors"
+                              className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-soft-cloud transition-colors"
                             >
                               {crew.logoUrl ? (
                                 <Image
@@ -653,28 +653,28 @@ export default function SignupPage() {
                                   className="rounded-full object-cover"
                                 />
                               ) : (
-                                <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                  <Building className="w-3 h-3 text-gray-400" />
+                                <div className="w-6 h-6 rounded-full bg-soft-cloud flex items-center justify-center flex-shrink-0">
+                                  <Building className="w-3 h-3 text-mute" />
                                 </div>
                               )}
                               <span className="text-sm font-medium truncate">{crew.name}</span>
-                              <BadgeCheck className="w-4 h-4 text-blue-500 flex-shrink-0 ml-auto" />
+                              <BadgeCheck className="w-4 h-4 text-[#C7FF00] flex-shrink-0 ml-auto" />
                             </button>
                           ))}
                         </div>
                       )}
                     </div>
                     {selectedCrew ? (
-                      <p className="text-xs text-green-600 flex items-center gap-1">
+                      <p className="text-xs text-success flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" />
                         등록된 크루입니다. 가입 즉시 10% 할인 혜택이 적용됩니다!
                       </p>
                     ) : crewQuery && !isSearchingCrew && crewResults.length === 0 ? (
-                      <p className="text-xs text-amber-600">
+                      <p className="text-xs text-[#C7FF00]">
                         검색 결과가 없습니다. RunHouse에 크루를 먼저 등록해주세요.
                       </p>
                     ) : (
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-mute">
                         RunHouse에 등록된 러닝크루를 검색하세요
                       </p>
                     )}
@@ -694,11 +694,11 @@ export default function SignupPage() {
                 </Button>
               </form>
               {/* 로그인 링크 */}
-              <div className="mt-6 text-center text-sm text-gray-600">
+              <div className="mt-6 text-center text-sm text-mute">
                 이미 계정이 있으신가요?{" "}
                 <Link
                   href="/login"
-                  className="text-blue-600 hover:underline font-medium"
+                  className="text-ink underline underline-offset-4 font-medium"
                 >
                   로그인
                 </Link>

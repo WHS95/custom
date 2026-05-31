@@ -49,25 +49,25 @@ export default function ForgotPasswordPage() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-canvas px-4">
         <div className="w-full max-w-md">
-          <Card>
+          <Card className="border border-hairline">
             <CardContent className="space-y-4 pt-8 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+                <CheckCircle className="h-8 w-8 text-success" />
               </div>
               <div>
-                <h2 className="text-xl font-bold">재설정 링크가 준비되었습니다</h2>
-                <p className="mt-2 text-sm text-gray-600">
+                <h2 className="text-xl font-bold text-ink">재설정 링크가 준비되었습니다</h2>
+                <p className="mt-2 text-sm text-mute">
                   등록된 이메일이 있으면 비밀번호 재설정 링크를 보냈습니다.
                 </p>
               </div>
               {previewUrl ? (
-                <div className="rounded-lg border bg-gray-50 p-3 text-left text-sm">
-                  <div className="mb-1 font-medium text-gray-900">개발용 미리보기 링크</div>
+                <div className="rounded-[4px] border border-hairline bg-soft-cloud p-3 text-left text-sm">
+                  <div className="mb-1 font-medium text-ink">개발용 미리보기 링크</div>
                   <a
                     href={previewUrl}
-                    className="break-all text-blue-600 underline"
+                    className="break-all text-ink underline underline-offset-4"
                   >
                     {previewUrl}
                   </a>
@@ -96,21 +96,21 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-canvas px-4">
       <div className="w-full max-w-md">
         {/* 뒤로가기 */}
         <Link
           href="/login"
-          className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-6"
+          className="inline-flex items-center text-sm text-mute hover:text-ink mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
           로그인으로 돌아가기
         </Link>
 
-        <Card>
+        <Card className="border border-hairline">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">비밀번호 찾기</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-2xl font-bold text-ink">비밀번호 찾기</CardTitle>
+            <CardDescription className="text-mute">
               가입한 이메일로 재설정 링크를 발급합니다
             </CardDescription>
           </CardHeader>
@@ -119,7 +119,7 @@ export default function ForgotPasswordPage() {
               <div className="space-y-2">
                 <Label htmlFor="email">이메일</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone" />
                   <Input
                     id="email"
                     type="email"
@@ -133,8 +133,8 @@ export default function ForgotPasswordPage() {
                 </div>
               </div>
 
-              <div className="rounded-lg border bg-white p-4 text-sm text-gray-600">
-                <div className="mb-2 flex items-center gap-2 font-medium text-gray-900">
+              <div className="rounded-[4px] border border-hairline bg-soft-cloud p-4 text-sm text-mute">
+                <div className="mb-2 flex items-center gap-2 font-medium text-ink">
                   <Lock className="h-4 w-4" />
                   현재 동작 방식
                 </div>

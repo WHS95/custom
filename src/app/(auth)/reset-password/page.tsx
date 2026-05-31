@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -64,16 +64,16 @@ export default function ResetPasswordPage() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-canvas px-4">
         <div className="w-full max-w-md">
-          <Card>
+          <Card className="border border-hairline">
             <CardContent className="space-y-4 pt-8 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+                <CheckCircle className="h-8 w-8 text-success" />
               </div>
               <div>
-                <h2 className="text-xl font-bold">비밀번호 재설정 완료</h2>
-                <p className="mt-2 text-sm text-gray-600">
+                <h2 className="text-xl font-bold text-ink">비밀번호 재설정 완료</h2>
+                <p className="mt-2 text-sm text-mute">
                   새 비밀번호로 다시 로그인할 수 있습니다.
                 </p>
               </div>
@@ -91,19 +91,19 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-canvas px-4">
       <div className="w-full max-w-md">
         <Link
           href="/login"
-          className="mb-6 inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+          className="mb-6 inline-flex items-center text-sm text-mute hover:text-ink transition-colors"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
           로그인으로 돌아가기
         </Link>
-        <Card>
+        <Card className="border border-hairline">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">새 비밀번호 설정</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-2xl font-bold text-ink">새 비밀번호 설정</CardTitle>
+            <CardDescription className="text-mute">
               재설정 링크가 유효하면 새 비밀번호로 바꿉니다
             </CardDescription>
           </CardHeader>
@@ -112,7 +112,7 @@ export default function ResetPasswordPage() {
               <div className="space-y-2">
                 <Label htmlFor="password">새 비밀번호</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone" />
                   <Input
                     id="password"
                     type="password"
@@ -128,7 +128,7 @@ export default function ResetPasswordPage() {
               <div className="space-y-2">
                 <Label htmlFor="passwordConfirm">비밀번호 확인</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone" />
                   <Input
                     id="passwordConfirm"
                     type="password"
