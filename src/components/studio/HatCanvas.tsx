@@ -92,7 +92,7 @@ export function HatCanvas({
   }, []);
 
   return (
-    <div className='absolute inset-0 flex items-center justify-center bg-gray-100'>
+    <div className='absolute inset-0 flex items-center justify-center bg-gray-50'>
       {/* 좌측 레이어 패널 */}
       <div className='absolute top-4 left-4 w-48 bg-white rounded-lg shadow-sm border p-3 z-10 hidden lg:block'>
         <h3 className='text-xs font-bold text-gray-400 uppercase mb-2'>
@@ -138,16 +138,16 @@ export function HatCanvas({
         </div>
       </div>
 
-      {/* 하단 뷰 스위처 */}
-      <div className='absolute bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg border p-1 flex gap-1 z-20'>
+      {/* 하단 뷰 스위처 - 세그먼트 컨트롤 */}
+      <div className='absolute bottom-4 left-1/2 -translate-x-1/2 bg-gray-200/70 backdrop-blur-sm rounded-full p-0.5 flex gap-0.5 z-20'>
         {visibleViews.map((v) => (
           <button
             key={v.id}
             onClick={() => onViewChange(v.id)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`px-3.5 py-1.5 min-h-[40px] rounded-full text-[13px] font-medium transition-colors ${
               currentView === v.id
-                ? "bg-black text-white"
-                : "hover:bg-gray-100 text-gray-600"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-800"
             }`}
           >
             {v.label}
@@ -173,8 +173,8 @@ export function HatCanvas({
               onLayerSelect={onSelectLayer}
               selectedLayerId={selectedLayerId}
               showSafeZone={true}
-              showViewLabel={true}
-              className='w-full h-full rounded-xl shadow-xl'
+              showViewLabel={false}
+              className='w-full h-full rounded-xl'
               productColors={productColors}
               productSafeZones={productSafeZones}
             />

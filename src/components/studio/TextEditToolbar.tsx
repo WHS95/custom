@@ -90,7 +90,7 @@ export function TextEditToolbar({
                 }}
                 className={`w-full text-left px-3 py-2 text-sm transition-colors ${
                   fontFamily === font.family
-                    ? "bg-blue-50 text-blue-700"
+                    ? "bg-gray-100 text-gray-900"
                     : "hover:bg-gray-50"
                 }`}
               >
@@ -111,7 +111,7 @@ export function TextEditToolbar({
                 }}
                 className={`w-full text-left px-3 py-2 text-sm transition-colors ${
                   fontFamily === font.family
-                    ? "bg-blue-50 text-blue-700"
+                    ? "bg-gray-100 text-gray-900"
                     : "hover:bg-gray-50"
                 }`}
               >
@@ -134,7 +134,7 @@ export function TextEditToolbar({
             onClick={() => onColorChange(c.hex)}
             className={`w-5 h-5 rounded-full border transition-all shrink-0 ${
               color === c.hex
-                ? "border-blue-500 scale-125 ring-1 ring-blue-300"
+                ? "border-gray-900 scale-125 ring-1 ring-gray-300"
                 : "border-gray-200 hover:border-gray-400 hover:scale-110"
             }`}
             style={{ backgroundColor: c.hex }}
@@ -153,7 +153,7 @@ export function TextEditToolbar({
           max={72}
           value={fontSize}
           onChange={(e) => onFontSizeChange(Number(e.target.value))}
-          className='w-20 accent-blue-500'
+          className='w-20 accent-gray-900'
         />
         <span className='text-xs text-gray-500 font-medium w-8 text-right tabular-nums'>
           {fontSize}px

@@ -451,12 +451,13 @@ export function StudioLayout({
           />
         )}
 
-        {/* Floating Tool Bar */}
+        {/* Floating Tool Bar (상단 도킹) */}
         <DesignToolbar
           onUploadClick={() =>
             document.getElementById("hidden-file-input")?.click()
           }
           onTextClick={() => setIsTextModalOpen(true)}
+          currentView={currentView}
         />
 
         {/* Hidden Input for Toolbar Action - PNG 파일만 허용 */}

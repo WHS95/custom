@@ -75,7 +75,7 @@ const RESIZE_HANDLE_STYLES = {
     right: "-10px",
     bottom: "-10px",
     borderRadius: "9999px",
-    background: "#3b82f6",
+    background: "#111827",
     border: "2px solid #fff",
     boxShadow: "0 1px 3px rgba(0,0,0,0.35)",
   },
@@ -85,7 +85,7 @@ const RESIZE_HANDLE_STYLES = {
     left: "-10px",
     bottom: "-10px",
     borderRadius: "9999px",
-    background: "#3b82f6",
+    background: "#111827",
     border: "2px solid #fff",
     boxShadow: "0 1px 3px rgba(0,0,0,0.35)",
   },
@@ -209,7 +209,7 @@ function RotationHandle({
     <>
       {/* 회전 핸들 연결선 */}
       <div
-        className='absolute left-1/2 -translate-x-1/2 w-px bg-blue-500 pointer-events-none'
+        className='absolute left-1/2 -translate-x-1/2 w-px bg-gray-900/60 pointer-events-none'
         style={{ top: -24, height: 24 }}
       />
       {/* 회전 핸들 원형 */}
@@ -219,7 +219,7 @@ function RotationHandle({
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
       >
-        <div className='w-6 h-6 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center shadow-md transition-colors'>
+        <div className='w-6 h-6 bg-gray-900 hover:bg-black rounded-full flex items-center justify-center shadow-md transition-colors'>
           <RotateCw size={12} className='text-white' />
         </div>
       </div>
@@ -361,7 +361,7 @@ export function HatDesignCanvas({
       {/* 안전 영역 표시 */}
       {showSafeZone && zone && (
         <div
-          className='absolute border-2 border-dashed border-blue-400/50 bg-blue-400/5 pointer-events-none z-[5]'
+          className='absolute border border-dashed border-gray-400/40 bg-transparent rounded-md pointer-events-none z-[5]'
           style={{
             left: `${zone.x}%`,
             top: `${zone.y}%`,
@@ -369,8 +369,8 @@ export function HatDesignCanvas({
             height: `${zone.height}%`,
           }}
         >
-          <div className='absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-1 rounded-bl'>
-            PRINT AREA
+          <div className='absolute -top-px left-0 text-gray-400 text-[9px] font-medium tracking-wide px-1 py-px pointer-events-none'>
+            인쇄영역
           </div>
         </div>
       )}
@@ -462,7 +462,7 @@ export function HatDesignCanvas({
               enableResizing={isSelected}
               resizeHandleStyles={isSelected ? RESIZE_HANDLE_STYLES : undefined}
               disableDragging={false}
-              className={`${isSelected ? "ring-2 ring-blue-500" : "hover:ring-2 hover:ring-blue-300"}`}
+              className={`${isSelected ? "ring-1 ring-gray-900/70" : "hover:ring-1 hover:ring-gray-400"}`}
               onDragStart={(e) => {
                 e.stopPropagation();
                 onLayerSelect?.(layer.id);
@@ -546,7 +546,7 @@ export function HatDesignCanvas({
                     {/* 45° 회전 버튼 */}
                     {onLayerRotate && (
                       <button
-                        className='bg-blue-500 text-white rounded-full p-1.5 hover:bg-blue-600 transition-colors shadow-md'
+                        className='bg-gray-900 text-white rounded-full p-1.5 hover:bg-black transition-colors shadow-md'
                         onClick={(e) => {
                           e.stopPropagation();
                           onLayerRotate(layer.id, 45);
