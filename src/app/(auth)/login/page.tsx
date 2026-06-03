@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { CrewLoginInline } from "@/components/cart/CrewLoginInline";
 import {
   Card,
   CardContent,
@@ -10,8 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, ArrowLeft, Users, ShieldCheck } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { Loader2, ArrowLeft, ShieldCheck } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const SSO_ERROR_MESSAGES: Record<string, string> = {
   sso_missing_params: "SSO 파라미터가 누락되었습니다. 다시 시도해 주세요.",
@@ -22,6 +22,8 @@ const SSO_ERROR_MESSAGES: Record<string, string> = {
 
 function LoginContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const redirectTo = searchParams.get("redirect") || "/";
   const errorKey = searchParams.get("error");
   const errorMessage = errorKey ? (SSO_ERROR_MESSAGES[errorKey] ?? "로그인 중 오류가 발생했습니다.") : null;
 
@@ -82,17 +84,8 @@ function LoginContent() {
                 </div>
               )}
 
-              {/* 크루 SSO 로그인 버튼 */}
-              <Button
-                asChild
-                className="w-full gap-2 bg-ink text-canvas hover:bg-ink/90"
-                size="lg"
-              >
-                <a href="/api/sso/initiate">
-                  <Users className="w-5 h-5 text-[#C7FF00]" />
-                  크루로 로그인
-                </a>
-              </Button>
+              {/* 인라인 크루 로그인 (인스타 핸들 + PIN, 리다이렉트 없음) */}
+              <CrewLoginInline onSuccess={() => router.replace(redirectTo)} />
 
               {/* 혜택 안내 */}
               <div className="rounded-[4px] border border-hairline bg-soft-cloud p-4 space-y-2">
