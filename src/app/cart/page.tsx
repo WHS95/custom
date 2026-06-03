@@ -32,6 +32,7 @@ import { CustomerSupportLink } from "@/components/cart/CustomerSupportLink";
 import { getCrewDiscountAmount, getCrewDiscountLabel } from "@/lib/pricing/crew-discount";
 import { Badge } from "@/components/ui/badge";
 import { Users as UsersIcon } from "lucide-react";
+import { CrewLoginInline } from "@/components/cart/CrewLoginInline";
 
 interface AdminMessage {
   productId: string;
@@ -49,7 +50,13 @@ const viewLabels: Record<string, string> = {
 
 export default function CartPage() {
   const router = useRouter();
-  const { user, profile, isLoading: authLoading, isAuthenticated } = useAuth();
+  const {
+    user,
+    profile,
+    isLoading: authLoading,
+    isAuthenticated,
+    refreshProfile,
+  } = useAuth();
   const items = useCartStore((state) => state.items);
   const removeItem = useCartStore((state) => state.removeItem);
   const updateItemQuantity = useCartStore((state) => state.updateItemQuantity);
@@ -131,6 +138,13 @@ export default function CartPage() {
 
     fetchAdminMessages();
   }, [items]);
+
+  // 인라인 크루 로그인 성공 → auth 새로고침 (크루 신원 + 10% 할인 반영)
+  const handleCrewLoginSuccess = () => {
+    refreshProfile();
+    router.refresh();
+    toast.success("크루로 로그인되었습니다! 10% 할인이 적용됩니다.");
+  };
 
   // Analytics: open order modal (hat_order_started)
   const handleOpenOrderModal = () => {
@@ -551,23 +565,28 @@ export default function CartPage() {
                     </Button>
                   </>
                 ) : (
-                  <div className="p-4 bg-gray-100 rounded-lg text-center">
-                    <LogIn className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-600 mb-3">
-                      주문하려면 로그인이 필요합니다
-                    </p>
-                    <Link href="/login?redirect=/cart">
-                      <Button className="w-full">로그인하기</Button>
-                    </Link>
-                    <p className="text-xs text-gray-500 mt-2">
-                      아직 회원이 아니신가요?{" "}
-                      <Link
-                        href="/signup"
-                        className="text-blue-600 hover:underline"
-                      >
-                        회원가입
+                  <div className="space-y-3">
+                    {/* 인라인 크루 로그인 (10% 할인) */}
+                    <CrewLoginInline onSuccess={handleCrewLoginSuccess} />
+
+                    <div className="p-4 bg-gray-100 rounded-lg text-center">
+                      <LogIn className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600 mb-3">
+                        일반 회원으로 주문하기
+                      </p>
+                      <Link href="/login?redirect=/cart">
+                        <Button className="w-full">로그인하기</Button>
                       </Link>
-                    </p>
+                      <p className="text-xs text-gray-500 mt-2">
+                        아직 회원이 아니신가요?{" "}
+                        <Link
+                          href="/signup"
+                          className="text-blue-600 hover:underline"
+                        >
+                          회원가입
+                        </Link>
+                      </p>
+                    </div>
                   </div>
                 )}
               </CardContent>
