@@ -412,12 +412,12 @@ export function StudioLayout({
   };
 
   return (
-    <div className='flex h-[calc(100vh-64px)] overflow-hidden bg-gray-50'>
+    <div className='flex flex-col lg:flex-row min-h-[calc(100dvh-64px)] lg:h-[calc(100vh-64px)] lg:overflow-hidden bg-gray-50'>
       {/* 에러 알림 모달 */}
       <AlertModal />
 
-      {/* Main Canvas Area */}
-      <div className='flex-1 relative'>
+      {/* Main Canvas Area - 모바일: 상단 고정 높이, 데스크탑: 잔여 영역 채움 */}
+      <div className='relative h-[58vh] min-h-[340px] lg:h-auto lg:min-h-0 lg:flex-1'>
         <HatCanvas
           hatColor={selectedColor}
           currentView={currentView}

@@ -47,7 +47,7 @@ export function TextEditToolbar({
     FONT_LIST.find((f) => f.family === fontFamily) || FONT_LIST[0];
 
   return (
-    <div className='absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-white rounded-xl shadow-lg border border-gray-200 px-4 py-3 flex items-center gap-3 flex-wrap max-w-[520px]'>
+    <div className='absolute top-3 lg:top-4 left-1/2 -translate-x-1/2 z-30 bg-white rounded-xl shadow-lg border border-gray-200 px-3 py-2.5 lg:px-4 lg:py-3 flex items-center gap-2 lg:gap-3 flex-wrap max-w-[calc(100vw-1.5rem)] sm:max-w-[520px]'>
       <div className='flex items-center gap-1.5 text-gray-500'>
         <Type className='w-4 h-4' />
         <span className='text-xs font-medium hidden sm:inline'>

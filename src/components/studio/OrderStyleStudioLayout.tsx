@@ -266,8 +266,8 @@ export function OrderStyleStudioLayout({
         </div>
       </div>
 
-      <div className='flex h-[calc(100vh-64px)]'>
-        <div className='w-80 bg-white border-r overflow-y-auto'>
+      <div className='flex flex-col lg:flex-row min-h-[calc(100dvh-64px)] lg:h-[calc(100vh-64px)]'>
+        <div className='w-full lg:w-80 bg-white border-b lg:border-b-0 lg:border-r lg:overflow-y-auto order-2 lg:order-none'>
           <div className='p-4 space-y-3'>
             <p className='text-xs text-gray-500'>커스텀 내역 확인</p>
             <div className='rounded-xl border-2 border-blue-500 shadow-sm overflow-hidden'>
@@ -286,7 +286,7 @@ export function OrderStyleStudioLayout({
           </div>
         </div>
 
-        <div className='flex-1 flex flex-col'>
+        <div className='flex-1 flex flex-col min-h-0 order-1 lg:order-none'>
           <div className='bg-white border-b px-4 py-2'>
             <Tabs
               value={currentView}
@@ -314,7 +314,7 @@ export function OrderStyleStudioLayout({
             </Tabs>
           </div>
 
-          <div className='flex-1 flex items-center justify-center p-8 bg-gray-100 relative'>
+          <div className='flex-1 flex items-center justify-center p-3 sm:p-6 lg:p-8 bg-gray-100 relative'>
             {selectedTextLayer && (
               <TextEditToolbar
                 fontFamily={selectedTextLayer.fontFamily || "'Noto Sans KR'"}
@@ -350,7 +350,7 @@ export function OrderStyleStudioLayout({
           </div>
         </div>
 
-        <div className='w-72 bg-white border-l overflow-y-auto'>
+        <div className='w-full lg:w-72 bg-white border-t lg:border-t-0 lg:border-l lg:overflow-y-auto order-3 lg:order-none'>
           <div className='p-4 space-y-4'>
             <Button
               onClick={handleSaveDesign}

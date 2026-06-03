@@ -158,7 +158,7 @@ export function HatCanvas({
       {/* 메인 캔버스 영역 - 정사각형 비율 보장 */}
       <div
         ref={canvasContainerRef}
-        className='w-full h-full max-w-[700px] max-h-[700px] p-8 flex items-center justify-center'
+        className='w-full h-full max-w-[700px] max-h-[700px] p-3 sm:p-6 lg:p-8 flex items-center justify-center'
       >
         {squareSize > 0 && (
           <div style={{ width: squareSize, height: squareSize, flexShrink: 0 }}>

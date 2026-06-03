@@ -66,6 +66,32 @@ interface HatDesignCanvasProps {
 }
 
 /**
+ * 터치에서도 잡기 쉬운 모서리 리사이즈 핸들 (선택 시에만 표시)
+ */
+const RESIZE_HANDLE_STYLES = {
+  bottomRight: {
+    width: "20px",
+    height: "20px",
+    right: "-10px",
+    bottom: "-10px",
+    borderRadius: "9999px",
+    background: "#3b82f6",
+    border: "2px solid #fff",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.35)",
+  },
+  bottomLeft: {
+    width: "20px",
+    height: "20px",
+    left: "-10px",
+    bottom: "-10px",
+    borderRadius: "9999px",
+    background: "#3b82f6",
+    border: "2px solid #fff",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.35)",
+  },
+} as const;
+
+/**
  * 회전 핸들 컴포넌트
  * PPT처럼 드래그로 자유 회전 가능
  */
@@ -133,6 +159,52 @@ function RotationHandle({
     [layerId, onRotationChange],
   );
 
+  // 터치(모바일) 회전 - 마우스 핸들러와 동일한 로직
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      e.stopPropagation();
+      isDragging.current = true;
+
+      const handle = e.currentTarget as HTMLElement;
+      const rndEl = handle.closest('[class*="z-10"]') as HTMLElement;
+      if (!rndEl) return;
+
+      const rect = rndEl.getBoundingClientRect();
+      centerRef.current = {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      };
+
+      const handleTouchMove = (moveE: TouchEvent) => {
+        if (!isDragging.current) return;
+        const t = moveE.touches[0];
+        if (!t) return;
+        moveE.preventDefault();
+
+        const angle = Math.atan2(
+          t.clientY - centerRef.current.y,
+          t.clientX - centerRef.current.x,
+        );
+        let degrees = (angle * 180) / Math.PI + 90;
+        if (degrees < 0) degrees += 360;
+
+        onRotationChange(layerId, Math.round(degrees));
+      };
+
+      const handleTouchEnd = () => {
+        isDragging.current = false;
+        document.removeEventListener("touchmove", handleTouchMove);
+        document.removeEventListener("touchend", handleTouchEnd);
+      };
+
+      document.addEventListener("touchmove", handleTouchMove, {
+        passive: false,
+      });
+      document.addEventListener("touchend", handleTouchEnd);
+    },
+    [layerId, onRotationChange],
+  );
+
   return (
     <>
       {/* 회전 핸들 연결선 */}
@@ -142,12 +214,13 @@ function RotationHandle({
       />
       {/* 회전 핸들 원형 */}
       <div
-        className='absolute left-1/2 -translate-x-1/2 cursor-grab active:cursor-grabbing'
-        style={{ top: -36 }}
+        className='absolute left-1/2 -translate-x-1/2 cursor-grab active:cursor-grabbing touch-none'
+        style={{ top: -38 }}
         onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
       >
-        <div className='w-5 h-5 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center shadow-md transition-colors'>
-          <RotateCw size={10} className='text-white' />
+        <div className='w-6 h-6 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center shadow-md transition-colors'>
+          <RotateCw size={12} className='text-white' />
         </div>
       </div>
     </>
@@ -372,7 +445,7 @@ export function HatDesignCanvas({
         return (
           <div
             key={layer.id}
-            className='absolute z-10'
+            className='absolute z-10 touch-none'
             style={{
               left: pixelX,
               top: pixelY,
@@ -387,6 +460,7 @@ export function HatDesignCanvas({
               size={{ width: pixelWidth, height: pixelHeight }}
               lockAspectRatio
               enableResizing={isSelected}
+              resizeHandleStyles={isSelected ? RESIZE_HANDLE_STYLES : undefined}
               disableDragging={false}
               className={`${isSelected ? "ring-2 ring-blue-500" : "hover:ring-2 hover:ring-blue-300"}`}
               onDragStart={(e) => {
@@ -466,33 +540,33 @@ export function HatDesignCanvas({
                   />
                 )}
 
-                {/* 컨트롤 버튼들 */}
+                {/* 컨트롤 버튼들 - 선택 시 상시 노출(터치에는 hover가 없음) */}
                 {isSelected && (
-                  <div className='absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20'>
+                  <div className='absolute -top-3 -right-3 flex gap-1.5 z-20 touch-none'>
                     {/* 45° 회전 버튼 */}
                     {onLayerRotate && (
                       <button
-                        className='bg-blue-500 text-white rounded-full p-1 hover:bg-blue-600 transition-colors'
+                        className='bg-blue-500 text-white rounded-full p-1.5 hover:bg-blue-600 transition-colors shadow-md'
                         onClick={(e) => {
                           e.stopPropagation();
                           onLayerRotate(layer.id, 45);
                         }}
                         title='45° 회전'
                       >
-                        <RotateCw size={12} />
+                        <RotateCw size={14} />
                       </button>
                     )}
                     {/* 삭제 버튼 */}
                     {onLayerRemove && (
                       <button
-                        className='bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors'
+                        className='bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-md'
                         onClick={(e) => {
                           e.stopPropagation();
                           onLayerRemove(layer.id);
                         }}
                         title='삭제'
                       >
-                        <X size={12} />
+                        <X size={14} />
                       </button>
                     )}
                   </div>

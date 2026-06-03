@@ -191,7 +191,7 @@ export function ProductSidebar({
   const totalCartPrice = getTotalPrice();
 
   return (
-    <div className='w-[380px] bg-white border-l h-[calc(100vh-64px)] overflow-y-auto flex flex-col'>
+    <div className='w-full lg:w-[380px] bg-white border-t lg:border-t-0 lg:border-l lg:h-[calc(100vh-64px)] lg:overflow-y-auto flex flex-col'>
       <div className='p-4 space-y-3 flex-1'>
         {/* Header */}
         <div className='space-y-0.5'>
@@ -222,7 +222,7 @@ export function ProductSidebar({
                 <div key={c.id} className='relative'>
                   <button
                     onClick={() => onColorChange(c.id)}
-                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                    className={`w-10 h-10 lg:w-8 lg:h-8 rounded-full border-2 transition-all ${
                       selectedColor === c.id
                         ? "ring-2 ring-black ring-offset-1 border-transparent"
                         : "border-gray-200 hover:scale-110"
@@ -265,7 +265,7 @@ export function ProductSidebar({
               <button
                 key={size}
                 onClick={() => setSelectedSize(size)}
-                className={`py-1.5 text-xs border rounded hover:border-black transition-colors ${
+                className={`py-2.5 text-sm lg:py-1.5 lg:text-xs border rounded hover:border-black transition-colors ${
                   selectedSize === size
                     ? "bg-black text-white border-black"
                     : "bg-white text-gray-700"
@@ -287,16 +287,16 @@ export function ProductSidebar({
               <div className='flex items-center bg-white border rounded'>
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className='px-2 py-0.5 hover:bg-gray-100 border-r text-xs'
+                  className='px-3.5 py-1.5 lg:px-2 lg:py-0.5 hover:bg-gray-100 border-r text-sm lg:text-xs'
                 >
                   -
                 </button>
-                <span className='px-2.5 py-0.5 text-xs font-medium min-w-[24px] text-center'>
+                <span className='px-3 py-1.5 lg:px-2.5 lg:py-0.5 text-sm lg:text-xs font-medium min-w-[28px] lg:min-w-[24px] text-center'>
                   {quantity}
                 </span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className='px-2 py-0.5 hover:bg-gray-100 border-l text-xs'
+                  className='px-3.5 py-1.5 lg:px-2 lg:py-0.5 hover:bg-gray-100 border-l text-sm lg:text-xs'
                 >
                   +
                 </button>
@@ -372,7 +372,7 @@ export function ProductSidebar({
         <Button
           onClick={handleAddToCart}
           disabled={!hasCurrentDesign}
-          className={`w-full h-9 text-sm rounded transform transition-all ${
+          className={`w-full h-11 text-base lg:h-9 lg:text-sm rounded transform transition-all ${
             hasCurrentDesign
               ? "bg-black hover:bg-gray-900 hover:-translate-y-0.5"
               : "bg-gray-300 cursor-not-allowed"
