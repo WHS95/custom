@@ -10,8 +10,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, ArrowLeft, ShieldCheck } from "lucide-react";
+import { Loader2, ArrowLeft, ShieldCheck, ArrowUpRight } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+
+const CREW_REGISTER_URL = "https://www.runhouse.club/register";
 
 const SSO_ERROR_MESSAGES: Record<string, string> = {
   sso_missing_params: "SSO 파라미터가 누락되었습니다. 다시 시도해 주세요.",
@@ -100,19 +102,18 @@ function LoginContent() {
                 </ul>
               </div>
 
-              <p className="text-xs text-center text-mute">
-                RunHouse 크루 인스타그램 핸들 + PIN으로 로그인합니다.
-                <br />
-                크루 등록은{" "}
+              {/* 크루 등록 안내 (inline 링크) */}
+              <p className="text-xs text-center text-mute pt-1">
+                처음이신가요?{" "}
                 <a
-                  href="https://www.runhouse.club"
+                  href={CREW_REGISTER_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline underline-offset-2 hover:text-ink transition-colors"
+                  className="inline-flex items-center gap-0.5 font-medium text-ink underline underline-offset-2 hover:opacity-70 transition-opacity"
                 >
-                  RunHouse 지도
+                  크루 등록하기
+                  <ArrowUpRight className="w-3 h-3" />
                 </a>
-                에서 신청하세요.
               </p>
             </CardContent>
           </Card>
