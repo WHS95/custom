@@ -257,6 +257,47 @@ export type Database = {
           },
         ]
       }
+      groble_webhook_events: {
+        Row: {
+          created_at: string
+          event_id: string | null
+          event_type: string
+          id: string
+          idempotency_key: string
+          matched_order_id: string | null
+          payload: Json
+          processed: boolean
+        }
+        Insert: {
+          created_at?: string
+          event_id?: string | null
+          event_type: string
+          id?: string
+          idempotency_key: string
+          matched_order_id?: string | null
+          payload: Json
+          processed?: boolean
+        }
+        Update: {
+          created_at?: string
+          event_id?: string | null
+          event_type?: string
+          id?: string
+          idempotency_key?: string
+          matched_order_id?: string | null
+          payload?: Json
+          processed?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groble_webhook_events_matched_order_id_fkey"
+            columns: ["matched_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           admin_memo: string | null
@@ -268,6 +309,9 @@ export type Database = {
           customer_phone: string
           id: string
           order_number: string
+          paid_at: string | null
+          payment_link: string | null
+          payment_status: string
           shipping_cost: number
           shipping_info: Json
           status: Database["runhousecustom"]["Enums"]["order_status"]
@@ -287,6 +331,9 @@ export type Database = {
           customer_phone: string
           id?: string
           order_number: string
+          paid_at?: string | null
+          payment_link?: string | null
+          payment_status?: string
           shipping_cost: number
           shipping_info: Json
           status?: Database["runhousecustom"]["Enums"]["order_status"]
@@ -306,6 +353,9 @@ export type Database = {
           customer_phone?: string
           id?: string
           order_number?: string
+          paid_at?: string | null
+          payment_link?: string | null
+          payment_status?: string
           shipping_cost?: number
           shipping_info?: Json
           status?: Database["runhousecustom"]["Enums"]["order_status"]
