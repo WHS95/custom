@@ -13,6 +13,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import {
+  HatDesignCanvas,
+  type DesignLayer,
+} from "@/components/shared/HatDesignCanvas";
+import type { HatView } from "@/lib/store/studio-context";
 
 interface Variant {
   id: string;
@@ -36,6 +41,13 @@ interface CollectionInfo {
     name: string;
     images: { colorId: string; view: string; url: string }[];
     variants: Variant[];
+  } | null;
+  designLayers: DesignLayer[] | null;
+  designColor: {
+    id: string;
+    label: string;
+    hex: string;
+    views: Record<string, string>;
   } | null;
 }
 
@@ -106,6 +118,15 @@ export default function CollectSubmitPage({
     info?.product?.images.find(
       (img) => img.colorId === colorId && img.view === "front",
     )?.url || info?.product?.images.find((img) => img.view === "front")?.url;
+
+  // 확정 디자인 (크루 스토어 모드): 색상 고정 + 커스텀 미리보기
+  const hasDesign =
+    !!info?.designLayers && info.designLayers.length > 0 && !!info.designColor;
+  const designViews: HatView[] = hasDesign
+    ? ([...new Set(info!.designLayers!.map((l) => l.view))] as HatView[])
+    : [];
+  const [designView, setDesignView] = useState<HatView | null>(null);
+  const activeDesignView = designView ?? designViews[0] ?? "front";
 
   const closed =
     !info || info.status !== "open" || info.deadlinePassed;
@@ -317,16 +338,62 @@ export default function CollectSubmitPage({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {previewImage && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={previewImage}
-                alt={selectedVariant?.label || info.product?.name || ""}
-                className="mx-auto aspect-square w-48 rounded-lg object-cover"
-              />
+            {hasDesign && info.designColor ? (
+              <div className="space-y-2">
+                <div className="mx-auto w-56">
+                  <HatDesignCanvas
+                    hatColor={info.designColor.id}
+                    currentView={activeDesignView}
+                    layers={info.designLayers!}
+                    editable={false}
+                    showSafeZone={false}
+                    showViewLabel={false}
+                    productColors={[
+                      {
+                        id: info.designColor.id,
+                        label: info.designColor.label,
+                        hex: info.designColor.hex,
+                        views: info.designColor.views as Record<HatView, string>,
+                      },
+                    ]}
+                    className="aspect-square w-full rounded-lg border border-hairline"
+                  />
+                </div>
+                {designViews.length > 1 && (
+                  <div className="flex justify-center gap-2">
+                    {designViews.map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setDesignView(v)}
+                        className={cn(
+                          "rounded-full border px-3 py-1 text-xs transition",
+                          activeDesignView === v
+                            ? "border-ink bg-ink text-canvas"
+                            : "border-hairline",
+                        )}
+                      >
+                        {v === "front" ? "앞면" : v === "back" ? "뒷면" : v}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <p className="text-center text-xs text-muted-foreground">
+                  우리 크루의 확정 디자인 · {info.designColor.label}
+                </p>
+              </div>
+            ) : (
+              previewImage && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={previewImage}
+                  alt={selectedVariant?.label || info.product?.name || ""}
+                  className="mx-auto aspect-square w-48 rounded-lg object-cover"
+                />
+              )
             )}
 
-            {variants.length > 0 && (
+            {!hasDesign && variants.length > 0 && (
               <div className="space-y-2">
                 <Label>
                   색상 <span className="text-red-500">*</span>

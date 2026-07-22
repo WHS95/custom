@@ -124,6 +124,10 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     // 색상 × 사이즈로 집계 (제출된 색상 그대로 — 임의 폴백 없음)
     const unitPrice: number = collection.unit_price ?? product.basePrice;
+    // 확정 디자인이 있으면 모든 아이템에 디자인 스냅샷 첨부
+    const designLayers = Array.isArray(collection.design_snapshot)
+      ? (collection.design_snapshot as unknown as CreateOrderItemDTO["designLayers"])
+      : [];
     const grouped = new Map<string, CreateOrderItemDTO>();
     for (const r of responses) {
       const colorId = r.color_id || "";
@@ -141,7 +145,7 @@ export async function POST(request: NextRequest, { params }: Params) {
           size: r.size,
           quantity: r.quantity,
           unitPrice,
-          designLayers: [],
+          designLayers,
         });
       }
     }

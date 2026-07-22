@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useCartStore } from "@/lib/store/cart-store";
 import type { Product } from "@/domain/product/types";
 
 interface CreatedLinks {
@@ -33,6 +34,9 @@ export default function CollectNewPage() {
   const [unitPrice, setUnitPrice] = useState<string>("");
   const [deadline, setDeadline] = useState("");
   const [depositInfo, setDepositInfo] = useState("");
+  // 확정 디자인 첨부 (장바구니 아이템 ID)
+  const [designCartItemId, setDesignCartItemId] = useState<string>("");
+  const cartItems = useCartStore((state) => state.items);
 
   useEffect(() => {
     fetch("/api/products")
@@ -45,10 +49,16 @@ export default function CollectNewPage() {
   }, []);
 
   const selectedProduct = products.find((p) => p.id === productId);
+  // 선택한 상품에 대한 장바구니 디자인 (스튜디오에서 확정한 커스텀)
+  const designCandidates = cartItems.filter(
+    (item) => item.productId === productId && item.designLayers.length > 0,
+  );
+  const selectedDesign = designCandidates.find((c) => c.id === designCartItemId);
 
   const handleSelectProduct = (product: Product) => {
     setProductId(product.id);
     setUnitPrice(String(product.basePrice));
+    setDesignCartItemId("");
   };
 
   const handleSubmit = async () => {
@@ -68,6 +78,8 @@ export default function CollectNewPage() {
           unitPrice: unitPrice ? Number(unitPrice) : undefined,
           deadline: deadline ? new Date(`${deadline}T23:59:59`).toISOString() : undefined,
           depositInfo: depositInfo || undefined,
+          designLayers: selectedDesign?.designLayers,
+          designColorId: selectedDesign?.color,
         }),
       });
       const json = await res.json();
@@ -227,6 +239,60 @@ export default function CollectNewPage() {
               </div>
             )}
           </div>
+
+          {productId && designCandidates.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              💡 스튜디오에서 이 상품에 디자인을 만들어 장바구니에 담으면, 커스텀이
+              적용된 &quot;크루 스토어&quot;로 취합을 만들 수 있어요.
+            </p>
+          )}
+          {designCandidates.length > 0 && (
+            <div className="space-y-2">
+              <Label>확정 디자인 첨부 (크루 스토어)</Label>
+              <p className="text-xs text-muted-foreground">
+                스튜디오에서 만든 디자인을 첨부하면 크루원에게 커스텀이 적용된
+                제품이 보이고, 색상이 디자인 색상으로 고정됩니다.
+              </p>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setDesignCartItemId("")}
+                  className={cn(
+                    "w-full rounded-lg border p-3 text-left text-sm transition",
+                    !designCartItemId
+                      ? "border-ink ring-1 ring-ink"
+                      : "border-hairline hover:border-stone",
+                  )}
+                >
+                  디자인 없이 진행 (색상은 크루원이 선택)
+                </button>
+                {designCandidates.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setDesignCartItemId(item.id)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-lg border p-3 text-left text-sm transition",
+                      designCartItemId === item.id
+                        ? "border-ink ring-1 ring-ink"
+                        : "border-hairline hover:border-stone",
+                    )}
+                  >
+                    <span
+                      className="h-5 w-5 shrink-0 rounded-full border border-hairline"
+                      style={{ backgroundColor: item.colorHex }}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="font-medium">{item.colorLabel}</span>
+                      <span className="ml-2 text-muted-foreground">
+                        레이어 {item.designLayers.length}개
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="unitPrice">1인당 가격 안내 (원)</Label>

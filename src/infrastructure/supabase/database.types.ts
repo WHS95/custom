@@ -651,6 +651,8 @@ export type Database = {
           crew_name: string | null
           deadline: string | null
           deposit_info: string | null
+          design_color_id: string | null
+          design_snapshot: Json | null
           id: string
           order_number: string | null
           product_id: string | null
@@ -669,6 +671,8 @@ export type Database = {
           crew_name?: string | null
           deadline?: string | null
           deposit_info?: string | null
+          design_color_id?: string | null
+          design_snapshot?: Json | null
           id?: string
           order_number?: string | null
           product_id?: string | null
@@ -687,6 +691,8 @@ export type Database = {
           crew_name?: string | null
           deadline?: string | null
           deposit_info?: string | null
+          design_color_id?: string | null
+          design_snapshot?: Json | null
           id?: string
           order_number?: string | null
           product_id?: string | null

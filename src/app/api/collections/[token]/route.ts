@@ -54,10 +54,32 @@ export async function GET(request: NextRequest, { params }: Params) {
     }
 
     const allowedColors = getAllowedColors(collection);
+    const designColorId = collection.design_color_id;
     const variants =
-      product?.variants.filter(
-        (v) => allowedColors.length === 0 || allowedColors.includes(v.id),
+      product?.variants.filter((v) =>
+        // 확정 디자인이 있으면 해당 색상으로 고정
+        designColorId
+          ? v.id === designColorId
+          : allowedColors.length === 0 || allowedColors.includes(v.id),
       ) || [];
+
+    // 확정 디자인 렌더링용: 디자인 색상의 모든 뷰 이미지
+    const designVariant = designColorId
+      ? product?.variants.find((v) => v.id === designColorId)
+      : null;
+    const designColor =
+      product && designVariant
+        ? {
+            id: designVariant.id,
+            label: designVariant.label,
+            hex: designVariant.hex,
+            views: Object.fromEntries(
+              product.images
+                .filter((img) => img.colorId === designVariant.id)
+                .map((img) => [img.view, img.url]),
+            ),
+          }
+        : null;
 
     const rows: SizeCollectionResponseRow[] = responsesResult.data || [];
     const totalQuantity = rows.reduce((s, r) => s + r.quantity, 0);
@@ -75,6 +97,8 @@ export async function GET(request: NextRequest, { params }: Params) {
         orderNumber: isManager ? collection.order_number : undefined,
         responseCount: rows.length,
         totalQuantity,
+        designLayers: collection.design_snapshot ?? null,
+        designColor,
         product: product
           ? {
               id: product.id,

@@ -39,8 +39,11 @@ async function validateSelection(
   if (!product) return null;
 
   const allowedColors = getAllowedColors(collection);
-  const variants = product.variants.filter(
-    (v) => allowedColors.length === 0 || allowedColors.includes(v.id),
+  const variants = product.variants.filter((v) =>
+    // 확정 디자인이 있으면 해당 색상으로 고정
+    collection.design_color_id
+      ? v.id === collection.design_color_id
+      : allowedColors.length === 0 || allowedColors.includes(v.id),
   );
 
   if (variants.length > 0) {
