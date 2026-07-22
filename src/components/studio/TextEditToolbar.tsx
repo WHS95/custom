@@ -126,8 +126,8 @@ export function TextEditToolbar({
 
       <div className='w-px h-6 bg-gray-200' />
 
-      {/* 색상 선택 */}
-      <div className='flex items-center gap-1'>
+      {/* 색상 선택 - 모바일에서는 가로 스크롤, 데스크탑에서는 자연 폭 */}
+      <div className='flex items-center gap-1 overflow-x-auto max-w-[180px] sm:max-w-none -mx-1 px-1 py-0.5 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]'>
         {textColorPresets.map((c) => (
           <button
             key={c.hex}

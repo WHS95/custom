@@ -257,6 +257,47 @@ export type Database = {
           },
         ]
       }
+      groble_webhook_events: {
+        Row: {
+          created_at: string
+          event_id: string | null
+          event_type: string
+          id: string
+          idempotency_key: string
+          matched_order_id: string | null
+          payload: Json
+          processed: boolean
+        }
+        Insert: {
+          created_at?: string
+          event_id?: string | null
+          event_type: string
+          id?: string
+          idempotency_key: string
+          matched_order_id?: string | null
+          payload: Json
+          processed?: boolean
+        }
+        Update: {
+          created_at?: string
+          event_id?: string | null
+          event_type?: string
+          id?: string
+          idempotency_key?: string
+          matched_order_id?: string | null
+          payload?: Json
+          processed?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groble_webhook_events_matched_order_id_fkey"
+            columns: ["matched_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           admin_memo: string | null
@@ -268,6 +309,9 @@ export type Database = {
           customer_phone: string
           id: string
           order_number: string
+          paid_at: string | null
+          payment_link: string | null
+          payment_status: string
           shipping_cost: number
           shipping_info: Json
           status: Database["runhousecustom"]["Enums"]["order_status"]
@@ -287,6 +331,9 @@ export type Database = {
           customer_phone: string
           id?: string
           order_number: string
+          paid_at?: string | null
+          payment_link?: string | null
+          payment_status?: string
           shipping_cost: number
           shipping_info: Json
           status?: Database["runhousecustom"]["Enums"]["order_status"]
@@ -306,6 +353,9 @@ export type Database = {
           customer_phone?: string
           id?: string
           order_number?: string
+          paid_at?: string | null
+          payment_link?: string | null
+          payment_status?: string
           shipping_cost?: number
           shipping_info?: Json
           status?: Database["runhousecustom"]["Enums"]["order_status"]
@@ -535,6 +585,134 @@ export type Database = {
           },
           {
             foreignKeyName: "reviews_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      size_collection_responses: {
+        Row: {
+          collection_id: string
+          color_id: string | null
+          created_at: string
+          edit_token: string
+          id: string
+          is_paid: boolean
+          name: string
+          note: string | null
+          quantity: number
+          size: string
+          updated_at: string
+        }
+        Insert: {
+          collection_id: string
+          color_id?: string | null
+          created_at?: string
+          edit_token: string
+          id?: string
+          is_paid?: boolean
+          name: string
+          note?: string | null
+          quantity?: number
+          size: string
+          updated_at?: string
+        }
+        Update: {
+          collection_id?: string
+          color_id?: string | null
+          created_at?: string
+          edit_token?: string
+          id?: string
+          is_paid?: boolean
+          name?: string
+          note?: string | null
+          quantity?: number
+          size?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "size_collection_responses_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "size_collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      size_collections: {
+        Row: {
+          admin_token: string
+          allowed_colors: Json | null
+          created_at: string
+          creator_user_id: string | null
+          crew_name: string | null
+          deadline: string | null
+          deposit_info: string | null
+          design_color_id: string | null
+          design_snapshot: Json | null
+          id: string
+          order_number: string | null
+          product_id: string | null
+          status: string
+          tenant_id: string
+          title: string
+          token: string
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          admin_token: string
+          allowed_colors?: Json | null
+          created_at?: string
+          creator_user_id?: string | null
+          crew_name?: string | null
+          deadline?: string | null
+          deposit_info?: string | null
+          design_color_id?: string | null
+          design_snapshot?: Json | null
+          id?: string
+          order_number?: string | null
+          product_id?: string | null
+          status?: string
+          tenant_id: string
+          title: string
+          token: string
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          admin_token?: string
+          allowed_colors?: Json | null
+          created_at?: string
+          creator_user_id?: string | null
+          crew_name?: string | null
+          deadline?: string | null
+          deposit_info?: string | null
+          design_color_id?: string | null
+          design_snapshot?: Json | null
+          id?: string
+          order_number?: string | null
+          product_id?: string | null
+          status?: string
+          tenant_id?: string
+          title?: string
+          token?: string
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "size_collections_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "size_collections_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

@@ -131,6 +131,28 @@ export async function sendSlackNotification(payload: SlackOrderPayload): Promise
 }
 
 /**
+ * 임의 텍스트 알림 헬퍼 (결제 웹훅 등)
+ */
+export async function notifyText(text: string): Promise<boolean> {
+  if (!SLACK_WEBHOOK_URL) {
+    console.warn("[Slack] SLACK_WEBHOOK_URL 환경변수가 설정되지 않았습니다.")
+    return false
+  }
+
+  try {
+    const response = await fetch(SLACK_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    })
+    return response.ok
+  } catch (error) {
+    console.error("[Slack] 알림 발송 중 에러:", error)
+    return false
+  }
+}
+
+/**
  * 신규 주문 알림 헬퍼
  */
 export async function notifyNewOrder(

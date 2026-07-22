@@ -22,17 +22,19 @@ import {
   Eye,
   Pencil,
   Layers,
-  LogIn,
   User,
 } from "lucide-react";
 import { useDesignStore } from "@/lib/store/design-store";
 import { OrderFormData } from "@/components/cart/StepOrderForm";
 import { OrderModal } from "@/components/cart/OrderModal";
 import { CustomerSupportLink } from "@/components/cart/CustomerSupportLink";
+import { GuestIntentModal } from "@/components/cart/GuestIntentModal";
 import { getCrewDiscountAmount, getCrewDiscountLabel } from "@/lib/pricing/crew-discount";
 import { Badge } from "@/components/ui/badge";
 import { Users as UsersIcon } from "lucide-react";
 import { CrewLoginInline } from "@/components/cart/CrewLoginInline";
+
+const GUEST_INTENT_SEEN_KEY = "cart:guest_intent_shown";
 
 interface AdminMessage {
   productId: string;
@@ -67,6 +69,7 @@ export default function CartPage() {
 
   const [isOrdering, setIsOrdering] = useState(false);
   const [orderModalOpen, setOrderModalOpen] = useState(false);
+  const [guestIntentOpen, setGuestIntentOpen] = useState(false);
   const [adminMessages, setAdminMessages] = useState<AdminMessage[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
@@ -152,6 +155,47 @@ export default function CartPage() {
     setOrderModalOpen(true);
   };
 
+  /**
+   * "주문하기" 클릭 통합 핸들러
+   * - 로그인된 사용자: 바로 주문 모달
+   * - 비로그인 사용자: 세션 내 첫 시도면 유도 모달 1회 → 그 다음부터는 바로 주문 모달
+   */
+  const handleOrderButtonClick = () => {
+    if (isAuthenticated) {
+      handleOpenOrderModal();
+      return;
+    }
+
+    const alreadyShown =
+      typeof window !== "undefined" &&
+      sessionStorage.getItem(GUEST_INTENT_SEEN_KEY) === "1";
+
+    if (alreadyShown) {
+      handleOpenOrderModal();
+      return;
+    }
+
+    sessionStorage.setItem(GUEST_INTENT_SEEN_KEY, "1");
+    posthog.capture("guest_intent_modal_shown");
+    setGuestIntentOpen(true);
+  };
+
+  // 유도 모달: 비회원으로 계속 진행
+  const handleContinueAsGuest = () => {
+    posthog.capture("guest_intent_continue_as_guest");
+    setGuestIntentOpen(false);
+    handleOpenOrderModal();
+  };
+
+  // 유도 모달 내 크루 로그인 성공
+  const handleCrewLoginFromIntent = () => {
+    posthog.capture("guest_intent_crew_login_success");
+    setGuestIntentOpen(false);
+    handleCrewLoginSuccess();
+    // 로그인 직후 바로 주문 단계로
+    handleOpenOrderModal();
+  };
+
   const handleQuantityChange = (id: string, delta: number) => {
     const item = items.find((i) => i.id === id);
     if (item) {
@@ -163,22 +207,17 @@ export default function CartPage() {
     formData: OrderFormData,
     attachmentFiles: File[]
   ) => {
-    if (!isAuthenticated || !user) {
-      toast.error("로그인이 필요합니다.");
-      router.push("/login?redirect=/cart");
-      return;
-    }
-
     setIsOrdering(true);
     try {
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: user.id,
+          // 비회원 주문: userId 생략 → 백엔드에서 null 허용 (이미 지원)
+          userId: user?.id,
           customerName: formData.customerName,
           customerPhone: formData.customerPhone,
-          customerEmail: formData.customerEmail || user.email,
+          customerEmail: formData.customerEmail || user?.email,
           shippingInfo: {
             recipientName: formData.recipientName,
             phone: formData.recipientPhone,
@@ -234,7 +273,13 @@ export default function CartPage() {
       }
 
       clearCart();
-      toast.success("주문이 완료되었습니다!");
+      if (!isAuthenticated) {
+        toast.success(`주문번호 ${orderNumber} 로 접수되었습니다. 진행 상황은 주문번호로 확인하실 수 있어요.`, {
+          duration: 6000,
+        });
+      } else {
+        toast.success("주문이 완료되었습니다!");
+      }
       router.push(`/order/${orderNumber}`);
     } catch (error) {
       console.error("주문 에러:", error);
@@ -566,26 +611,35 @@ export default function CartPage() {
                   </>
                 ) : (
                   <div className="space-y-3">
-                    {/* 인라인 크루 로그인 (10% 할인) */}
-                    <CrewLoginInline onSuccess={handleCrewLoginSuccess} />
+                    {/* primary CTA: 비회원으로 주문하기 (즉시 진행) */}
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      onClick={handleOrderButtonClick}
+                      disabled={isLoadingMessages}
+                    >
+                      {isLoadingMessages ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          로딩 중...
+                        </>
+                      ) : (
+                        "주문하기"
+                      )}
+                    </Button>
+                    <p className="text-[11px] text-center text-gray-500">
+                      비회원으로도 주문 가능 · 주문번호로 진행 추적
+                    </p>
 
-                    <div className="p-4 bg-gray-100 rounded-lg text-center">
-                      <LogIn className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600 mb-3">
-                        일반 회원으로 주문하기
-                      </p>
-                      <Link href="/login?redirect=/cart">
-                        <Button className="w-full">로그인하기</Button>
-                      </Link>
-                      <p className="text-xs text-gray-500 mt-2">
-                        아직 회원이 아니신가요?{" "}
-                        <Link
-                          href="/signup"
-                          className="text-blue-600 hover:underline"
-                        >
-                          회원가입
-                        </Link>
-                      </p>
+                    {/* 보조 CTA: 크루 로그인 — 10% 할인 */}
+                    <div className="pt-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <UsersIcon className="w-3.5 h-3.5 text-purple-600" />
+                        <span className="text-xs font-medium text-gray-700">
+                          크루 로그인 시 10% 할인
+                        </span>
+                      </div>
+                      <CrewLoginInline onSuccess={handleCrewLoginSuccess} />
                     </div>
                   </div>
                 )}
@@ -616,9 +670,9 @@ export default function CartPage() {
               <Button disabled className="px-8">
                 <Loader2 className="h-4 w-4 animate-spin" />
               </Button>
-            ) : isAuthenticated ? (
+            ) : (
               <Button
-                onClick={handleOpenOrderModal}
+                onClick={handleOrderButtonClick}
                 disabled={isLoadingMessages}
                 className="px-8"
               >
@@ -627,10 +681,6 @@ export default function CartPage() {
                 ) : (
                   "주문하기"
                 )}
-              </Button>
-            ) : (
-              <Button asChild className="px-8">
-                <Link href="/login?redirect=/cart">로그인</Link>
               </Button>
             )}
           </div>
@@ -645,6 +695,14 @@ export default function CartPage() {
         totalAmount={getGrandTotal()}
         onSubmit={handleOrder}
         isSubmitting={isOrdering}
+      />
+
+      {/* 비회원 주문 전 1회 유도 모달 */}
+      <GuestIntentModal
+        open={guestIntentOpen}
+        onOpenChange={setGuestIntentOpen}
+        onContinueAsGuest={handleContinueAsGuest}
+        onCrewLoginSuccess={handleCrewLoginFromIntent}
       />
 
       <CustomerSupportLink />

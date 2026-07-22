@@ -87,6 +87,10 @@ export default function OrderDetailPage() {
 
   // 주문 데이터
   const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [payment, setPayment] = useState<{
+    paymentLink: string | null;
+    paymentStatus: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -141,6 +145,18 @@ export default function OrderDetailPage() {
 
   // 선택된 레이어
   const selectedLayer = currentLayers.find((l) => l.id === selectedLayerId);
+
+  // 결제 정보 (그로블 결제 링크)
+  useEffect(() => {
+    fetch(`/api/orders/${orderNumber}/payment`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success) setPayment(json.data);
+      })
+      .catch(() => {
+        // 결제 정보는 부가 기능 — 실패해도 주문 페이지는 동작
+      });
+  }, [orderNumber]);
 
   // 주문 데이터 로드
   useEffect(() => {
@@ -710,6 +726,8 @@ export default function OrderDetailPage() {
         organizationName={order.shippingInfo.organizationName}
         status={order.status}
         canEdit={canEdit}
+        paymentLink={payment?.paymentLink}
+        paymentStatus={payment?.paymentStatus}
       />
 
       {/* 메인 레이아웃 */}

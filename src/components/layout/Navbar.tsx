@@ -50,6 +50,7 @@ export function Navbar() {
   const navLinks = [
     { href: "/", label: t("common.studio"), icon: Home },
     { href: "/gallery", label: t("common.showcase"), icon: Image },
+    { href: "/collect/new", label: t("common.groupCollect"), icon: Users },
     ...(isAuthenticated
       ? [{ href: "/mypage/orders", label: t("common.myOrders"), icon: Package }]
       : []),

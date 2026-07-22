@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Lock, Unlock } from "lucide-react";
+import { ArrowLeft, Lock, Unlock, CreditCard, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   ORDER_STATUS_LABELS,
@@ -25,6 +25,8 @@ export interface OrderHeaderProps {
   organizationName?: string;
   status: OrderStatus;
   canEdit: boolean;
+  paymentLink?: string | null;
+  paymentStatus?: string | null;
 }
 
 export default function OrderHeader({
@@ -33,6 +35,8 @@ export default function OrderHeader({
   organizationName,
   status,
   canEdit,
+  paymentLink,
+  paymentStatus,
 }: OrderHeaderProps) {
   const router = useRouter();
 
@@ -57,6 +61,19 @@ export default function OrderHeader({
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            {paymentStatus === "paid" ? (
+              <Badge className="bg-green-100 text-green-700 text-xs sm:text-sm">
+                <CheckCircle2 className="w-3 h-3 mr-1" />
+                결제 완료
+              </Badge>
+            ) : paymentLink ? (
+              <Button size="sm" asChild>
+                <a href={paymentLink} target="_blank" rel="noopener noreferrer">
+                  <CreditCard className="w-4 h-4 mr-1" />
+                  결제하기
+                </a>
+              </Button>
+            ) : null}
             <Badge className={`text-xs sm:text-sm ${STATUS_COLORS[status]}`}>
               {ORDER_STATUS_LABELS[status]}
             </Badge>
