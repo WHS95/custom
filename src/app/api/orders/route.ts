@@ -23,6 +23,7 @@ import {
 } from "@/lib/constants/print-color-palette";
 import { getCrewDiscountAmount } from "@/lib/pricing/crew-discount";
 import { getSupabaseServerClient } from "@/infrastructure/supabase/server";
+import { getCurrentAdmin } from "@/lib/auth/admin-auth";
 
 function hasInvalidTextLayerColor(
   items: unknown,
@@ -195,6 +196,14 @@ export async function GET(request: NextRequest) {
     const detail = searchParams.get("detail") === "true";
 
     if (isAdmin) {
+      const adminSession = await getCurrentAdmin();
+      if (!adminSession) {
+        return NextResponse.json(
+          { success: false, error: "관리자 인증이 필요합니다" },
+          { status: 401 }
+        );
+      }
+
       // 페이지네이션 파라미터
       const page = parseInt(searchParams.get("page") || "1");
       const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);

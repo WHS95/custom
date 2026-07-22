@@ -4,6 +4,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { ADMIN_SESSION_COOKIE } from '@/lib/auth/admin-auth'
 
 /**
  * POST /api/admin/logout
@@ -15,7 +16,8 @@ export async function POST() {
     message: '로그아웃 되었습니다'
   })
 
-  // 쿠키 삭제
+  response.cookies.delete(ADMIN_SESSION_COOKIE)
+  // 레거시 쿠키도 함께 정리 (구버전 세션 잔재)
   response.cookies.delete('admin_auth')
   response.cookies.delete('admin_id')
   response.cookies.delete('tenant_id')

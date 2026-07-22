@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { orderRepository } from '@/infrastructure/supabase/order-repository'
 import type { TrackingInfo, CarrierCode } from '@/domain/order/types'
 import { notifyShipped } from '@/lib/slack'
+import { getCurrentAdmin } from '@/lib/auth/admin-auth'
 
 interface Params {
   params: Promise<{ orderNumber: string }>
@@ -59,9 +60,8 @@ export async function POST(
   { params }: Params
 ) {
   try {
-    // 간단한 쿠키 기반 인증 체크
-    const adminAuth = request.cookies.get('admin_auth')?.value
-    if (adminAuth !== 'true') {
+    const adminSession = await getCurrentAdmin()
+    if (!adminSession) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

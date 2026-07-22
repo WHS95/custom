@@ -6,6 +6,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/infrastructure/supabase'
 import bcrypt from 'bcryptjs'
+import {
+  ADMIN_SESSION_COOKIE,
+  adminSessionCookieOptions,
+  createAdminSessionToken,
+} from '@/lib/auth/admin-auth'
 
 interface LoginRequest {
   username: string
@@ -92,7 +97,13 @@ export async function POST(request: NextRequest) {
       .update({ last_login_at: new Date().toISOString() })
       .eq('id', admin.id)
 
-    // 응답 생성 (쿠키 설정)
+    const sessionToken = await createAdminSessionToken({
+      adminId: admin.id,
+      tenantId: tenant.id,
+      tenantSlug: tenant.slug,
+      username: admin.username,
+    })
+
     const response = NextResponse.json({
       success: true,
       data: {
@@ -104,19 +115,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // 쿠키 설정 (7일 유효)
-    const cookieOptions = {
-      path: '/',
-      httpOnly: false, // 클라이언트에서 접근 가능
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 7, // 7일
-      sameSite: 'lax' as const,
-    }
-
-    response.cookies.set('admin_auth', 'true', cookieOptions)
-    response.cookies.set('admin_id', admin.id, cookieOptions)
-    response.cookies.set('tenant_id', tenant.id, cookieOptions)
-    response.cookies.set('tenant_slug', tenant.slug, cookieOptions)
+    response.cookies.set(ADMIN_SESSION_COOKIE, sessionToken, adminSessionCookieOptions())
 
     return response
   } catch (error) {

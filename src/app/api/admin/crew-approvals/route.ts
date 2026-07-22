@@ -6,9 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/infrastructure/supabase/database.types";
+import { getCurrentAdmin } from "@/lib/auth/admin-auth";
 
 function getAdminClient() {
   return createClient<Database, "runhousecustom">(
@@ -22,8 +22,7 @@ function getAdminClient() {
 }
 
 async function checkAdminAuth() {
-  const cookieStore = await cookies();
-  return cookieStore.get("admin_auth")?.value === "true";
+  return (await getCurrentAdmin()) !== null;
 }
 
 /**

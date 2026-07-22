@@ -15,6 +15,7 @@ import {
 } from '@/application/order-service'
 import { ORDER_STATUS_LABELS, type OrderStatus, type ShippingInfo } from '@/domain/order'
 import { notifyStatusChange } from '@/lib/slack'
+import { getCurrentAdmin } from '@/lib/auth/admin-auth'
 
 interface RouteParams {
   params: Promise<{ orderNumber: string }>
@@ -94,6 +95,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
+    const adminSession = await getCurrentAdmin()
+    if (!adminSession) {
+      return NextResponse.json(
+        { error: '관리자 인증이 필요합니다.' },
+        { status: 401 }
+      )
+    }
+
     const { orderNumber } = await params
     const body = await request.json()
 
