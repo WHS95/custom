@@ -542,6 +542,128 @@ export type Database = {
           },
         ]
       }
+      size_collection_responses: {
+        Row: {
+          collection_id: string
+          color_id: string | null
+          created_at: string
+          edit_token: string
+          id: string
+          is_paid: boolean
+          name: string
+          note: string | null
+          quantity: number
+          size: string
+          updated_at: string
+        }
+        Insert: {
+          collection_id: string
+          color_id?: string | null
+          created_at?: string
+          edit_token: string
+          id?: string
+          is_paid?: boolean
+          name: string
+          note?: string | null
+          quantity?: number
+          size: string
+          updated_at?: string
+        }
+        Update: {
+          collection_id?: string
+          color_id?: string | null
+          created_at?: string
+          edit_token?: string
+          id?: string
+          is_paid?: boolean
+          name?: string
+          note?: string | null
+          quantity?: number
+          size?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "size_collection_responses_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "size_collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      size_collections: {
+        Row: {
+          admin_token: string
+          allowed_colors: Json | null
+          created_at: string
+          creator_user_id: string | null
+          crew_name: string | null
+          deadline: string | null
+          deposit_info: string | null
+          id: string
+          order_number: string | null
+          product_id: string | null
+          status: string
+          tenant_id: string
+          title: string
+          token: string
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          admin_token: string
+          allowed_colors?: Json | null
+          created_at?: string
+          creator_user_id?: string | null
+          crew_name?: string | null
+          deadline?: string | null
+          deposit_info?: string | null
+          id?: string
+          order_number?: string | null
+          product_id?: string | null
+          status?: string
+          tenant_id: string
+          title: string
+          token: string
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          admin_token?: string
+          allowed_colors?: Json | null
+          created_at?: string
+          creator_user_id?: string | null
+          crew_name?: string | null
+          deadline?: string | null
+          deposit_info?: string | null
+          id?: string
+          order_number?: string | null
+          product_id?: string | null
+          status?: string
+          tenant_id?: string
+          title?: string
+          token?: string
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "size_collections_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "size_collections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_admins: {
         Row: {
           created_at: string
