@@ -14,7 +14,9 @@ import {
   Plus,
   Trash2,
   Tag,
+  Store,
 } from "lucide-react";
+import { useAuth } from "@/lib/auth/auth-context";
 import { useStudioConfig, ProductColor } from "@/lib/store/studio-context";
 import { useLanguage } from "@/lib/i18n/language-context";
 import {
@@ -54,6 +56,9 @@ export function ProductSidebar({
   const { config } = useStudioConfig();
   const { t } = useLanguage();
   const router = useRouter();
+  const { isAuthenticated, profile } = useAuth();
+  const [registeringStore, setRegisteringStore] = useState(false);
+  const isCrewStaff = isAuthenticated && profile?.user_type === "crew_staff";
 
   // 상품별 색상이 제공되면 사용, 아니면 기본 config 사용
   const colors = productColors || config.colors;
@@ -383,6 +388,53 @@ export function ProductSidebar({
             ? t("common.addToCart")
             : "디자인을 먼저 추가하세요"}
         </Button>
+
+        {/* 우리 크루 상품으로 등록 (크루 로그인 시) */}
+        {isCrewStaff && (
+          <Button
+            variant="outline"
+            disabled={!hasCurrentDesign || registeringStore}
+            onClick={async () => {
+              if (!hasCurrentDesign || !productId) return;
+              setRegisteringStore(true);
+              try {
+                const res = await fetch("/api/store/register", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    productId,
+                    colorId: selectedColor,
+                    designLayers: currentColorLayers,
+                  }),
+                });
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                  throw new Error(json.error || "등록 실패");
+                }
+                toast.success("우리 크루 상점에 등록되었습니다!", {
+                  description: "크루원에게 스토어 링크를 공유해보세요.",
+                  action: {
+                    label: "상점 보기",
+                    onClick: () => router.push(`/store/${json.data.storeToken}`),
+                  },
+                  duration: 8000,
+                });
+              } catch (err) {
+                toast.error(
+                  err instanceof Error && err.message
+                    ? err.message
+                    : "크루 상품 등록에 실패했습니다.",
+                );
+              } finally {
+                setRegisteringStore(false);
+              }
+            }}
+            className="w-full h-11 text-base lg:h-9 lg:text-sm rounded"
+          >
+            <Store className="mr-1.5 h-3.5 w-3.5" />
+            {registeringStore ? "등록 중..." : "우리 크루 상품으로 등록"}
+          </Button>
+        )}
 
         {/* 장바구니 목록 - 색상별 그룹핑 */}
         {cartItems.length > 0 && (

@@ -257,6 +257,44 @@ export type Database = {
           },
         ]
       }
+      crew_stores: {
+        Row: {
+          created_at: string
+          creator_user_id: string
+          crew_name: string
+          id: string
+          store_token: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_user_id: string
+          crew_name: string
+          id?: string
+          store_token: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_user_id?: string
+          crew_name?: string
+          id?: string
+          store_token?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crew_stores_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       groble_webhook_events: {
         Row: {
           created_at: string
@@ -657,6 +695,7 @@ export type Database = {
           order_number: string | null
           product_id: string | null
           status: string
+          store_id: string | null
           tenant_id: string
           title: string
           token: string
@@ -677,6 +716,7 @@ export type Database = {
           order_number?: string | null
           product_id?: string | null
           status?: string
+          store_id?: string | null
           tenant_id: string
           title: string
           token: string
@@ -697,6 +737,7 @@ export type Database = {
           order_number?: string | null
           product_id?: string | null
           status?: string
+          store_id?: string | null
           tenant_id?: string
           title?: string
           token?: string
