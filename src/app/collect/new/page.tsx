@@ -14,12 +14,31 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/lib/store/cart-store";
+import { useAuth } from "@/lib/auth/auth-context";
+import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/domain/product/types";
 
 interface CreatedLinks {
   shareUrl: string;
   manageUrl: string;
 }
+
+interface MyCollection {
+  token: string;
+  adminToken: string;
+  title: string;
+  crewName?: string;
+  status: "open" | "closed" | "ordered";
+  responseCount: number;
+  totalQuantity: number;
+  createdAt: string;
+}
+
+const STATUS_LABEL: Record<MyCollection["status"], string> = {
+  open: "진행 중",
+  closed: "마감",
+  ordered: "주문 완료",
+};
 
 export default function CollectNewPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -37,6 +56,26 @@ export default function CollectNewPage() {
   // 확정 디자인 첨부 (장바구니 아이템 ID)
   const [designCartItemId, setDesignCartItemId] = useState<string>("");
   const cartItems = useCartStore((state) => state.items);
+  const { profile, isAuthenticated } = useAuth();
+  const [myCollections, setMyCollections] = useState<MyCollection[]>([]);
+
+  // 크루 로그인 시 크루명 자동 입력
+  useEffect(() => {
+    if (profile?.crew_name) {
+      setCrewName((prev) => prev || profile.crew_name || "");
+    }
+  }, [profile]);
+
+  // 내가 만든 취합 목록 (로그인 시)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetch("/api/collections?mine=true")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success) setMyCollections(json.data);
+      })
+      .catch(() => {});
+  }, [isAuthenticated, created]);
 
   useEffect(() => {
     fetch("/api/products")
@@ -169,6 +208,32 @@ export default function CollectNewPage() {
           없이, 자동으로 집계되고 그대로 주문까지 이어집니다.
         </p>
       </div>
+
+      {myCollections.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>내 크루 스토어</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {myCollections.map((c) => (
+              <a
+                key={c.token}
+                href={`/collect/${c.token}/manage?key=${c.adminToken}`}
+                className="flex items-center gap-3 rounded-lg border border-hairline p-3 transition hover:border-stone"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{c.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {c.responseCount}명 참여 · {c.totalQuantity}장 ·{" "}
+                    {new Date(c.createdAt).toLocaleDateString("ko-KR")}
+                  </p>
+                </div>
+                <Badge>{STATUS_LABEL[c.status]}</Badge>
+              </a>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
