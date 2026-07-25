@@ -16,6 +16,7 @@
 | SEC-7 | 관리자 테넌트 격리 | `session.tenantSlug === tenantSlug` 검증, 테넌트 스코프 라우트 | `admin-auth.ts`, `/admin/[tenantSlug]/*` |
 | SEC-8 | 데이터 접근 통제 | Postgres RLS(Service role 전체 + 제한된 anon), service-role은 서버 전용 | 마이그레이션 003–008 |
 | SEC-9 | 민감정보 미로깅 | 백채널 PIN 로그 금지 | `actions/crew-login.ts` |
+| SEC-10 | 커스텀 인증 ↔ RLS 정합 | RLS가 `auth.uid()` 기준인 테이블은 커스텀 인증(`customer_auth_users`)에서 anon 브라우저 쓰기가 막힘. 해당 쓰기는 **service_role 서버 라우트**로 처리하고 `user_id`는 세션 쿠키에서 서버가 도출(클라이언트 값 미신뢰) | `api/cart` (user_carts) |
 
 ## 성능 (Performance)
 
