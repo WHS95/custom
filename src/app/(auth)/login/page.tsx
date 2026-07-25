@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { CrewLoginInline } from "@/components/cart/CrewLoginInline";
+import { useAuth } from "@/lib/auth/auth-context";
 import {
   Card,
   CardContent,
@@ -25,6 +26,7 @@ const SSO_ERROR_MESSAGES: Record<string, string> = {
 function LoginContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { refreshProfile } = useAuth();
   const redirectTo = searchParams.get("redirect") || "/";
   const errorKey = searchParams.get("error");
   const errorMessage = errorKey ? (SSO_ERROR_MESSAGES[errorKey] ?? "로그인 중 오류가 발생했습니다.") : null;
@@ -87,7 +89,15 @@ function LoginContent() {
               )}
 
               {/* 인라인 크루 로그인 (인스타 핸들 + PIN, 리다이렉트 없음) */}
-              <CrewLoginInline onSuccess={() => router.replace(redirectTo)} />
+              <CrewLoginInline
+                onSuccess={async () => {
+                  // 세션 쿠키가 생겼으니 클라이언트 인증 상태를 갱신한 뒤 이동
+                  // (갱신 없이는 AuthProvider의 profile이 null로 남아
+                  //  크루 전용 UI가 표시되지 않는다)
+                  await refreshProfile();
+                  router.replace(redirectTo);
+                }}
+              />
 
               {/* 혜택 안내 */}
               <div className="rounded-[4px] border border-hairline bg-soft-cloud p-4 space-y-2">
