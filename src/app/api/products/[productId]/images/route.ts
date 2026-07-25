@@ -12,6 +12,7 @@ import {
 } from '@/infrastructure/supabase/storage'
 import { updateProduct, getProductById } from '@/application/product-service'
 import type { ProductImage } from '@/domain/product/types'
+import { getCurrentAdmin } from '@/lib/auth/admin-auth'
 
 interface Params {
   params: Promise<{ productId: string }>
@@ -28,8 +29,8 @@ export async function POST(
   { params }: Params
 ) {
   try {
-    const adminAuth = request.cookies.get('admin_auth')?.value
-    if (adminAuth !== 'true') {
+    const admin = await getCurrentAdmin()
+    if (!admin) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -156,8 +157,8 @@ export async function DELETE(
   { params }: Params
 ) {
   try {
-    const adminAuth = request.cookies.get('admin_auth')?.value
-    if (adminAuth !== 'true') {
+    const admin = await getCurrentAdmin()
+    if (!admin) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

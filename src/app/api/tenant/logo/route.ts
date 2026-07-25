@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/infrastructure/supabase'
 import { DEFAULT_TENANT_ID } from '@/application/tenant-service'
+import { getCurrentAdmin } from '@/lib/auth/admin-auth'
 
 const BUCKET_NAME = 'product-images'
 
@@ -16,8 +17,8 @@ const BUCKET_NAME = 'product-images'
  */
 export async function POST(request: NextRequest) {
   try {
-    const adminAuth = request.cookies.get('admin_auth')?.value
-    if (adminAuth !== 'true') {
+    const admin = await getCurrentAdmin()
+    if (!admin) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -113,8 +114,8 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const adminAuth = request.cookies.get('admin_auth')?.value
-    if (adminAuth !== 'true') {
+    const admin = await getCurrentAdmin()
+    if (!admin) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

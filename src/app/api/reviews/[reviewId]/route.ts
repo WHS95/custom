@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/infrastructure/supabase'
 import { DEFAULT_TENANT_ID } from '@/application/tenant-service'
 import type { Review, UpdateReviewDTO } from '@/domain/review'
+import { getCurrentAdmin } from '@/lib/auth/admin-auth'
 
 // DB 레코드 → Review 변환
 function toReview(row: any): Review {
@@ -84,8 +85,8 @@ export async function PATCH(
     const { reviewId } = await params
 
     // 관리자 인증 확인
-    const adminAuth = request.cookies.get('admin_auth')?.value
-    if (adminAuth !== 'true') {
+    const admin = await getCurrentAdmin()
+    if (!admin) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -177,8 +178,8 @@ export async function DELETE(
     const { reviewId } = await params
 
     // 관리자 인증 확인
-    const adminAuth = request.cookies.get('admin_auth')?.value
-    if (adminAuth !== 'true') {
+    const admin = await getCurrentAdmin()
+    if (!admin) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }

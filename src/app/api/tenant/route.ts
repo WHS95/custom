@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { getCurrentAdmin } from '@/lib/auth/admin-auth'
 import {
   getTenantById,
   updateTenantSettings,
@@ -50,8 +51,8 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     // 간단한 쿠키 기반 인증 체크
-    const adminAuth = request.cookies.get('admin_auth')?.value
-    if (adminAuth !== 'true') {
+    const admin = await getCurrentAdmin()
+    if (!admin) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

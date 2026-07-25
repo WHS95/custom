@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/infrastructure/supabase'
 import { DEFAULT_TENANT_ID } from '@/application/tenant-service'
 import type { Review, CreateReviewDTO, ReviewImage } from '@/domain/review'
+import { getCurrentAdmin } from '@/lib/auth/admin-auth'
 
 const BUCKET_NAME = 'product-images'
 
@@ -180,8 +181,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 관리자 인증 확인
-    const adminAuth = request.cookies.get('admin_auth')?.value
-    const isAdmin = adminAuth === 'true' && authorType === 'admin'
+    const admin = await getCurrentAdmin()
+    const isAdmin = !!admin && authorType === 'admin'
 
     // 후기 생성
     const { data, error } = await (supabase as any)

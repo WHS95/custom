@@ -1,7 +1,7 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getProductsByTenant } from "@/application/product-service";
 import { DEFAULT_TENANT_ID } from "@/application/tenant-service";
+import { getCurrentAdmin } from "@/lib/auth/admin-auth";
 import { AdminProductsPageClient } from "@/components/admin/AdminProductsPageClient";
 
 interface AdminProductsPageProps {
@@ -13,16 +13,13 @@ export default async function AdminProductsPage({
 }: AdminProductsPageProps) {
   const { tenantSlug } = await params;
 
-  const cookieStore = await cookies();
-  const adminAuth = cookieStore.get("admin_auth")?.value;
-  const tenantSlugCookie = cookieStore.get("tenant_slug")?.value;
-
-  if (adminAuth !== "true") {
+  const session = await getCurrentAdmin();
+  if (!session) {
     redirect("/admin/login");
   }
 
-  if (tenantSlugCookie && tenantSlugCookie !== tenantSlug) {
-    redirect(`/admin/${tenantSlugCookie}/products`);
+  if (session.tenantSlug !== tenantSlug) {
+    redirect(`/admin/${session.tenantSlug}/products`);
   }
 
   const initialProducts = await getProductsByTenant(DEFAULT_TENANT_ID, true);

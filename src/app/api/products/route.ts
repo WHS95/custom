@@ -11,6 +11,7 @@ import {
 } from "@/application/product-service";
 import { DEFAULT_TENANT_ID } from "@/application/tenant-service";
 import type { CreateProductDTO } from "@/domain/product/types";
+import { getCurrentAdmin } from "@/lib/auth/admin-auth";
 
 /**
  * GET /api/products
@@ -44,8 +45,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // 간단한 쿠키 기반 인증 체크
-    const adminAuth = request.cookies.get("admin_auth")?.value;
-    if (adminAuth !== "true") {
+    const admin = await getCurrentAdmin();
+    if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

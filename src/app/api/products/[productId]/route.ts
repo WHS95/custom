@@ -13,6 +13,7 @@ import {
   deleteProduct,
 } from "@/application/product-service";
 import type { UpdateProductDTO } from "@/domain/product/types";
+import { getCurrentAdmin } from "@/lib/auth/admin-auth";
 
 interface Params {
   params: Promise<{ productId: string }>;
@@ -66,8 +67,8 @@ export async function GET(request: NextRequest, { params }: Params) {
  */
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
-    const adminAuth = request.cookies.get("admin_auth")?.value;
-    if (adminAuth !== "true") {
+    const admin = await getCurrentAdmin();
+    if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -107,8 +108,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
  */
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const adminAuth = request.cookies.get("admin_auth")?.value;
-    if (adminAuth !== "true") {
+    const admin = await getCurrentAdmin();
+    if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
