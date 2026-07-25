@@ -16,6 +16,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomBytes, randomUUID } from "crypto";
 import { createServerSupabaseClient } from "@/infrastructure/supabase";
 import { getProductById } from "@/application/product-service";
+import { getCurrentAuthState } from "@/lib/auth/server-auth";
+
+/** 로그인 사용자가 이 상점의 주인인지 (운영진 권한: 신원 확인·운영기간 우회) */
+async function isStoreOwner(store: { creator_user_id: string }) {
+  try {
+    const { user } = await getCurrentAuthState();
+    return !!user && user.id === store.creator_user_id;
+  } catch {
+    return false;
+  }
+}
 
 interface Params {
   params: Promise<{ storeToken: string }>;
@@ -141,8 +152,10 @@ export async function POST(request: NextRequest, { params }: Params) {
     if (!store) {
       return NextResponse.json({ error: "상점을 찾을 수 없습니다." }, { status: 404 });
     }
+    const owner = await isStoreOwner(store);
     const closed = storeClosedReason(store);
-    if (closed) {
+    if (closed && !owner) {
+      // 운영진은 운영기간 밖에도 현장 접수분을 직접 추가할 수 있다
       return NextResponse.json({ error: closed }, { status: 400 });
     }
 
@@ -283,14 +296,17 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
 
     const supabase = createServerSupabaseClient();
+    const owner = await isStoreOwner(store);
 
-    // 본인 제출 확인 (이름+뒷4자리+submission)
-    const { data: existing } = await supabase
+    // 본인 제출 확인 (이름+뒷4자리+submission) — 운영진은 submission만으로 접근
+    let existingQuery = supabase
       .from("size_collection_responses")
       .select("id, collection_id, edit_token")
-      .eq("submission_id", body.submissionId)
-      .eq("name", name)
-      .eq("phone_last4", phoneLast4);
+      .eq("submission_id", body.submissionId);
+    if (!owner) {
+      existingQuery = existingQuery.eq("name", name).eq("phone_last4", phoneLast4);
+    }
+    const { data: existing } = await existingQuery;
     if (!existing || existing.length === 0) {
       return NextResponse.json({ error: "주문을 찾을 수 없습니다." }, { status: 404 });
     }
@@ -352,7 +368,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     const name = searchParams.get("name")?.trim();
     const phoneLast4 = searchParams.get("phoneLast4")?.trim();
     const submissionId = searchParams.get("submissionId");
-    if (!name || !phoneLast4 || !PHONE4_RE.test(phoneLast4) || !submissionId) {
+    if (!submissionId) {
       return NextResponse.json({ error: "요청이 올바르지 않습니다." }, { status: 400 });
     }
 
@@ -361,13 +377,20 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "상점을 찾을 수 없습니다." }, { status: 404 });
     }
 
+    const owner = await isStoreOwner(store);
+    if (!owner && (!name || !phoneLast4 || !PHONE4_RE.test(phoneLast4))) {
+      return NextResponse.json({ error: "요청이 올바르지 않습니다." }, { status: 400 });
+    }
+
     const supabase = createServerSupabaseClient();
-    const { data: existing } = await supabase
+    let existingQuery = supabase
       .from("size_collection_responses")
       .select("id, collection_id")
-      .eq("submission_id", submissionId)
-      .eq("name", name)
-      .eq("phone_last4", phoneLast4);
+      .eq("submission_id", submissionId);
+    if (!owner) {
+      existingQuery = existingQuery.eq("name", name!).eq("phone_last4", phoneLast4!);
+    }
+    const { data: existing } = await existingQuery;
     if (!existing || existing.length === 0) {
       return NextResponse.json({ error: "주문을 찾을 수 없습니다." }, { status: 404 });
     }
