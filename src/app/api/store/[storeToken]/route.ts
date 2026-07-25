@@ -76,6 +76,8 @@ export async function GET(_request: NextRequest, { params }: Params) {
         deadline: c.deadline,
         createdAt: c.created_at,
         sizes: variant?.sizes ?? [],
+        productDescription: product?.description ?? null,
+        productDetailImageUrl: product?.detailImageUrl ?? null,
         responseCount: c.size_collection_responses?.length ?? 0,
         totalQuantity: (c.size_collection_responses || []).reduce(
           (s: number, r: { quantity: number }) => s + r.quantity,

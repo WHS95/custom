@@ -29,6 +29,8 @@ interface StoreProduct {
   status: "open" | "closed" | "ordered";
   unitPrice?: number;
   sizes: string[];
+  productDescription?: string | null;
+  productDetailImageUrl?: string | null;
   responseCount: number;
   totalQuantity: number;
   productName?: string;
@@ -325,6 +327,11 @@ export default function CrewStorePage({
                       title: p.title,
                       unitPrice: p.unitPrice,
                       sizes: p.sizes,
+                      productName: p.productName,
+                      productDescription: p.productDescription,
+                      productDetailImageUrl: p.productDetailImageUrl,
+                      designLayers: p.designLayers,
+                      designColor: p.designColor,
                     })
                   }
                 >

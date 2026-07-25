@@ -24,12 +24,30 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  HatDesignCanvas,
+  type DesignLayer,
+} from "@/components/shared/HatDesignCanvas";
+import type { HatView } from "@/lib/store/studio-context";
+import { cn } from "@/lib/utils";
 
 export interface OrderableProduct {
   token: string;
   title: string;
   unitPrice?: number;
   sizes: string[];
+  /** 제품 상세 (시트 상단 표시) */
+  productName?: string | null;
+  productDescription?: string | null;
+  productDetailImageUrl?: string | null;
+  /** 커스텀 디자인 미리보기 */
+  designLayers?: DesignLayer[] | null;
+  designColor?: {
+    id: string;
+    label: string;
+    hex: string;
+    views: Record<string, string>;
+  } | null;
 }
 
 // 상점 장바구니: collectionToken → (size → qty)
@@ -55,6 +73,68 @@ interface MySubmission {
 }
 
 const won = (n: number) => n.toLocaleString("ko-KR") + "원";
+
+/** 커스텀 디자인 미리보기 — 디자인이 있는 뷰(앞/뒤) 전환 */
+function ProductDesignPreview({ product }: { product: OrderableProduct }) {
+  const layers = product.designLayers;
+  const color = product.designColor;
+  const views = useMemo(
+    () =>
+      layers && layers.length > 0
+        ? ([...new Set(layers.map((l) => l.view))] as HatView[])
+        : [],
+    [layers],
+  );
+  const [view, setView] = useState<HatView | null>(null);
+  if (!layers || layers.length === 0 || !color) return null;
+  const activeView = view ?? views[0] ?? "front";
+
+  return (
+    <div className="mt-3">
+      <div className="mx-auto w-52">
+        <HatDesignCanvas
+          hatColor={color.id}
+          currentView={activeView}
+          layers={layers}
+          editable={false}
+          showSafeZone={false}
+          showViewLabel={false}
+          productColors={[
+            {
+              id: color.id,
+              label: color.label,
+              hex: color.hex,
+              views: color.views as Record<HatView, string>,
+            },
+          ]}
+          className="aspect-square w-full rounded-lg border border-hairline-soft"
+        />
+      </div>
+      {views.length > 1 && (
+        <div className="mt-2 flex justify-center gap-2">
+          {views.map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs font-bold transition",
+                activeView === v
+                  ? "border-ink bg-ink text-canvas"
+                  : "border-hairline text-muted-foreground",
+              )}
+            >
+              {v === "front" ? "앞면" : v === "back" ? "뒷면" : v}
+            </button>
+          ))}
+        </div>
+      )}
+      <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
+        우리 크루의 확정 디자인 · {color.label}
+      </p>
+    </div>
+  );
+}
 
 /** 사이즈별 수량 스테퍼 목록 */
 function SizeSteppers({
@@ -334,9 +414,12 @@ export function StoreOrderFlow({
         </div>
       )}
 
-      {/* ── 상품 사이즈 선택 시트 ── */}
+      {/* ── 상품 상세 + 사이즈 선택 시트 ── */}
       <Sheet open={!!selected} onOpenChange={(o) => !o && onCloseProduct()}>
-        <SheetContent side="bottom" className="mx-auto max-w-lg rounded-t-2xl p-5">
+        <SheetContent
+          side="bottom"
+          className="mx-auto max-h-[90dvh] max-w-lg overflow-y-auto rounded-t-2xl p-5"
+        >
           {selected && (
             <>
               <SheetHeader className="p-0 text-left">
@@ -345,6 +428,24 @@ export function StoreOrderFlow({
                   {selected.unitPrice != null ? `${won(selected.unitPrice)} / 1장` : ""}
                 </SheetDescription>
               </SheetHeader>
+
+              {/* 커스텀 디자인 미리보기 (앞/뒤 전환) */}
+              <ProductDesignPreview product={selected} />
+
+              {/* 제품 상세 */}
+              {(selected.productName || selected.productDescription) && (
+                <div className="mt-3 rounded-lg bg-soft-cloud p-3">
+                  {selected.productName && (
+                    <p className="text-xs font-bold">{selected.productName}</p>
+                  )}
+                  {selected.productDescription && (
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      {selected.productDescription}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="mt-4">
                 <SizeSteppers sizes={selected.sizes} value={draft} onChange={setDraft} />
                 <div className="flex items-baseline justify-between py-3.5">
@@ -363,6 +464,16 @@ export function StoreOrderFlow({
                     : `담기 — ${draftCount}장 ${won(draftAmount)}`}
                 </Button>
               </div>
+
+              {/* 제품 상세 이미지 (하단) */}
+              {selected.productDetailImageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={selected.productDetailImageUrl}
+                  alt={`${selected.productName ?? selected.title} 상세`}
+                  className="mt-4 w-full rounded-lg"
+                />
+              )}
             </>
           )}
         </SheetContent>
