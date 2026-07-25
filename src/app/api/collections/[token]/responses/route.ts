@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { randomBytes } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 import { createServerSupabaseClient } from "@/infrastructure/supabase";
 import { getProductById } from "@/application/product-service";
 import {
@@ -58,26 +58,44 @@ export async function POST(request: NextRequest, { params }: Params) {
   try {
     const { token } = await params;
     const body = await request.json();
-    const { name, colorId, size, quantity, note } = body as {
-      name?: string;
-      colorId?: string;
-      size?: string;
-      quantity?: number;
-      note?: string;
-    };
+    const { name, colorId, size, quantity, sizeQuantities, phoneLast4, note } =
+      body as {
+        name?: string;
+        colorId?: string;
+        size?: string;
+        quantity?: number;
+        /** 사이즈별 수량 다건 제출: { S: 1, M: 2 } — size/quantity 대신 사용 */
+        sizeQuantities?: Record<string, number>;
+        phoneLast4?: string;
+        note?: string;
+      };
 
-    if (!name?.trim() || !size) {
+    // 다건(sizeQuantities) 또는 단건(size+quantity) 입력을 [size, qty][]로 정규화
+    const entries: Array<[string, number]> = sizeQuantities
+      ? Object.entries(sizeQuantities).filter(([, q]) => q > 0)
+      : size
+        ? [[size, quantity ?? 1]]
+        : [];
+
+    if (!name?.trim() || entries.length === 0) {
       return NextResponse.json(
         { error: "이름과 사이즈를 입력해주세요." },
         { status: 400 },
       );
     }
-    const qty = quantity ?? 1;
-    if (!Number.isInteger(qty) || qty < 1 || qty > 20) {
+    if (phoneLast4 && !/^\d{4}$/.test(phoneLast4)) {
       return NextResponse.json(
-        { error: "수량은 1~20 사이여야 합니다." },
+        { error: "휴대폰 뒷 4자리가 올바르지 않습니다." },
         { status: 400 },
       );
+    }
+    for (const [, qty] of entries) {
+      if (!Number.isInteger(qty) || qty < 1 || qty > 20) {
+        return NextResponse.json(
+          { error: "수량은 사이즈당 1~20 사이여야 합니다." },
+          { status: 400 },
+        );
+      }
     }
 
     const collection = await findCollectionByToken(token);
@@ -93,26 +111,32 @@ export async function POST(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: closedReason }, { status: 400 });
     }
 
-    const selectionError = await validateSelection(collection, colorId, size);
-    if (selectionError) {
-      return NextResponse.json({ error: selectionError }, { status: 400 });
+    for (const [entrySize] of entries) {
+      const selectionError = await validateSelection(collection, colorId, entrySize);
+      if (selectionError) {
+        return NextResponse.json({ error: selectionError }, { status: 400 });
+      }
     }
 
     const editToken = randomBytes(12).toString("base64url");
+    const submissionId = randomUUID();
     const supabase = createServerSupabaseClient();
     const { data, error } = await supabase
       .from("size_collection_responses")
-      .insert({
-        collection_id: collection.id,
-        name: name.trim().slice(0, 100),
-        color_id: colorId || null,
-        size,
-        quantity: qty,
-        note: note?.trim().slice(0, 500) || null,
-        edit_token: editToken,
-      })
-      .select()
-      .single();
+      .insert(
+        entries.map(([entrySize, qty]) => ({
+          collection_id: collection.id,
+          name: name.trim().slice(0, 100),
+          phone_last4: phoneLast4 || null,
+          submission_id: submissionId,
+          color_id: colorId || null,
+          size: entrySize,
+          quantity: qty,
+          note: note?.trim().slice(0, 500) || null,
+          edit_token: editToken,
+        })),
+      )
+      .select();
 
     if (error) {
       throw new Error(error.message);
@@ -120,7 +144,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     return NextResponse.json({
       success: true,
-      data: { id: data.id, editToken },
+      data: { id: data[0].id, submissionId, editToken },
     });
   } catch (error) {
     console.error("POST /api/collections/[token]/responses error:", error);
@@ -135,18 +159,111 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const { token } = await params;
     const body = await request.json();
-    const { responseId, adminToken, editToken, isPaid, name, colorId, size, quantity, note } =
-      body as {
-        responseId?: string;
-        adminToken?: string;
-        editToken?: string;
-        isPaid?: boolean;
-        name?: string;
-        colorId?: string;
-        size?: string;
-        quantity?: number;
-        note?: string;
-      };
+    const {
+      responseId,
+      submissionId,
+      adminToken,
+      editToken,
+      isPaid,
+      name,
+      colorId,
+      size,
+      quantity,
+      sizeQuantities,
+      phoneLast4,
+      note,
+    } = body as {
+      responseId?: string;
+      /** submission 단위 교체 (사이즈별 수량 다건) */
+      submissionId?: string;
+      adminToken?: string;
+      editToken?: string;
+      isPaid?: boolean;
+      name?: string;
+      colorId?: string;
+      size?: string;
+      quantity?: number;
+      sizeQuantities?: Record<string, number>;
+      phoneLast4?: string;
+      note?: string;
+    };
+
+    // ── submission 단위 교체 (다건 수정) ──
+    if (submissionId && sizeQuantities) {
+      const collection = await findCollectionByToken(token);
+      if (!collection) {
+        return NextResponse.json({ error: "취합을 찾을 수 없습니다." }, { status: 404 });
+      }
+      const closedReason = collectionAcceptsResponses(collection);
+      if (closedReason) {
+        return NextResponse.json(
+          { error: `${closedReason} 수정은 운영진에게 문의해주세요.` },
+          { status: 400 },
+        );
+      }
+
+      const supabase = createServerSupabaseClient();
+      const { data: rows } = await supabase
+        .from("size_collection_responses")
+        .select("id, edit_token")
+        .eq("submission_id", submissionId)
+        .eq("collection_id", collection.id);
+      if (!rows || rows.length === 0) {
+        return NextResponse.json({ error: "제출을 찾을 수 없습니다." }, { status: 404 });
+      }
+      const isManager = !!adminToken && adminToken === collection.admin_token;
+      const isSelf = !!editToken && editToken === rows[0].edit_token;
+      if (!isManager && !isSelf) {
+        return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+      }
+
+      const entries = Object.entries(sizeQuantities).filter(([, q]) => q > 0);
+      if (!name?.trim() || entries.length === 0) {
+        return NextResponse.json(
+          { error: "이름과 사이즈를 입력해주세요." },
+          { status: 400 },
+        );
+      }
+      for (const [entrySize, qty] of entries) {
+        if (!Number.isInteger(qty) || qty < 1 || qty > 20) {
+          return NextResponse.json(
+            { error: "수량은 사이즈당 1~20 사이여야 합니다." },
+            { status: 400 },
+          );
+        }
+        const selectionError = await validateSelection(collection, colorId, entrySize);
+        if (selectionError) {
+          return NextResponse.json({ error: selectionError }, { status: 400 });
+        }
+      }
+
+      const keepEditToken = rows[0].edit_token;
+      const { error: delError } = await supabase
+        .from("size_collection_responses")
+        .delete()
+        .eq("submission_id", submissionId)
+        .eq("collection_id", collection.id);
+      if (delError) throw new Error(delError.message);
+
+      const { error: insError } = await supabase
+        .from("size_collection_responses")
+        .insert(
+          entries.map(([entrySize, qty]) => ({
+            collection_id: collection.id,
+            name: name.trim().slice(0, 100),
+            phone_last4: phoneLast4 && /^\d{4}$/.test(phoneLast4) ? phoneLast4 : null,
+            submission_id: submissionId,
+            color_id: colorId || null,
+            size: entrySize,
+            quantity: qty,
+            note: note?.trim().slice(0, 500) || null,
+            edit_token: keepEditToken,
+          })),
+        );
+      if (insError) throw new Error(insError.message);
+
+      return NextResponse.json({ success: true });
+    }
 
     if (!responseId) {
       return NextResponse.json(
@@ -251,10 +368,11 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     const { token } = await params;
     const { searchParams } = new URL(request.url);
     const responseId = searchParams.get("responseId");
+    const submissionId = searchParams.get("submissionId");
     const adminToken = searchParams.get("adminToken");
     const editToken = searchParams.get("editToken");
 
-    if (!responseId) {
+    if (!responseId && !submissionId) {
       return NextResponse.json(
         { error: "responseId가 필요합니다." },
         { status: 400 },
@@ -276,14 +394,16 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     const supabase = createServerSupabaseClient();
-    const { data: response } = await supabase
+    let responseQuery = supabase
       .from("size_collection_responses")
       .select("id, edit_token")
-      .eq("id", responseId)
-      .eq("collection_id", collection.id)
-      .maybeSingle();
+      .eq("collection_id", collection.id);
+    responseQuery = submissionId
+      ? responseQuery.eq("submission_id", submissionId)
+      : responseQuery.eq("id", responseId!);
+    const { data: responses } = await responseQuery;
 
-    if (!response) {
+    if (!responses || responses.length === 0) {
       return NextResponse.json(
         { error: "제출을 찾을 수 없습니다." },
         { status: 404 },
@@ -291,7 +411,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     const isManager = !!adminToken && adminToken === collection.admin_token;
-    const isOwner = !!editToken && editToken === response.edit_token;
+    const isOwner = !!editToken && editToken === responses[0].edit_token;
     if (!isManager && !isOwner) {
       return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
     }
@@ -307,10 +427,14 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       }
     }
 
-    const { error } = await supabase
+    let deleteQuery = supabase
       .from("size_collection_responses")
       .delete()
-      .eq("id", responseId);
+      .eq("collection_id", collection.id);
+    deleteQuery = submissionId
+      ? deleteQuery.eq("submission_id", submissionId)
+      : deleteQuery.eq("id", responseId!);
+    const { error } = await deleteQuery;
 
     if (error) {
       throw new Error(error.message);

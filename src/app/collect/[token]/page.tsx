@@ -53,11 +53,17 @@ interface CollectionInfo {
 
 interface MySubmission {
   responseId: string;
+  /** 다건 제출 묶음 ID (v2) — 구버전 저장분에는 없음 */
+  submissionId?: string;
   editToken: string;
   name: string;
+  phoneLast4?: string;
   colorId?: string;
+  /** 구버전(단건) 저장분 */
   size?: string;
   quantity?: number;
+  /** v2: 사이즈별 수량 */
+  sizeQuantities?: Record<string, number>;
   note?: string;
 }
 
@@ -77,10 +83,12 @@ export default function CollectSubmitPage({
   const [editing, setEditing] = useState(false);
 
   const [name, setName] = useState("");
+  const [phone4, setPhone4] = useState("");
   const [colorId, setColorId] = useState("");
-  const [size, setSize] = useState("");
-  const [quantity, setQuantity] = useState(1);
+  const [sizeQuantities, setSizeQuantities] = useState<Record<string, number>>({});
   const [note, setNote] = useState("");
+
+  const totalQty = Object.values(sizeQuantities).reduce((s, q) => s + q, 0);
 
   const loadInfo = useCallback(async () => {
     try {
@@ -132,13 +140,50 @@ export default function CollectSubmitPage({
     !info || info.status !== "open" || info.deadlinePassed;
 
   const handleSubmit = async () => {
-    if (!name.trim() || !size) {
-      toast.error("이름과 사이즈를 입력해주세요.");
+    if (!name.trim() || totalQty === 0) {
+      toast.error("이름과 사이즈별 수량을 입력해주세요.");
+      return;
+    }
+    if (phone4 && !/^\d{4}$/.test(phone4)) {
+      toast.error("휴대폰 뒷 4자리는 숫자 4자리입니다.");
       return;
     }
     setSubmitting(true);
     try {
-      if (editing && mySubmission) {
+      if (editing && mySubmission?.submissionId) {
+        // v2 다건 수정: submission 단위 교체
+        const res = await fetch(`/api/collections/${token}/responses`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            submissionId: mySubmission.submissionId,
+            editToken: mySubmission.editToken,
+            name,
+            phoneLast4: phone4 || undefined,
+            colorId: colorId || undefined,
+            sizeQuantities,
+            note,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json.success) throw new Error(json.error);
+        const updated: MySubmission = {
+          ...mySubmission,
+          name,
+          phoneLast4: phone4,
+          colorId,
+          sizeQuantities,
+          note,
+        };
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+        setMySubmission(updated);
+        setEditing(false);
+        toast.success("수정되었습니다.");
+      } else if (editing && mySubmission) {
+        // 구버전(단건) 저장분 수정: 첫 사이즈만 반영
+        const [firstSize, firstQty] = Object.entries(sizeQuantities).find(
+          ([, q]) => q > 0,
+        )!;
         const res = await fetch(`/api/collections/${token}/responses`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -147,8 +192,8 @@ export default function CollectSubmitPage({
             editToken: mySubmission.editToken,
             name,
             colorId: colorId || undefined,
-            size,
-            quantity,
+            size: firstSize,
+            quantity: firstQty,
             note,
           }),
         });
@@ -158,8 +203,8 @@ export default function CollectSubmitPage({
           ...mySubmission,
           name,
           colorId,
-          size,
-          quantity,
+          size: firstSize,
+          quantity: firstQty,
           note,
         };
         localStorage.setItem(storageKey, JSON.stringify(updated));
@@ -172,9 +217,9 @@ export default function CollectSubmitPage({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name,
+            phoneLast4: phone4 || undefined,
             colorId: colorId || undefined,
-            size,
-            quantity,
+            sizeQuantities,
             note: note || undefined,
           }),
         });
@@ -182,11 +227,12 @@ export default function CollectSubmitPage({
         if (!res.ok || !json.success) throw new Error(json.error);
         const submission: MySubmission = {
           responseId: json.data.id,
+          submissionId: json.data.submissionId,
           editToken: json.data.editToken,
           name,
+          phoneLast4: phone4,
           colorId,
-          size,
-          quantity,
+          sizeQuantities,
           note,
         };
         localStorage.setItem(storageKey, JSON.stringify(submission));
@@ -204,8 +250,11 @@ export default function CollectSubmitPage({
     if (!mySubmission) return;
     if (!confirm("제출을 취소할까요?")) return;
     try {
+      const idParam = mySubmission.submissionId
+        ? `submissionId=${mySubmission.submissionId}`
+        : `responseId=${mySubmission.responseId}`;
       const res = await fetch(
-        `/api/collections/${token}/responses?responseId=${mySubmission.responseId}&editToken=${mySubmission.editToken}`,
+        `/api/collections/${token}/responses?${idParam}&editToken=${mySubmission.editToken}`,
         { method: "DELETE" },
       );
       const json = await res.json();
@@ -274,8 +323,14 @@ export default function CollectSubmitPage({
                     // 저장된 제출 내용으로 폼 프리필
                     setName(mySubmission.name);
                     if (mySubmission.colorId) setColorId(mySubmission.colorId);
-                    if (mySubmission.size) setSize(mySubmission.size);
-                    setQuantity(mySubmission.quantity ?? 1);
+                    setPhone4(mySubmission.phoneLast4 ?? "");
+                    // v2(사이즈별) 우선, 구버전(단건)은 해당 사이즈 1개로 변환
+                    setSizeQuantities(
+                      mySubmission.sizeQuantities ??
+                        (mySubmission.size
+                          ? { [mySubmission.size]: mySubmission.quantity ?? 1 }
+                          : {}),
+                    );
                     setNote(mySubmission.note ?? "");
                     setEditing(true);
                   }}
@@ -411,7 +466,14 @@ export default function CollectSubmitPage({
                       title={v.label}
                       onClick={() => {
                         setColorId(v.id);
-                        if (!v.sizes.includes(size)) setSize("");
+                        // 색상 변경 시 해당 색상에 없는 사이즈 수량 제거
+                        setSizeQuantities((prev) =>
+                          Object.fromEntries(
+                            Object.entries(prev).filter(([s]) =>
+                              v.sizes.includes(s),
+                            ),
+                          ),
+                        );
                       }}
                       className={cn(
                         "h-9 w-9 rounded-full border-2 transition",
@@ -429,62 +491,89 @@ export default function CollectSubmitPage({
             {selectedVariant && (
               <div className="space-y-2">
                 <Label>
-                  사이즈 <span className="text-red-500">*</span>
+                  사이즈별 수량 <span className="text-red-500">*</span>
                 </Label>
-                <div className="flex flex-wrap gap-2">
-                  {selectedVariant.sizes.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => setSize(s)}
-                      className={cn(
-                        "rounded-full border px-4 py-2 text-sm font-medium transition",
-                        size === s
-                          ? "border-ink bg-ink text-canvas"
-                          : "border-hairline hover:border-stone",
-                      )}
-                    >
-                      {s}
-                    </button>
-                  ))}
+                <div className="divide-y divide-hairline-soft border-y border-hairline-soft">
+                  {selectedVariant.sizes.map((s) => {
+                    const q = sizeQuantities[s] ?? 0;
+                    const set = (v: number) =>
+                      setSizeQuantities((prev) => ({
+                        ...prev,
+                        [s]: Math.max(0, Math.min(20, v)),
+                      }));
+                    return (
+                      <div key={s} className="flex items-center justify-between py-2.5">
+                        <span className="font-mono text-sm font-bold">{s}</span>
+                        <div className="flex items-center rounded-md border border-hairline">
+                          <button
+                            type="button"
+                            aria-label={`${s} 빼기`}
+                            onClick={() => set(q - 1)}
+                            className="h-9 w-9 text-lg leading-none active:bg-soft-cloud"
+                          >
+                            −
+                          </button>
+                          <span
+                            className={cn(
+                              "w-10 text-center font-mono text-sm font-bold",
+                              q > 0 ? "text-ink" : "text-hairline",
+                            )}
+                          >
+                            {q}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label={`${s} 더하기`}
+                            onClick={() => set(q + 1)}
+                            className="h-9 w-9 text-lg leading-none active:bg-soft-cloud"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
+                {totalQty > 0 && (
+                  <p className="text-right font-mono text-sm font-bold">
+                    합계 {totalQty}장
+                    {info.unitPrice != null &&
+                      ` · ${(totalQty * info.unitPrice).toLocaleString()}원`}
+                  </p>
+                )}
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="name">
-                이름 <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="name"
-                placeholder="크루에서 쓰는 이름/닉네임"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="quantity">수량</Label>
-              <div className="flex items-center gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                >
-                  -
-                </Button>
-                <span className="w-8 text-center font-medium">{quantity}</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={() => setQuantity((q) => Math.min(20, q + 1))}
-                >
-                  +
-                </Button>
+            <div className="grid grid-cols-[1fr_130px] gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="name">
+                  이름 <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  placeholder="크루에서 쓰는 이름/닉네임"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone4">휴대폰 뒷 4자리</Label>
+                <Input
+                  id="phone4"
+                  inputMode="numeric"
+                  placeholder="1234"
+                  className="font-mono"
+                  value={phone4}
+                  onChange={(e) =>
+                    setPhone4(e.target.value.replace(/\D/g, "").slice(0, 4))
+                  }
+                />
               </div>
             </div>
+            <p className="-mt-2 text-[11px] leading-relaxed text-muted-foreground">
+              뒷 4자리를 입력해두면 다른 기기에서도 이름+뒷4자리로 제출을
+              확인·수정할 수 있어요.
+            </p>
 
             <div className="space-y-2">
               <Label htmlFor="note">요청사항</Label>
@@ -499,7 +588,7 @@ export default function CollectSubmitPage({
             <Button
               className="w-full"
               size="lg"
-              disabled={submitting || !name.trim() || !size}
+              disabled={submitting || !name.trim() || totalQty === 0}
               onClick={handleSubmit}
             >
               {submitting ? "제출 중..." : editing ? "수정 완료" : "사이즈 제출하기"}
