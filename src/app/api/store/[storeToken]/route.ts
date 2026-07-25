@@ -75,6 +75,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
         unitPrice: c.unit_price,
         deadline: c.deadline,
         createdAt: c.created_at,
+        sizes: variant?.sizes ?? [],
         responseCount: c.size_collection_responses?.length ?? 0,
         totalQuantity: (c.size_collection_responses || []).reduce(
           (s: number, r: { quantity: number }) => s + r.quantity,
@@ -98,11 +99,20 @@ export async function GET(_request: NextRequest, { params }: Params) {
       };
     });
 
+    // 운영기간 판정
+    const today = new Date().toISOString().slice(0, 10);
+    const storeOpen =
+      (!store.open_from || today >= store.open_from) &&
+      (!store.open_until || today <= store.open_until);
+
     return NextResponse.json({
       success: true,
       data: {
         crewName: store.crew_name,
         isOwner,
+        storeOpen,
+        openFrom: store.open_from,
+        openUntil: store.open_until,
         products,
       },
     });

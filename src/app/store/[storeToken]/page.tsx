@@ -5,9 +5,9 @@
  * 배너(크루 프로필) → 탭바 → 굿즈 상품 그리드
  */
 
-import { use, useEffect, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Copy, Settings, Plus, Users } from "lucide-react";
+import { Copy, Settings, Users, PackageSearch } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,11 @@ import {
 } from "@/components/shared/HatDesignCanvas";
 import type { HatView } from "@/lib/store/studio-context";
 import { cn } from "@/lib/utils";
+import {
+  StoreOrderFlow,
+  type OrderableProduct,
+  type StoreCart,
+} from "@/components/store/StoreOrderFlow";
 
 interface StoreProduct {
   token: string;
@@ -23,6 +28,7 @@ interface StoreProduct {
   title: string;
   status: "open" | "closed" | "ordered";
   unitPrice?: number;
+  sizes: string[];
   responseCount: number;
   totalQuantity: number;
   productName?: string;
@@ -38,6 +44,9 @@ interface StoreProduct {
 interface StoreData {
   crewName: string;
   isOwner: boolean;
+  storeOpen: boolean;
+  openFrom: string | null;
+  openUntil: string | null;
   products: StoreProduct[];
 }
 
@@ -51,7 +60,12 @@ export default function CrewStorePage({
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  useEffect(() => {
+  // 주문 흐름 상태
+  const [cart, setCart] = useState<StoreCart>({});
+  const [selectedProduct, setSelectedProduct] = useState<OrderableProduct | null>(null);
+  const [myOrdersOpen, setMyOrdersOpen] = useState(false);
+
+  const reload = useCallback(() => {
     fetch(`/api/store/${storeToken}`)
       .then((res) => res.json())
       .then((json) => {
@@ -61,6 +75,10 @@ export default function CrewStorePage({
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [storeToken]);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
   const totalMembers = useMemo(
     () => (data?.products || []).reduce((s, p) => s + p.responseCount, 0),
@@ -132,6 +150,17 @@ export default function CrewStorePage({
               {data.crewName} 운영진이 직접 디자인한 우리 크루 전용 커스텀
               굿즈입니다. 원하는 상품을 골라 사이즈를 등록하세요.
             </p>
+            {(data.openFrom || data.openUntil) && (
+              <p className="mt-2 font-mono text-xs text-white/60">
+                {data.storeOpen ? (
+                  <span className="text-[#C7FF00]">운영 중</span>
+                ) : (
+                  <span className="text-white/80">운영 종료</span>
+                )}{" "}
+                · {data.openFrom?.replaceAll("-", ".") ?? ""} –{" "}
+                {data.openUntil?.replaceAll("-", ".") ?? ""}
+              </p>
+            )}
           </div>
 
           {/* 참여 카운트 */}
@@ -154,18 +183,27 @@ export default function CrewStorePage({
               굿즈 <sup className="text-xs">{data.products.length}</sup>
             </span>
           </div>
-          {data.isOwner && (
-            <div className="flex gap-2 py-2">
-              <Button variant="outline" size="sm" onClick={copyStoreLink}>
-                <Copy className="h-4 w-4" /> 링크 복사
-              </Button>
-              <Button size="sm" asChild>
-                <Link href="/">
-                  <Plus className="h-4 w-4" /> 상품 추가
-                </Link>
-              </Button>
-            </div>
-          )}
+          <div className="flex gap-2 py-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMyOrdersOpen(true)}
+            >
+              <PackageSearch className="h-4 w-4" /> 내 주문
+            </Button>
+            {data.isOwner && (
+              <>
+                <Button variant="outline" size="sm" onClick={copyStoreLink}>
+                  <Copy className="h-4 w-4" /> 링크 복사
+                </Button>
+                <Button size="sm" asChild>
+                  <Link href={`/store/${storeToken}/manage`}>
+                    <Settings className="h-4 w-4" /> 상점 관리
+                  </Link>
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -259,21 +297,70 @@ export default function CrewStorePage({
                         {p.responseCount}명 참여 · {p.totalQuantity}장
                       </p>
                     )}
+                    {cart[p.token] &&
+                      Object.values(cart[p.token]).some((q) => q > 0) && (
+                        <p className="text-xs font-bold text-success">
+                          담김 ·{" "}
+                          {Object.values(cart[p.token]).reduce((s, q) => s + q, 0)}
+                          장 ✓
+                        </p>
+                      )}
                   </div>
                 </div>
               );
 
-              return closed ? (
+              return closed || !data.storeOpen ? (
                 <div key={p.token}>{card}</div>
               ) : (
-                <Link key={p.token} href={`/collect/${p.token}`}>
+                <button
+                  key={p.token}
+                  type="button"
+                  className="text-left"
+                  onClick={() =>
+                    setSelectedProduct({
+                      token: p.token,
+                      title: p.title,
+                      unitPrice: p.unitPrice,
+                      sizes: p.sizes,
+                    })
+                  }
+                >
                   {card}
-                </Link>
+                </button>
               );
             })}
           </div>
         )}
       </div>
+
+      {/* 운영 종료 안내 */}
+      {!data.storeOpen && (
+        <div className="mx-auto max-w-6xl px-4 pb-8">
+          <div className="rounded-xl border border-hairline bg-soft-cloud p-4 text-center text-sm text-muted-foreground">
+            상점 운영이 종료되어 새 주문을 받지 않습니다.
+          </div>
+        </div>
+      )}
+
+      {/* ── 주문 흐름 (시트·카트바) ── */}
+      <StoreOrderFlow
+        storeToken={storeToken}
+        products={data.products
+          .filter((p) => p.status === "open")
+          .map((p) => ({
+            token: p.token,
+            title: p.title,
+            unitPrice: p.unitPrice,
+            sizes: p.sizes,
+          }))}
+        selected={selectedProduct}
+        onCloseProduct={() => setSelectedProduct(null)}
+        cart={cart}
+        setCart={setCart}
+        onOrderComplete={reload}
+        myOrdersOpen={myOrdersOpen}
+        setMyOrdersOpen={setMyOrdersOpen}
+      />
     </div>
   );
 }
