@@ -27,6 +27,7 @@ import {
   Package,
   Instagram,
   Globe,
+  Store,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -42,6 +43,20 @@ export function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // 내 크루 상점 (crew_staff 로그인 시 조회 — 상점 재발견 진입점)
+  const isCrewStaff = profile?.user_type === "crew_staff";
+  const [myStoreToken, setMyStoreToken] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isCrewStaff) {
+      setMyStoreToken(null);
+      return;
+    }
+    fetch("/api/store/mine")
+      .then((res) => res.json())
+      .then((json) => setMyStoreToken(json.store?.storeToken ?? null))
+      .catch(() => setMyStoreToken(null));
+  }, [isCrewStaff]);
+
   // 라우트 변경 시 모바일 메뉴 자동 닫기
   useEffect(() => {
     setMobileOpen(false);
@@ -51,6 +66,15 @@ export function Navbar() {
     { href: "/", label: t("common.studio"), icon: Home },
     { href: "/gallery", label: t("common.showcase"), icon: Image },
     { href: "/collect/new", label: t("common.groupCollect"), icon: Users },
+    ...(myStoreToken
+      ? [
+          {
+            href: `/store/${myStoreToken}/manage`,
+            label: "내 상점",
+            icon: Store,
+          },
+        ]
+      : []),
     ...(isAuthenticated
       ? [{ href: "/mypage/orders", label: t("common.myOrders"), icon: Package }]
       : []),
