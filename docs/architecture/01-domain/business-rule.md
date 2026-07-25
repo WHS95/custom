@@ -2,6 +2,17 @@
 
 코드에 구현된 도메인 규칙을 단일 출처로 정리한다. 각 규칙은 근거 파일을 명시한다.
 
+## 서비스 정의 — BR-0 (2026-07-25 피벗)
+- **크루 상점이 메인.** 유일한 메인 루프: 크루 운영진 커스텀 → 상점 굿즈 등록 →
+  링크 공유 → 크루원 취합(이름+뒷4자리, 로그인 불필요) → 일괄 주문(convert/convert-all).
+- **개인 장바구니·직접 구매는 보류(휴면)**: `/cart`·`/api/cart`·cart-store는 코드 유지,
+  UI 진입점만 제거. 삭제 아님 — 부활 가능성 유지 (오너 결정).
+- 가입 = 크루 단일 트랙 (`individual` 유형 신규 발급 중단, 기존 계정 유지).
+- 상점 굿즈 등록은 `crew_staff`만 가능 (`POST /api/store/register` 서버 검증).
+- 독립 취합 생성기(`/collect/new`)는 상점으로 흡수·제거(홈 redirect).
+  기존 `/collect/{token}` 참여·manage 링크는 하위 호환 유지.
+- 근거: 피벗 계획 문서(2026-07-25), `ProductSidebar.tsx`, `api/store/register`, `api/store/mine`.
+
 ## 주문번호 생성 — BR-1
 - 형식: `{테넌트 2글자 접두}-{YYYYMMDD}-{3자리 시퀀스}` (예: `RH-20241219-001`).
 - 시퀀스는 테넌트·당일 기준. DB 함수 `generate_order_number(p_tenant_id)` / `get_today_order_count(p_tenant_id)`.

@@ -51,8 +51,12 @@
 
 | 경로 | 설명 |
 |------|------|
-| `GET /api/cart` | 로그인 사용자의 `user_carts` 조회 (비로그인 시 빈 배열) |
-| `PUT /api/cart` | 장바구니 전체 교체(기존 삭제 후 재삽입) |
+| `GET /api/cart` | ⚠️ **휴면** — 로그인 사용자의 `user_carts` 조회 |
+| `PUT /api/cart` | ⚠️ **휴면** — 장바구니 전체 교체 |
+
+> **2026-07-25 피벗**: 개인 장바구니는 보류(휴면) — UI 진입점 없음, API·코드는 유지
+> (오너 결정: 부활 가능성 유지). `POST /api/store/register`는 `crew_staff` 전용.
+> `/collect/new`(취합 생성 UI)는 제거되어 홈으로 redirect — `POST /api/collections`는 유지되나 호출 UI 없음.
 
 > `user_carts`는 RLS가 `auth.uid()=user_id` 기준이나 앱은 커스텀 인증을 써서 anon 브라우저 쓰기가 막힌다.
 > 그래서 이 라우트에서 **service_role**로 처리하고, `user_id`는 세션 쿠키에서 서버가 도출한다(클라이언트 값 미신뢰).
@@ -78,6 +82,7 @@
 
 | 메서드/경로 | 인증 | 설명 |
 |-------------|------|------|
+| `GET /api/store/mine` | 🧑‍🤝‍🧑 | 내 크루 상점 조회 (Navbar "내 상점" — crew_staff만, 없으면 null) |
 | `GET /api/store/[storeToken]` | 🟢 | 스토어 + 상품 목록(sizes·운영기간·storeOpen 포함) |
 | `POST /api/store/register` | 🧑‍🤝‍🧑 | 스튜디오 디자인을 크루 상품(size_collection)으로 등록 |
 | `POST/GET/PATCH/DELETE /api/store/[storeToken]/orders` | 🟢/👑 | 통합 주문: 여러 굿즈·사이즈별 수량을 한 번에(공통 submission_id). 본인 확인 = 이름+뒷4자리, owner 세션(👑)은 신원 매칭 없이 수정·삭제·현장 추가 가능 |

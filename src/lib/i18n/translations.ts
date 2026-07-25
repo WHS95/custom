@@ -4,7 +4,7 @@ export const translations = {
   ko: {
     common: {
       studio: "스튜디오",
-      myOrders: "주문 내역",
+      myOrders: "크루 주문 내역",
       showcase: "제품후기",
       groupCollect: "단체 취합",
       addToCart: "장바구니 담기",
@@ -28,7 +28,7 @@ export const translations = {
   en: {
     common: {
       studio: "Studio",
-      myOrders: "My Orders",
+      myOrders: "Crew Orders",
       showcase: "Showcase",
       groupCollect: "Group Sizing",
       addToCart: "Add to Cart",

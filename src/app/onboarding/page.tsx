@@ -21,7 +21,6 @@ import {
   User,
   Users,
   Building,
-  Check,
   BadgeCheck,
   Search,
   CheckCircle2,
@@ -41,7 +40,8 @@ export default function OnboardingPage() {
   const { user, isLoading: authLoading, refreshProfile } = useAuth();
 
   const [name, setName] = useState("");
-  const [userType, setUserType] = useState<UserType>("individual");
+  // 가입 = 크루 단일 트랙 (개인 유형은 피벗으로 제거, 기존 individual 계정은 유지)
+  const [userType] = useState<UserType>("crew_staff");
   const [crewName, setCrewName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -238,63 +238,19 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              {/* 회원 유형 */}
-              <div className="space-y-3">
-                <Label>회원 유형</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setUserType("individual")}
-                    disabled={isSubmitting}
-                    className={`relative p-4 rounded-[4px] border text-left transition-all duration-200 ${
-                      userType === "individual"
-                        ? "border-ink bg-soft-cloud"
-                        : "border-hairline hover:border-ink/30 hover:bg-soft-cloud"
-                    }`}
-                  >
-                    {userType === "individual" && (
-                      <div className="absolute top-2 right-2 w-5 h-5 bg-ink rounded-full flex items-center justify-center">
-                        <Check className="w-3 h-3 text-canvas" />
-                      </div>
-                    )}
-                    <User
-                      className={`w-6 h-6 mb-2 ${
-                        userType === "individual" ? "text-ink" : "text-mute"
-                      }`}
-                    />
-                    <p className="font-medium text-sm text-ink">일반 개인</p>
-                    <p className="text-xs text-mute mt-1">개인 고객으로 이용</p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setUserType("crew_staff")}
-                    disabled={isSubmitting}
-                    className={`relative p-4 rounded-[4px] border text-left transition-all duration-200 ${
-                      userType === "crew_staff"
-                        ? "border-ink bg-soft-cloud"
-                        : "border-hairline hover:border-ink/30 hover:bg-soft-cloud"
-                    }`}
-                  >
-                    {userType === "crew_staff" && (
-                      <div className="absolute top-2 right-2 w-5 h-5 bg-ink rounded-full flex items-center justify-center">
-                        <Check className="w-3 h-3 text-canvas" />
-                      </div>
-                    )}
-                    <Users
-                      className={`w-6 h-6 mb-2 ${
-                        userType === "crew_staff" ? "text-[#C7FF00]" : "text-mute"
-                      }`}
-                    />
-                    <p className="font-medium text-sm text-ink">러닝크루 멤버</p>
-                    <p className="text-xs text-mute mt-1">
-                      등록 크루 회원 10% 할인
-                    </p>
-                  </button>
+              {/* 가입 = 크루 단일 트랙 (2026-07 피벗 — 일반 개인 유형 제거) */}
+              <div className="rounded-[4px] border border-hairline bg-soft-cloud p-4">
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-[#C7FF00]" />
+                  <p className="font-medium text-sm text-ink">러닝크루 계정</p>
                 </div>
+                <p className="mt-1 text-xs text-mute leading-relaxed">
+                  RunHouse Custom 계정은 크루 운영진용이에요. 크루 상점의 굿즈
+                  구매는 상점 링크에서 <b>가입 없이</b> 참여할 수 있습니다.
+                </p>
               </div>
 
-              {/* 크루 검색 (크루 멤버 선택 시) */}
+              {/* 크루 검색 */}
               {userType === "crew_staff" && (
                 <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
                   <Label>
