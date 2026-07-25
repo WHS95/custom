@@ -36,6 +36,17 @@
 | `POST|PATCH /api/auth/profile` | 프로필 생성/수정 |
 | `PATCH /api/auth/password`, `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` | 비번 변경/재설정 |
 
+> **로그인 UI 주의**: `/login` 페이지는 **크루 SSO 로그인 전용**(인스타 핸들 + PIN →
+> `crewLoginInline` 서버 액션 → IdP `/api/sso/verify-pin` 백채널). 이메일/비번 로그인은
+> `POST /api/auth/login` API만 존재하고 **이를 쓰는 UI 페이지는 현재 없다**.
+> SSO 계정(`sso-{핸들}@runhouse-sso.internal`)은 `password_hash="sso-no-password"`로
+> 이메일 로그인이 의도적으로 차단됨.
+>
+> **클라이언트 인증 상태 갱신 규칙**: `AuthProvider`는 마운트 시 1회만 세션을 로드한다.
+> 따라서 **로그인 성공 콜백은 반드시 `refreshProfile()`을 호출한 뒤 이동**해야 한다
+> (`router.replace`만 하면 profile이 null로 남아 crew_staff 전용 UI가 안 보임).
+> 적용처: `/login`, `/cart` 인라인 로그인, `GuestIntentModal`.
+
 ## 장바구니 (Cart)
 
 | 경로 | 설명 |
@@ -69,6 +80,11 @@
 |-------------|------|------|
 | `GET /api/store/[storeToken]` | 🟢 | 스토어 + 등록 커스텀 상품(토큰 게이트) |
 | `POST /api/store/register` | 🧑‍🤝‍🧑 | 스튜디오 디자인을 크루 상품(size_collection)으로 등록 |
+
+> 스튜디오의 "우리 크루 상품으로 등록" 버튼(`ProductSidebar`)은
+> `isAuthenticated && profile.user_type === "crew_staff"`일 때만 렌더된다.
+> 버튼이 안 보이면: ① 비로그인 ② user_type이 individual/crew_pending
+> ③ 로그인 후 `refreshProfile()` 미호출로 클라이언트 profile이 stale (인증 섹션 참조).
 
 ## 크루/리뷰/SSO/웹훅
 
