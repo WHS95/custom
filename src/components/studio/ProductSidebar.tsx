@@ -1,21 +1,11 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {
-  ShoppingBag,
-  Check,
-  Palette,
-  ShoppingCart,
-  Minus,
-  Plus,
-  Trash2,
-  Tag,
-  Store,
-} from "lucide-react";
+import { Check, Palette, Tag, Store } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useStudioConfig, ProductColor } from "@/lib/store/studio-context";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -23,12 +13,19 @@ import {
   useDesignStore,
   useCurrentColorLayers,
 } from "@/lib/store/design-store";
-import { useCartStore, CartItem } from "@/lib/store/cart-store";
 import { toast } from "sonner";
 import posthog from "posthog-js";
 import type { PriceTier } from "@/domain/product/types";
 import { getUnitPrice, getDiscountRate } from "@/lib/pricing/price-calculator";
 import { PricingTableModal } from "./PricingTableModal";
+import { CrewLoginInline } from "@/components/cart/CrewLoginInline";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 interface ProductSidebarProps {
   productId?: string; // 상품 ID (UUID)
@@ -56,9 +53,11 @@ export function ProductSidebar({
   const { config } = useStudioConfig();
   const { t } = useLanguage();
   const router = useRouter();
-  const { isAuthenticated, profile } = useAuth();
+  const { isAuthenticated, profile, refreshProfile } = useAuth();
   const [registeringStore, setRegisteringStore] = useState(false);
+  const [crewGateOpen, setCrewGateOpen] = useState(false);
   const isCrewStaff = isAuthenticated && profile?.user_type === "crew_staff";
+  const isCrewPending = isAuthenticated && profile?.user_type === "crew_pending";
 
   // 상품별 색상이 제공되면 사용, 아니면 기본 config 사용
   const colors = productColors || config.colors;
@@ -81,15 +80,6 @@ export function ProductSidebar({
   // 디자인 스토어에서 색상별 디자인 정보 가져오기
   const layersByColor = useDesignStore((state) => state.layersByColor);
   const currentColorLayers = useCurrentColorLayers();
-  const setSelectedColor = useDesignStore((state) => state.setSelectedColor);
-
-  // 장바구니 스토어
-  const addToCart = useCartStore((state) => state.addItem);
-  const cartItems = useCartStore((state) => state.items);
-  const getTotalItems = useCartStore((state) => state.getTotalItems);
-  const getTotalPrice = useCartStore((state) => state.getTotalPrice);
-  const updateItemQuantity = useCartStore((state) => state.updateItemQuantity);
-  const removeItem = useCartStore((state) => state.removeItem);
 
   const selectedColorData = useMemo(
     () => colors.find((c) => c.id === selectedColor),
@@ -109,108 +99,54 @@ export function ProductSidebar({
   );
 
   /**
-   * 장바구니에 현재 디자인 추가
+   * 우리 크루 상품으로 등록 (피벗 후 유일한 primary 액션)
    */
-  const handleAddToCart = useCallback(() => {
-    if (!hasCurrentDesign) {
-      toast.error("디자인을 먼저 추가해주세요", {
-        description:
-          "로고나 텍스트를 모자에 배치한 후 장바구니에 담을 수 있습니다.",
-      });
+  const handleRegisterToStore = async () => {
+    if (!hasCurrentDesign || !productId) return;
+    // 비크루는 게이트 모달로 인터셉트
+    if (!isCrewStaff) {
+      setCrewGateOpen(true);
       return;
     }
-
-    const result = addToCart({
-      productId: productId || "custom-hat",
-      productName: displayName,
-      color: selectedColor,
-      colorLabel: selectedColorData?.label || selectedColor,
-      colorHex: selectedColorData?.hex,
-      size: selectedSize,
-      quantity: quantity,
-      designLayers: [...currentColorLayers],
-      unitPrice: currentUnitPrice,
-      basePrice: basePrice,
-      priceTiers: priceTiers || undefined,
-    });
-
-    // Analytics: track add-to-cart (no amounts — Phase 2)
-    posthog.capture("hat_added_to_cart", {
-      product_id: productId || "custom-hat",
-      color: selectedColor,
-      quantity: quantity,
-    });
-
-    if (result.merged) {
-      toast.success(
-        `${selectedColorData?.label} / ${selectedSize} 수량이 ${result.newQuantity}개로 변경됨`,
-      );
-    } else {
-      toast.success("장바구니에 추가되었습니다", {
-        description: `${selectedColorData?.label} / ${selectedSize} / ${quantity}개`,
+    setRegisteringStore(true);
+    try {
+      const res = await fetch("/api/store/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId,
+          colorId: selectedColor,
+          designLayers: currentColorLayers,
+        }),
       });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "등록 실패");
+      }
+      posthog.capture("store_goods_registered", {
+        product_id: productId,
+        color: selectedColor,
+      });
+      toast.success("우리 크루 상점에 등록되었습니다!");
+      // toast 의존 폐지 — 상점 관리로 즉시 이동
+      router.push(`/store/${json.data.storeToken}/manage`);
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message
+          ? err.message
+          : "크루 상품 등록에 실패했습니다.",
+      );
+    } finally {
+      setRegisteringStore(false);
     }
-
-    setQuantity(1);
-  }, [hasCurrentDesign, addToCart, productId, displayName, selectedColor, selectedColorData, selectedSize, quantity, currentColorLayers, currentUnitPrice, basePrice, priceTiers]);
-
-  /**
-   * 장바구니 아이템 클릭 시 해당 디자인으로 이동
-   */
-  const handleCartItemClick = useCallback((item: CartItem) => {
-    onColorChange(item.color);
-    setSelectedColor(item.color);
-
-    toast.info(`${item.colorLabel} 디자인으로 이동했습니다`, {
-      description: `사이즈: ${item.size} / 수량: ${item.quantity}개`,
-    });
-  }, [onColorChange, setSelectedColor]);
-
-  /**
-   * 장바구니 아이템 수량 변경
-   */
-  const handleQuantityChange = useCallback((
-    itemId: string,
-    newQuantity: number,
-    e: React.MouseEvent,
-  ) => {
-    e.stopPropagation();
-    if (newQuantity <= 0) {
-      removeItem(itemId);
-      toast.info("아이템이 삭제되었습니다");
-    } else {
-      updateItemQuantity(itemId, newQuantity);
-    }
-  }, [removeItem, updateItemQuantity]);
-
-  /**
-   * 장바구니 아이템 삭제
-   */
-  const handleRemoveItem = useCallback((itemId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    removeItem(itemId);
-    toast.info("아이템이 삭제되었습니다");
-  }, [removeItem]);
-
-  const totalCartItems = getTotalItems();
-  const totalCartPrice = getTotalPrice();
+  };
 
   return (
     <div className='w-full lg:w-[380px] bg-white border-t lg:border-t-0 lg:border-l lg:h-[calc(100vh-64px)] lg:overflow-y-auto flex flex-col'>
       <div className='p-4 space-y-3 flex-1'>
         {/* Header */}
         <div className='space-y-0.5'>
-          <div className='flex justify-between items-start'>
-            <h2 className='text-lg font-bold text-gray-900'>{displayName}</h2>
-            {totalCartItems > 0 && (
-              <div className='relative'>
-                <ShoppingCart className='h-4 w-4 text-gray-600' />
-                <span className='absolute -top-1 -right-1 bg-black text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center'>
-                  {totalCartItems}
-                </span>
-              </div>
-            )}
-          </div>
+          <h2 className='text-lg font-bold text-gray-900'>{displayName}</h2>
         </div>
 
         <Separator />
@@ -373,233 +309,52 @@ export function ProductSidebar({
           )}
         </div>
 
-        {/* 장바구니 담기 버튼 */}
+        {/* 우리 크루 상품으로 등록 — 유일한 primary CTA */}
         <Button
-          onClick={handleAddToCart}
-          disabled={!hasCurrentDesign}
+          onClick={handleRegisterToStore}
+          disabled={!hasCurrentDesign || registeringStore}
           className={`w-full h-11 text-base lg:h-9 lg:text-sm rounded transform transition-all ${
             hasCurrentDesign
               ? "bg-black hover:bg-gray-900 hover:-translate-y-0.5"
               : "bg-gray-300 cursor-not-allowed"
           }`}
         >
-          <ShoppingBag className='mr-1.5 h-3.5 w-3.5' />
-          {hasCurrentDesign
-            ? t("common.addToCart")
-            : "디자인을 먼저 추가하세요"}
+          <Store className='mr-1.5 h-3.5 w-3.5' />
+          {!hasCurrentDesign
+            ? "디자인을 먼저 추가하세요"
+            : registeringStore
+              ? "등록 중..."
+              : "우리 크루 상품으로 등록"}
         </Button>
+        <p className='text-[10px] leading-relaxed text-gray-400'>
+          등록하면 우리 크루 상점에 굿즈로 올라가고, 링크를 공유해 크루원들의
+          사이즈를 취합할 수 있어요.
+        </p>
 
-        {/* 우리 크루 상품으로 등록 (크루 로그인 시) */}
-        {isCrewStaff && (
-          <Button
-            variant="outline"
-            disabled={!hasCurrentDesign || registeringStore}
-            onClick={async () => {
-              if (!hasCurrentDesign || !productId) return;
-              setRegisteringStore(true);
-              try {
-                const res = await fetch("/api/store/register", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    productId,
-                    colorId: selectedColor,
-                    designLayers: currentColorLayers,
-                  }),
-                });
-                const json = await res.json();
-                if (!res.ok || !json.success) {
-                  throw new Error(json.error || "등록 실패");
-                }
-                toast.success("우리 크루 상점에 등록되었습니다!", {
-                  description: "크루원에게 스토어 링크를 공유해보세요.",
-                  action: {
-                    label: "상점 보기",
-                    onClick: () => router.push(`/store/${json.data.storeToken}`),
-                  },
-                  duration: 8000,
-                });
-              } catch (err) {
-                toast.error(
-                  err instanceof Error && err.message
-                    ? err.message
-                    : "크루 상품 등록에 실패했습니다.",
-                );
-              } finally {
-                setRegisteringStore(false);
-              }
-            }}
-            className="w-full h-11 text-base lg:h-9 lg:text-sm rounded"
-          >
-            <Store className="mr-1.5 h-3.5 w-3.5" />
-            {registeringStore ? "등록 중..." : "우리 크루 상품으로 등록"}
-          </Button>
-        )}
-
-        {/* 장바구니 목록 - 색상별 그룹핑 */}
-        {cartItems.length > 0 && (
-          <>
-            <Separator />
-            <div className='space-y-2'>
-              <div className='flex justify-between items-center'>
-                <Label className='text-[10px] text-gray-500 font-bold uppercase flex items-center gap-1'>
-                  <ShoppingCart className='w-3 h-3' />
-                  장바구니 ({totalCartItems}개)
-                </Label>
-                <span className='text-xs font-bold'>
-                  {totalCartPrice.toLocaleString()} KRW
-                </span>
-              </div>
-
-              <div className='space-y-2 max-h-[320px] overflow-y-auto pr-1'>
-                {/* 색상별 그룹핑 */}
-                {Object.entries(
-                  cartItems.reduce(
-                    (groups, item) => {
-                      if (!groups[item.color]) groups[item.color] = [];
-                      groups[item.color].push(item);
-                      return groups;
-                    },
-                    {} as Record<string, CartItem[]>,
-                  ),
-                ).map(([colorId, colorItems]) => {
-                  const colorData = colors.find((c) => c.id === colorId);
-                  const colorHex = colorData?.hex || "#000";
-                  const colorLabel = colorItems[0]?.colorLabel || colorId;
-
-                  return (
-                    <div
-                      key={colorId}
-                      className='bg-gray-50 rounded-lg border border-gray-100 overflow-hidden'
-                    >
-                      {/* 색상 그룹 헤더 - 클릭 시 해당 색상 디자인으로 이동 */}
-                      <button
-                        onClick={() => {
-                          onColorChange(colorId);
-                          setSelectedColor(colorId);
-                          toast.info(`${colorLabel} 디자인으로 이동했습니다`);
-                        }}
-                        className='w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 transition-colors group'
-                      >
-                        <div
-                          className='w-4 h-4 rounded-full border-2 shadow-sm flex-shrink-0'
-                          style={{ backgroundColor: colorHex }}
-                        />
-                        <span className='text-xs font-bold text-gray-700 group-hover:text-blue-600 transition-colors truncate'>
-                          {colorLabel}
-                        </span>
-                        <span className='text-[10px] text-gray-400 ml-auto flex-shrink-0'>
-                          {colorItems.length > 1
-                            ? `${colorItems.length}건`
-                            : ""}
-                        </span>
-                      </button>
-
-                      {/* 해당 색상의 아이템들 */}
-                      <div className='border-t border-gray-100'>
-                        {colorItems.map((item, idx) => (
-                          <div
-                            key={item.id}
-                            className={`px-2.5 py-1.5 ${
-                              idx > 0 ? "border-t border-gray-100" : ""
-                            }`}
-                          >
-                            <div className='flex items-center justify-between'>
-                              {/* 사이즈 표시 */}
-                              <span className='text-[10px] text-gray-500 font-medium w-8 flex-shrink-0'>
-                                {item.size}
-                              </span>
-
-                              {/* 수량 조정 */}
-                              <div className='flex items-center bg-white border rounded shadow-sm'>
-                                <button
-                                  onClick={(e) =>
-                                    handleQuantityChange(
-                                      item.id,
-                                      item.quantity - 1,
-                                      e,
-                                    )
-                                  }
-                                  className='px-1.5 py-0.5 hover:bg-gray-100 rounded-l transition-colors border-r'
-                                >
-                                  <Minus className='w-2.5 h-2.5' />
-                                </button>
-                                <span className='px-2 py-0.5 text-xs font-bold min-w-[24px] text-center'>
-                                  {item.quantity}
-                                </span>
-                                <button
-                                  onClick={(e) =>
-                                    handleQuantityChange(
-                                      item.id,
-                                      item.quantity + 1,
-                                      e,
-                                    )
-                                  }
-                                  className='px-1.5 py-0.5 hover:bg-gray-100 rounded-r transition-colors border-l'
-                                >
-                                  <Plus className='w-2.5 h-2.5' />
-                                </button>
-                              </div>
-
-                              {/* 가격 + 삭제 */}
-                              <div className='flex items-center gap-1'>
-                                <span className='text-xs font-bold'>
-                                  {(
-                                    item.unitPrice * item.quantity
-                                  ).toLocaleString()}
-                                  원
-                                </span>
-                                <button
-                                  onClick={(e) => handleRemoveItem(item.id, e)}
-                                  className='p-0.5 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded transition-colors'
-                                >
-                                  <Trash2 className='w-2.5 h-2.5' />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </>
-        )}
       </div>
 
-      {/* Footer - 총 합계 */}
-      {totalCartItems > 0 && (
-        <div className='p-4 border-t bg-gray-50 space-y-2'>
-          <div className='space-y-0.5'>
-            <div className='flex justify-between text-xs'>
-              <span className='text-gray-500'>상품 합계</span>
-              <span>{totalCartPrice.toLocaleString()} KRW</span>
-            </div>
-            <div className='flex justify-between text-xs'>
-              <span className='text-gray-500'>배송비</span>
-              <span>{totalCartPrice >= 50000 ? "무료" : "3,000 KRW"}</span>
-            </div>
-          </div>
-          <Separator />
-          <div className='flex justify-between items-end'>
-            <span className='text-xs font-medium'>총 결제금액</span>
-            <span className='text-base font-bold'>
-              {(
-                totalCartPrice + (totalCartPrice >= 50000 ? 0 : 3000)
-              ).toLocaleString()}{" "}
-              KRW
-            </span>
-          </div>
-          <Button
-            onClick={() => router.push("/cart")}
-            className='w-full h-9 bg-blue-600 hover:bg-blue-700 rounded text-sm'
-          >
-            장바구니로 이동 ({totalCartItems}개)
-          </Button>
-        </div>
-      )}
+      {/* 크루 게이트 모달 — 비크루가 등록을 누르면 */}
+      <Dialog open={crewGateOpen} onOpenChange={setCrewGateOpen}>
+        <DialogContent className='max-w-md'>
+          <DialogHeader>
+            <DialogTitle>크루 상점 등록은 크루 운영진 계정으로</DialogTitle>
+            <DialogDescription>
+              {isCrewPending
+                ? "크루 등록 신청이 승인 대기 중이에요. 승인이 완료되면 굿즈를 등록할 수 있습니다."
+                : "RunHouse에 등록된 러닝크루로 로그인하면 이 디자인을 우리 크루 상점에 굿즈로 올릴 수 있어요."}
+            </DialogDescription>
+          </DialogHeader>
+          {!isCrewPending && (
+            <CrewLoginInline
+              onSuccess={async () => {
+                await refreshProfile();
+                setCrewGateOpen(false);
+                toast.success("크루 로그인 완료! 이제 등록할 수 있어요.");
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* 할인 가격표 모달 */}
       {hasPriceTiers && (

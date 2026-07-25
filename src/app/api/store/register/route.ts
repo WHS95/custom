@@ -22,6 +22,18 @@ export async function POST(request: NextRequest) {
         { status: 401 },
       );
     }
+    // 크루 운영진(crew_staff)만 상점에 굿즈 등록 가능
+    if (profile?.user_type !== "crew_staff") {
+      return NextResponse.json(
+        {
+          error:
+            profile?.user_type === "crew_pending"
+              ? "크루 승인 대기 중입니다. 승인 후 등록할 수 있어요."
+              : "크루 운영진 계정만 상점에 등록할 수 있습니다.",
+        },
+        { status: 403 },
+      );
+    }
 
     const body = await request.json();
     const { productId, colorId, designLayers, title, unitPrice } = body as {
