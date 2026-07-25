@@ -78,8 +78,15 @@
 
 | 메서드/경로 | 인증 | 설명 |
 |-------------|------|------|
-| `GET /api/store/[storeToken]` | 🟢 | 스토어 + 등록 커스텀 상품(토큰 게이트) |
+| `GET /api/store/[storeToken]` | 🟢 | 스토어 + 상품 목록(sizes·운영기간·storeOpen 포함) |
 | `POST /api/store/register` | 🧑‍🤝‍🧑 | 스튜디오 디자인을 크루 상품(size_collection)으로 등록 |
+| `POST/GET/PATCH/DELETE /api/store/[storeToken]/orders` | 🟢/👑 | 통합 주문: 여러 굿즈·사이즈별 수량을 한 번에(공통 submission_id). 본인 확인 = 이름+뒷4자리, owner 세션(👑)은 신원 매칭 없이 수정·삭제·현장 추가 가능 |
+| `GET/PATCH /api/store/[storeToken]/manage` | 👑 | 관리 데이터 일괄 조회 / 상점 설정(운영기간)·굿즈(수정·마감·재오픈·삭제) |
+| `POST /api/store/[storeToken]/convert-all` | 👑 | 열린 굿즈 전부를 **주문 1건**(주문번호 1개)으로 원자적 전환, 배송지 입력 |
+
+> 화면: `/store/[storeToken]`(장바구니 시트·카트바·내 주문), `/store/[storeToken]/manage`
+> (취합현황·주문진행·굿즈·설정 탭). 입금 관리 UI 없음 — 취합은 확인 전용.
+> 취합 responses API도 `sizeQuantities` 다건 제출·`submissionId` 단위 수정/삭제 지원(하위호환 유지).
 
 > 스튜디오의 "우리 크루 상품으로 등록" 버튼(`ProductSidebar`)은
 > `isAuthenticated && profile.user_type === "crew_staff"`일 때만 렌더된다.

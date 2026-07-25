@@ -53,10 +53,16 @@
 
 ### size_collection_responses
 `id(PK)`, `collection_id→size_collections(CASCADE)`, `name`, `color_id`, `size`,
-`quantity`(CHECK 1–20), `note`, `is_paid`, `edit_token`. **RLS.**
+`quantity`(CHECK 1–20), `note`, `is_paid`, `edit_token`,
+`phone_last4`·`submission_id`(mig 009). **RLS.**
+> 1행 = 한 사람의 한 사이즈. 한 번의 제출(여러 사이즈·여러 굿즈)은 공통
+> `submission_id`로 묶인다(상품 경계를 넘음). 본인 확인은 `name`+`phone_last4`
+> (크로스 기기) 또는 `edit_token`(localStorage). 입금 관리는 UI에서 제거됨
+> (is_paid 컬럼은 유지).
 
 ### crew_stores (mig 008)
-`id(PK)`, `tenant_id→tenants`, `creator_user_id`, `crew_name`, `store_token`. **RLS.**
+`id(PK)`, `tenant_id→tenants`, `creator_user_id`, `crew_name`, `store_token`,
+`open_from`·`open_until`(mig 009 — 상점 운영기간, NULL=상시). **RLS.**
 
 ## 결제 정산 (mig 006)
 

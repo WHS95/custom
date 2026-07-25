@@ -122,7 +122,10 @@ export default function CrewStorePage({
   return (
     <div className="min-h-screen bg-canvas">
       {/* ── 프로필 배너 ── */}
-      <div className="relative overflow-hidden bg-[#0B0C0A] text-white">
+      <div
+        className="relative overflow-hidden text-white"
+        style={{ backgroundColor: "#0B0C0A" }}
+      >
         {/* 은은한 크루 워터마크 */}
         <div
           aria-hidden
