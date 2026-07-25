@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { useAuth } from "@/lib/auth/auth-context";
-import { useCartStore } from "@/lib/store/cart-store";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +15,6 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import {
-  ShoppingCart,
   User,
   LogOut,
   Users,
@@ -38,8 +36,6 @@ const RUNHOUSE_CLUB_LINK = "https://www.runhouse.club/home";
 export function Navbar() {
   const { t } = useLanguage();
   const { profile, isLoading, isAuthenticated, signOut } = useAuth();
-  const cartItems = useCartStore((state) => state.items);
-  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -65,7 +61,6 @@ export function Navbar() {
   const navLinks = [
     { href: "/", label: t("common.studio"), icon: Home },
     { href: "/gallery", label: t("common.showcase"), icon: Image },
-    { href: "/collect/new", label: t("common.groupCollect"), icon: Users },
     ...(myStoreToken
       ? [
           {
@@ -134,18 +129,6 @@ export function Navbar() {
               <MessageCircle className="w-4 h-4" />
               <span>문의하기</span>
             </a>
-          </Button>
-
-          {/* 장바구니 */}
-          <Button asChild variant="ghost" size="icon" className="relative">
-            <Link href="/cart">
-              <ShoppingCart className="w-5 h-5" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-ink text-canvas text-xs rounded-full flex items-center justify-center">
-                  {cartCount > 99 ? "99+" : cartCount}
-                </span>
-              )}
-            </Link>
           </Button>
 
           {/* 인증 상태에 따른 UI */}

@@ -3,33 +3,33 @@ import { getProductsByTenant } from "@/application/product-service";
 import { DEFAULT_TENANT_ID } from "@/application/tenant-service";
 import type { Product } from "@/domain/product/types";
 import Link from "next/link";
-import { Palette, Truck, Users, Star, ArrowRight, MessageCircle, Instagram } from "lucide-react";
-import { CREW_DISCOUNT_RATE } from "@/lib/pricing/crew-discount";
+import { Palette, Store, Link2, PackageCheck, ArrowRight, MessageCircle, Instagram } from "lucide-react";
 
 const KAKAO_LINK = "https://open.kakao.com/me/runhouse";
 const INSTAGRAM_LINK = "https://www.instagram.com/run_house_club/";
 const RUNHOUSE_CLUB_LINK = "https://www.runhouse.club/home";
 
+// 크루 상점 흐름: 디자인 → 등록 → 링크 공유 → 일괄 주문
 const features = [
   {
     icon: Palette,
-    title: "자유로운 커스텀 디자인",
-    description: "로고, 텍스트, 이미지를 자유롭게 배치하세요",
+    title: "1. 굿즈 디자인",
+    description: "스튜디오에서 로고·텍스트를 자유롭게 배치",
   },
   {
-    icon: Users,
-    title: `등록 크루 ${Math.round(CREW_DISCOUNT_RATE * 100)}% 할인`,
-    description: "런하우스 크루 회원은 전 상품 즉시 할인",
+    icon: Store,
+    title: "2. 크루 상점에 등록",
+    description: "우리 크루만의 굿즈 상점이 자동으로 생겨요",
   },
   {
-    icon: Truck,
-    title: "전 상품 무료배송",
-    description: "수량에 관계없이 무료배송",
+    icon: Link2,
+    title: "3. 링크 공유·사이즈 취합",
+    description: "크루원은 로그인 없이 이름만으로 참여",
   },
   {
-    icon: Star,
-    title: "대량 주문 추가 할인",
-    description: "수량이 많을수록 더 저렴한 단가",
+    icon: PackageCheck,
+    title: "4. 일괄 주문·배송",
+    description: "취합 끝나면 한 번에 주문, 한 곳으로 배송",
   },
 ];
 
@@ -49,24 +49,25 @@ export default async function Home() {
           <div className="max-w-2xl">
             {/* Kicker — JetBrains Mono, RunHouse cartographic 시그니처 */}
             <p className="text-kicker text-[#C7FF00] mb-4">
-              · CUSTOM · CREW GEAR ·
+              · CREW STORE · CREW GEAR ·
             </p>
             <h1 className="font-display text-[48px] sm:text-[64px] lg:text-[96px] leading-[0.9] uppercase tracking-[0]">
-              Create Your
+              Your Crew&apos;s
               <br />
-              Crew&apos;s Identity
+              Own Store
             </h1>
             <p className="mt-6 text-base sm:text-lg text-stone leading-relaxed max-w-lg">
-              나만의 러닝크루를 위한 프리미엄 커스텀 굿즈.
+              우리 크루 굿즈, 링크 하나로 취합까지.
               <br />
-              모자부터 의류까지, 직접 디자인하세요.
+              디자인하고 상점에 올리면 크루원 사이즈 취합부터 일괄 주문까지 한
+              번에.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Link
                 href="#products"
                 className="inline-flex items-center justify-center gap-2 bg-[#C7FF00] text-[#0B0C0A] font-bold px-8 py-3 h-12 rounded-[4px] hover:brightness-95 transition-all active:scale-[0.98]"
               >
-                상품 둘러보기
+                크루 상점 만들기
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
@@ -106,8 +107,10 @@ export default async function Home() {
       <section id="products" className="bg-soft-cloud">
         <div className="container mx-auto px-4 py-12 sm:py-[48px]">
           <div className="mb-8">
-            <h2 className="text-[32px] font-bold text-ink leading-[1.2]">상품 목록</h2>
-            <p className="text-mute mt-2">커스텀하고 싶은 상품을 선택하세요</p>
+            <h2 className="text-[32px] font-bold text-ink leading-[1.2]">굿즈 베이스 상품</h2>
+            <p className="text-mute mt-2">
+              크루 굿즈로 만들 상품을 선택해 디자인을 시작하세요
+            </p>
           </div>
           <ProductGrid products={products} />
         </div>
