@@ -80,8 +80,13 @@
 `user_type`(enum), `crew_name`, `default_address(JSONB)`, `marketing_agreed`(+`_at`).
 
 ### user_carts
-`id(PK)`, `user_id→customer_auth_users(CASCADE)`, `tenant_id→tenants`, `product_id`, `product_name`,
-`color`, `color_label`, `size`, `quantity`, `unit_price`, `design_layers(JSONB)`.
+`id(PK)`, `user_id→customer_auth_users(CASCADE)`, `tenant_id→tenants`(NOT NULL, DEFAULT 기본 테넌트),
+`product_id`, `product_name`, `color`, `color_label`, `size`, `quantity`, `unit_price`, `design_layers(JSONB)`. **RLS.**
+> ⚠️ **RLS 주의**: 정책이 `auth.uid() = user_id` 기준인데, 이 앱은 Supabase Auth가 아닌 커스텀
+> `customer_auth_users` 인증을 쓰므로 브라우저(anon) 클라이언트에서는 `auth.uid()`가 항상 null이다.
+> 따라서 브라우저에서 직접 insert/update하면 RLS에 막힌다(과거 "장바구니 저장 에러: {}"의 실제 원인).
+> → 장바구니 읽기/쓰기는 `GET/PUT /api/cart` 서버 라우트에서 service_role로 처리한다.
+> user_id는 세션 쿠키에서 서버가 도출(클라이언트 값 미신뢰). 참조: 04-interface/api.md.
 
 ### tenant_admins (mig 003)
 `id(PK)`, `tenant_id→tenants(CASCADE)`, `username`(indexed). 관리자 로그인 계정. **RLS.**

@@ -3,8 +3,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { DesignLayer } from "./design-store";
-import type { Json } from "@/infrastructure/supabase/database.types";
-import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
 import type { PriceTier } from "@/domain/product/types";
 import { getUnitPrice } from "@/lib/pricing/price-calculator";
 
@@ -258,40 +256,38 @@ export const useCartStore = create<CartState>()(
         set({ isSyncing: true });
 
         try {
-          const supabase = getSupabaseBrowserClient();
-          const { data, error } = await supabase
-            .schema("runhousecustom")
-            .from("user_carts")
-            .select("*")
-            .eq("user_id", userId)
-            .order("created_at", { ascending: true });
+          const res = await fetch("/api/cart", {
+            method: "GET",
+            credentials: "include",
+          });
 
-          if (error) {
-            console.error("장바구니 불러오기 에러:", error);
+          if (!res.ok) {
+            console.error("장바구니 불러오기 에러:", res.status);
             return;
           }
+
+          const { items: data } = (await res.json()) as {
+            items: Array<Record<string, unknown>>;
+          };
 
           const localItems = get().items;
 
           if (data && data.length > 0) {
             // DB의 장바구니 데이터를 CartItem 형식으로 변환
             const dbItems: CartItem[] = data.map((item) => ({
-              id: item.id,
-              productId: item.product_id,
-              productName: item.product_name,
-              color: item.color,
-              colorLabel: item.color_label,
-              size: item.size,
-              quantity: item.quantity,
+              id: item.id as string,
+              productId: item.product_id as string,
+              productName: item.product_name as string,
+              color: item.color as string,
+              colorLabel: item.color_label as string,
+              size: item.size as string,
+              quantity: item.quantity as number,
               designLayers: item.design_layers as unknown as DesignLayer[],
-              unitPrice: item.unit_price,
+              unitPrice: item.unit_price as number,
               basePrice:
-                ((item as Record<string, unknown>).base_price as number) ||
-                item.unit_price,
-              priceTiers: (item as Record<string, unknown>).price_tiers as
-                | PriceTier[]
-                | undefined,
-              createdAt: new Date(item.created_at).getTime(),
+                (item.base_price as number) || (item.unit_price as number),
+              priceTiers: item.price_tiers as PriceTier[] | undefined,
+              createdAt: new Date(item.created_at as string).getTime(),
             }));
 
             // 로컬 장바구니와 병합 (DB 우선)
@@ -332,41 +328,27 @@ export const useCartStore = create<CartState>()(
         if (!userId) return;
 
         try {
-          const supabase = getSupabaseBrowserClient();
+          const res = await fetch("/api/cart", {
+            method: "PUT",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              items: items.map((item) => ({
+                productId: item.productId,
+                productName: item.productName,
+                color: item.color,
+                colorLabel: item.colorLabel,
+                size: item.size,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                designLayers: item.designLayers,
+              })),
+            }),
+          });
 
-          // 기존 장바구니 삭제
-          const { error: deleteError } = await supabase
-            .schema("runhousecustom")
-            .from("user_carts")
-            .delete()
-            .eq("user_id", userId);
-          if (deleteError) {
-            console.error("장바구니 삭제 에러:", deleteError);
-            return;
-          }
-
-          // 현재 장바구니 저장
-          if (items.length > 0) {
-            const cartData = items.map((item) => ({
-              user_id: userId,
-              product_id: item.productId,
-              product_name: item.productName,
-              color: item.color,
-              color_label: item.colorLabel,
-              size: item.size,
-              quantity: item.quantity,
-              unit_price: item.unitPrice,
-              design_layers: item.designLayers as unknown as Json,
-            }));
-
-            const { error } = await supabase
-              .schema("runhousecustom")
-              .from("user_carts")
-              .insert(cartData);
-
-            if (error) {
-              console.error("장바구니 저장 에러:", error);
-            }
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            console.error("장바구니 저장 에러:", res.status, body);
           }
         } catch (error) {
           console.error("장바구니 DB 동기화 에러:", error);

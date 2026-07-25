@@ -36,6 +36,17 @@
 | `POST|PATCH /api/auth/profile` | 프로필 생성/수정 |
 | `PATCH /api/auth/password`, `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` | 비번 변경/재설정 |
 
+## 장바구니 (Cart)
+
+| 경로 | 설명 |
+|------|------|
+| `GET /api/cart` | 로그인 사용자의 `user_carts` 조회 (비로그인 시 빈 배열) |
+| `PUT /api/cart` | 장바구니 전체 교체(기존 삭제 후 재삽입) |
+
+> `user_carts`는 RLS가 `auth.uid()=user_id` 기준이나 앱은 커스텀 인증을 써서 anon 브라우저 쓰기가 막힌다.
+> 그래서 이 라우트에서 **service_role**로 처리하고, `user_id`는 세션 쿠키에서 서버가 도출한다(클라이언트 값 미신뢰).
+> 클라이언트 `cart-store`의 `syncFromDB`/`syncToDB`가 이 엔드포인트를 호출한다.
+
 ## 관리자
 
 | 경로 | 설명 |
