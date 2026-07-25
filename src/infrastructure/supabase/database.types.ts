@@ -263,6 +263,8 @@ export type Database = {
           creator_user_id: string
           crew_name: string
           id: string
+          open_from: string | null
+          open_until: string | null
           store_token: string
           tenant_id: string
           updated_at: string
@@ -272,6 +274,8 @@ export type Database = {
           creator_user_id: string
           crew_name: string
           id?: string
+          open_from?: string | null
+          open_until?: string | null
           store_token: string
           tenant_id: string
           updated_at?: string
@@ -281,6 +285,8 @@ export type Database = {
           creator_user_id?: string
           crew_name?: string
           id?: string
+          open_from?: string | null
+          open_until?: string | null
           store_token?: string
           tenant_id?: string
           updated_at?: string
@@ -640,8 +646,10 @@ export type Database = {
           is_paid: boolean
           name: string
           note: string | null
+          phone_last4: string | null
           quantity: number
           size: string
+          submission_id: string | null
           updated_at: string
         }
         Insert: {
@@ -653,8 +661,10 @@ export type Database = {
           is_paid?: boolean
           name: string
           note?: string | null
+          phone_last4?: string | null
           quantity?: number
           size: string
+          submission_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -666,8 +676,10 @@ export type Database = {
           is_paid?: boolean
           name?: string
           note?: string | null
+          phone_last4?: string | null
           quantity?: number
           size?: string
+          submission_id?: string | null
           updated_at?: string
         }
         Relationships: [
