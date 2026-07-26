@@ -573,8 +573,8 @@ function GoodsCard({
   const handleDelete = () => {
     const message =
       participantCount > 0
-        ? `주문한 사람이 ${participantCount}명 있습니다.\n정말 '${p.title}'을(를) 지우겠습니까?\n제출한 사이즈 내역도 함께 삭제됩니다.`
-        : `'${p.title}'을(를) 삭제할까요?`;
+        ? `주문한 사람이 ${participantCount}명 있습니다.\n'${p.title}'을(를) 상점에서 완전히 내릴까요?\n제출한 사이즈 내역도 함께 삭제되고 되돌릴 수 없어요.`
+        : `'${p.title}'을(를) 상점에서 완전히 내릴까요? 되돌릴 수 없어요.`;
     if (!confirm(message)) return;
     patch(
       {
@@ -676,25 +676,24 @@ function GoodsCard({
                 마감
               </button>
             ) : (
-              <>
-                <button
-                  disabled={busy}
-                  onClick={() =>
-                    patch({ product: { token: p.token, action: "reopen" } }, "재오픈했습니다.")
-                  }
-                  className="rounded-md border border-hairline px-2.5 py-1 text-[11px] font-bold"
-                >
-                  재오픈
-                </button>
-                <button
-                  disabled={busy}
-                  onClick={handleDelete}
-                  className="rounded-md border border-danger px-2.5 py-1 text-[11px] font-bold text-danger"
-                >
-                  삭제
-                </button>
-              </>
+              <button
+                disabled={busy}
+                onClick={() =>
+                  patch({ product: { token: p.token, action: "reopen" } }, "재오픈했습니다.")
+                }
+                className="rounded-md border border-hairline px-2.5 py-1 text-[11px] font-bold"
+              >
+                재오픈
+              </button>
             )}
+            {/* 완전히 내리기 — 마감 여부와 무관하게 항상 가능 */}
+            <button
+              disabled={busy}
+              onClick={handleDelete}
+              className="rounded-md border border-danger px-2.5 py-1 text-[11px] font-bold text-danger"
+            >
+              내리기
+            </button>
           </div>
         )}
       </div>
