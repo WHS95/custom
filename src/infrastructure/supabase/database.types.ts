@@ -342,6 +342,63 @@ export type Database = {
           },
         ]
       }
+      manufacture_reviews: {
+        Row: {
+          attachments: Json
+          color_id: string
+          created_at: string
+          creator_user_id: string
+          crew_name: string | null
+          design_snapshot: Json
+          factory_comment: string | null
+          id: string
+          note: string | null
+          product_id: string
+          registered_collection_id: string | null
+          review_token: string
+          reviewed_at: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          attachments?: Json
+          color_id: string
+          created_at?: string
+          creator_user_id: string
+          crew_name?: string | null
+          design_snapshot: Json
+          factory_comment?: string | null
+          id?: string
+          note?: string | null
+          product_id: string
+          registered_collection_id?: string | null
+          review_token: string
+          reviewed_at?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Update: {
+          attachments?: Json
+          color_id?: string
+          created_at?: string
+          creator_user_id?: string
+          crew_name?: string | null
+          design_snapshot?: Json
+          factory_comment?: string | null
+          id?: string
+          note?: string | null
+          product_id?: string
+          registered_collection_id?: string | null
+          review_token?: string
+          reviewed_at?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           admin_memo: string | null
