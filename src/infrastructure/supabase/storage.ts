@@ -257,3 +257,45 @@ export async function listOrderAttachments(
     };
   });
 }
+
+// ============================================
+// 제작 리뷰 첨부파일 (order-attachments 버킷 재사용, manufacture-reviews/ prefix)
+// ============================================
+
+/**
+ * 제작 리뷰 참고 첨부파일 업로드
+ * @param file File/Blob
+ * @param reviewKey 리뷰 식별자 (임시 키 또는 reviewId)
+ * @param fileName 파일명
+ */
+export async function uploadReviewAttachment(
+  file: File | Blob,
+  reviewKey: string,
+  fileName: string,
+  isServer = false,
+): Promise<{ url: string; size: number } | null> {
+  const supabase = isServer
+    ? createServerSupabaseClient()
+    : getSupabaseClient();
+
+  const safeFileName = fileName.replace(/[^a-zA-Z0-9가-힣._-]/g, "_");
+  const path = `manufacture-reviews/${reviewKey}/${safeFileName}`;
+
+  const { data, error } = await supabase.storage
+    .from(ORDER_ATTACHMENTS_BUCKET)
+    .upload(path, file, {
+      upsert: true,
+      contentType: file.type || "application/octet-stream",
+    });
+
+  if (error) {
+    console.error("Review attachment upload error:", error);
+    return null;
+  }
+
+  const { data: urlData } = supabase.storage
+    .from(ORDER_ATTACHMENTS_BUCKET)
+    .getPublicUrl(data.path);
+
+  return { url: urlData.publicUrl, size: file.size };
+}

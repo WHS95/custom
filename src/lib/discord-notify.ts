@@ -1,0 +1,86 @@
+/**
+ * Discord 웹훅 알림 유틸리티 (제작 가능 여부 확인 플로우)
+ *
+ * 채널 2개:
+ * - 공장 채널(DISCORD_FACTORY_WEBHOOK_URL): 크루장이 제작 문의를 넣으면 시안+링크 전달
+ * - 운영자 채널(DISCORD_OPERATOR_WEBHOOK_URL): 공장이 판정하면 결과 통지
+ *
+ * Discord 웹훅은 { content } 또는 { embeds } JSON을 POST하면 된다.
+ * 실패해도 앱 흐름에 영향 없도록 조용히 로깅만 한다. (Slack 패턴과 동일)
+ */
+
+const FACTORY_WEBHOOK_URL = process.env.DISCORD_FACTORY_WEBHOOK_URL;
+const OPERATOR_WEBHOOK_URL = process.env.DISCORD_OPERATOR_WEBHOOK_URL;
+
+async function post(webhookUrl: string | undefined, content: string) {
+  if (!webhookUrl) {
+    console.warn("[Discord] 웹훅 URL 미설정 — 알림 생략");
+    return false;
+  }
+  try {
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // content는 2000자 제한
+      body: JSON.stringify({ content: content.slice(0, 1990) }),
+    });
+    if (!res.ok) {
+      console.error("[Discord] 웹훅 응답 오류:", res.status);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[Discord] 웹훅 전송 실패:", err);
+    return false;
+  }
+}
+
+const DIVIDER = "━━━━━━━━━━━━━━━━";
+
+export interface FactoryReviewRequestPayload {
+  crewName: string;
+  productName: string;
+  colorLabel: string;
+  attachmentCount: number;
+  note?: string;
+  reviewUrl: string; // 공장 확인 링크 (토큰 포함)
+}
+
+/** 공장 채널: 신규 제작 문의 */
+export async function notifyFactoryReviewRequest(
+  p: FactoryReviewRequestPayload,
+): Promise<boolean> {
+  const lines = [
+    "🧵 **제작 가능 여부 문의**",
+    DIVIDER,
+    `🏃 크루: ${p.crewName}`,
+    `👕 상품: ${p.productName} · ${p.colorLabel}`,
+    `📎 첨부: ${p.attachmentCount}개`,
+    p.note ? `📝 요청: ${p.note}` : "",
+    DIVIDER,
+    `🔗 시안·첨부 확인 후 판정: ${p.reviewUrl}`,
+  ].filter(Boolean);
+  return post(FACTORY_WEBHOOK_URL, lines.join("\n"));
+}
+
+export interface OperatorReviewResultPayload {
+  crewName: string;
+  productName: string;
+  colorLabel: string;
+  approved: boolean;
+  factoryComment?: string;
+}
+
+/** 운영자 채널: 공장 판정 결과 */
+export async function notifyOperatorReviewResult(
+  p: OperatorReviewResultPayload,
+): Promise<boolean> {
+  const lines = [
+    p.approved ? "✅ **제작 가능 — 승인**" : "🚫 **제작 불가 — 반려**",
+    DIVIDER,
+    `🏃 크루: ${p.crewName}`,
+    `👕 상품: ${p.productName} · ${p.colorLabel}`,
+    p.factoryComment ? `💬 공장 의견: ${p.factoryComment}` : "",
+  ].filter(Boolean);
+  return post(OPERATOR_WEBHOOK_URL, lines.join("\n"));
+}
