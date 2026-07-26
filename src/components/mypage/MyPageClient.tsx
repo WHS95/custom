@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
@@ -14,8 +15,29 @@ import {
   Truck,
   CheckCircle,
   Users,
+  ClipboardCheck,
+  Store,
 } from "lucide-react";
 import { ORDER_STATUS_LABELS, type OrderStatus } from "@/domain/order/types";
+
+interface ManufactureReviewItem {
+  reviewId: string;
+  productName: string;
+  colorLabel: string;
+  status: "pending" | "approved" | "rejected";
+  factoryComment: string | null;
+  registered: boolean;
+  createdAt: string;
+}
+
+const REVIEW_STATUS: Record<
+  ManufactureReviewItem["status"],
+  { label: string; cls: string }
+> = {
+  pending: { label: "심사 중", cls: "bg-gray-100 text-gray-600" },
+  approved: { label: "제작 가능", cls: "bg-green-100 text-green-700" },
+  rejected: { label: "제작 불가", cls: "bg-red-100 text-red-700" },
+};
 
 interface OrderSummary {
   id: string;
@@ -58,6 +80,17 @@ function displayEmail(email?: string): string | undefined {
 export function MyPageClient({ profile, email, orders }: MyPageClientProps) {
   const { signOut } = useAuth();
   const visibleEmail = displayEmail(email);
+
+  // 제작 문의 내역 (크루 운영진만)
+  const isCrewStaff = profile.user_type === "crew_staff";
+  const [reviews, setReviews] = useState<ManufactureReviewItem[] | null>(null);
+  useEffect(() => {
+    if (!isCrewStaff) return;
+    fetch("/api/manufacture-reviews")
+      .then((res) => res.json())
+      .then((json) => setReviews(json.success ? json.data.reviews : []))
+      .catch(() => setReviews([]));
+  }, [isCrewStaff]);
 
   const orderStats = {
     pending: orders.filter((o) => o.status === "pending").length,
@@ -153,6 +186,91 @@ export function MyPageClient({ profile, email, orders }: MyPageClientProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* 제작 문의 내역 (크루 운영진) */}
+        {isCrewStaff && (
+          <Card>
+            <CardHeader className='flex flex-row items-center justify-between'>
+              <CardTitle className='text-lg flex items-center gap-2'>
+                <ClipboardCheck className='w-5 h-5' />
+                제작 문의
+              </CardTitle>
+              {reviews && reviews.length > 0 && (
+                <Link href='/manufacture-reviews'>
+                  <Button variant='ghost' size='sm'>
+                    전체 보기
+                    <ChevronRight className='w-4 h-4 ml-1' />
+                  </Button>
+                </Link>
+              )}
+            </CardHeader>
+            <CardContent>
+              {reviews === null ? (
+                <p className='text-center py-6 text-sm text-gray-400'>
+                  불러오는 중...
+                </p>
+              ) : reviews.length === 0 ? (
+                <div className='text-center py-8'>
+                  <ClipboardCheck className='w-12 h-12 mx-auto text-gray-300 mb-3' />
+                  <p className='text-gray-500 mb-4 text-sm'>
+                    아직 제작 문의가 없습니다
+                  </p>
+                  <Link href='/'>
+                    <Button variant='outline'>스튜디오에서 디자인하기</Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className='space-y-3'>
+                  {reviews.slice(0, 5).map((r) => {
+                    const meta = REVIEW_STATUS[r.status];
+                    return (
+                      <div
+                        key={r.reviewId}
+                        className='p-4 bg-gray-50 rounded-lg'
+                      >
+                        <div className='flex items-center justify-between gap-2'>
+                          <div className='min-w-0'>
+                            <p className='font-medium truncate'>
+                              {r.productName}
+                            </p>
+                            <p className='text-sm text-gray-500'>
+                              {r.colorLabel} ·{" "}
+                              {new Date(r.createdAt).toLocaleDateString("ko-KR")}
+                            </p>
+                          </div>
+                          <Badge className={`shrink-0 ${meta.cls}`}>
+                            {meta.label}
+                          </Badge>
+                        </div>
+                        {r.factoryComment && (
+                          <p className='mt-2 text-xs text-gray-600 bg-white rounded px-2.5 py-1.5'>
+                            <span className='font-semibold text-gray-400'>
+                              공장 의견{" "}
+                            </span>
+                            {r.factoryComment}
+                          </p>
+                        )}
+                        {r.status === "approved" &&
+                          (r.registered ? (
+                            <p className='mt-2 text-xs font-medium text-green-600'>
+                              ✓ 상점에 등록됨
+                            </p>
+                          ) : (
+                            <Link href='/manufacture-reviews'>
+                              <Button size='sm' className='mt-2 h-8'>
+                                <Store className='w-3.5 h-3.5 mr-1' />
+                                상점에 등록하기
+                              </Button>
+                            </Link>
+                          ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader className='flex flex-row items-center justify-between'>
