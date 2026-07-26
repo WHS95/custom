@@ -27,8 +27,13 @@ import {
   Globe,
   Store,
   ClipboardCheck,
+  Bell,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  countUnread,
+  getNotificationsSeenAt,
+} from "@/lib/notifications";
 
 const KAKAO_LINK = "https://open.kakao.com/me/runhouse";
 const INSTAGRAM_LINK = "https://www.instagram.com/run_house_club/";
@@ -54,6 +59,23 @@ export function Navbar() {
       .catch(() => setMyStoreToken(null));
   }, [isCrewStaff]);
 
+  // 알림 미읽음 수 (crew_staff)
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    if (!isCrewStaff) {
+      setUnread(0);
+      return;
+    }
+    fetch("/api/notifications")
+      .then((res) => res.json())
+      .then((json) => {
+        const items: { createdAt: string }[] = json.data?.items ?? [];
+        setUnread(countUnread(items, getNotificationsSeenAt()));
+      })
+      .catch(() => setUnread(0));
+    // 알림 페이지에서 읽음 처리하면 pathname 변경 시 재계산됨
+  }, [isCrewStaff, pathname]);
+
   // 라우트 변경 시 모바일 메뉴 자동 닫기
   useEffect(() => {
     setMobileOpen(false);
@@ -64,6 +86,11 @@ export function Navbar() {
     { href: "/gallery", label: t("common.showcase"), icon: Image },
     ...(isCrewStaff
       ? [
+          {
+            href: "/notifications",
+            label: unread > 0 ? `알림 (${unread})` : "알림",
+            icon: Bell,
+          },
           {
             href: "/manufacture-reviews",
             label: "내 제작 문의",
@@ -140,6 +167,20 @@ export function Navbar() {
               <span>문의하기</span>
             </a>
           </Button>
+
+          {/* 알림 벨 (crew_staff) */}
+          {isCrewStaff && (
+            <Button asChild variant="ghost" size="icon" className="relative">
+              <Link href="/notifications" aria-label="알림">
+                <Bell className="w-5 h-5" />
+                {unread > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF6F1E] px-1 text-[10px] font-bold text-white">
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                )}
+              </Link>
+            </Button>
+          )}
 
           {/* 인증 상태에 따른 UI */}
           {isLoading ? (
