@@ -1,7 +1,10 @@
 /**
  * 크루 스토어 상품 등록 API
- * POST: 스튜디오에서 만든 커스텀 디자인을 우리 크루 상점에 등록 (크루 로그인 필요)
+ * POST: 공장 제작 승인(manufacture_reviews.status='approved')을 받은 디자인을
+ *       우리 크루 상점에 굿즈로 등록한다 (크루 로그인 필요).
  *
+ * 등록 전 필수 게이트: reviewId(승인된 제작 리뷰)가 있어야만 등록 가능.
+ * 디자인은 리뷰 레코드의 design_snapshot을 사용 (크루장은 스튜디오 재작업 불필요).
  * 크루 계정당 스토어 1개 (없으면 자동 생성).
  * 상품 = design 스냅샷이 붙은 size_collection (기존 취합·집계·발주 파이프라인 재사용)
  */
@@ -36,20 +39,50 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { productId, colorId, designLayers, title, unitPrice } = body as {
-      productId?: string;
-      colorId?: string;
-      designLayers?: unknown[];
+    const { reviewId, title, unitPrice } = body as {
+      reviewId?: string;
       title?: string;
       unitPrice?: number;
     };
 
-    if (!productId || !colorId || !Array.isArray(designLayers) || designLayers.length === 0) {
+    if (!reviewId) {
       return NextResponse.json(
-        { error: "상품, 색상, 디자인이 필요합니다." },
+        { error: "제작 승인된 디자인만 등록할 수 있습니다." },
         { status: 400 },
       );
     }
+
+    const supabase = createServerSupabaseClient();
+
+    // 승인된 제작 리뷰 확인 (본인 소유 + approved + 미등록)
+    const { data: review } = await supabase
+      .from("manufacture_reviews")
+      .select("*")
+      .eq("id", reviewId)
+      .eq("creator_user_id", user.id)
+      .maybeSingle();
+    if (!review) {
+      return NextResponse.json(
+        { error: "제작 문의를 찾을 수 없습니다." },
+        { status: 404 },
+      );
+    }
+    if (review.status !== "approved") {
+      return NextResponse.json(
+        { error: "제작 가능 승인을 받은 후 등록할 수 있습니다." },
+        { status: 400 },
+      );
+    }
+    if (review.registered_collection_id) {
+      return NextResponse.json(
+        { error: "이미 상점에 등록된 디자인입니다." },
+        { status: 400 },
+      );
+    }
+
+    const productId = review.product_id;
+    const colorId = review.color_id;
+    const designLayers = review.design_snapshot;
 
     const product = await getProductById(productId);
     if (!product || !product.isActive) {
@@ -66,9 +99,7 @@ export async function POST(request: NextRequest) {
     }
 
     const crewName =
-      profile?.crew_name || profile?.name || "우리 크루";
-
-    const supabase = createServerSupabaseClient();
+      review.crew_name || profile?.crew_name || profile?.name || "우리 크루";
 
     // 스토어 조회 또는 생성 (계정당 1개)
     const { data: existingStore, error: storeFindError } = await supabase
@@ -112,29 +143,41 @@ export async function POST(request: NextRequest) {
     const adminToken = randomBytes(18).toString("base64url");
     const variant = product.variants.find((v) => v.id === colorId);
 
-    const { error: insertError } = await supabase.from("size_collections").insert({
-      tenant_id: DEFAULT_TENANT_ID,
-      token,
-      admin_token: adminToken,
-      title:
-        title?.trim().slice(0, 200) ||
-        `${product.name} — ${variant?.label ?? colorId}`,
-      crew_name: store.crew_name,
-      product_id: productId,
-      unit_price:
-        typeof unitPrice === "number" && Number.isInteger(unitPrice) && unitPrice >= 0
-          ? unitPrice
-          : product.basePrice,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      design_snapshot: designLayers as any,
-      design_color_id: colorId,
-      creator_user_id: user.id,
-      store_id: store.id,
-    });
+    const { data: newCollection, error: insertError } = await supabase
+      .from("size_collections")
+      .insert({
+        tenant_id: DEFAULT_TENANT_ID,
+        token,
+        admin_token: adminToken,
+        title:
+          title?.trim().slice(0, 200) ||
+          `${product.name} — ${variant?.label ?? colorId}`,
+        crew_name: store.crew_name,
+        product_id: productId,
+        unit_price:
+          typeof unitPrice === "number" &&
+          Number.isInteger(unitPrice) &&
+          unitPrice >= 0
+            ? unitPrice
+            : product.basePrice,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        design_snapshot: designLayers as any,
+        design_color_id: colorId,
+        creator_user_id: user.id,
+        store_id: store.id,
+      })
+      .select("id")
+      .single();
 
     if (insertError) {
       throw new Error(insertError.message);
     }
+
+    // 리뷰 ↔ 등록된 굿즈 연결 (중복 등록 방지)
+    await supabase
+      .from("manufacture_reviews")
+      .update({ registered_collection_id: newCollection.id })
+      .eq("id", reviewId);
 
     return NextResponse.json({
       success: true,
