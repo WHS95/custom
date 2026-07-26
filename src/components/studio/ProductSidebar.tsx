@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -17,6 +16,7 @@ import { toast } from "sonner";
 import posthog from "posthog-js";
 import type { PriceTier } from "@/domain/product/types";
 import { PricingTableModal } from "./PricingTableModal";
+import { ReviewRequestDialog } from "./ReviewRequestDialog";
 import { CrewLoginInline } from "@/components/cart/CrewLoginInline";
 import {
   Dialog,
@@ -51,10 +51,9 @@ export function ProductSidebar({
 }: ProductSidebarProps) {
   const { config } = useStudioConfig();
   const { t } = useLanguage();
-  const router = useRouter();
   const { isAuthenticated, profile, refreshProfile } = useAuth();
-  const [registeringStore, setRegisteringStore] = useState(false);
   const [crewGateOpen, setCrewGateOpen] = useState(false);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const isCrewStaff = isAuthenticated && profile?.user_type === "crew_staff";
   const isCrewPending = isAuthenticated && profile?.user_type === "crew_pending";
 
@@ -91,46 +90,20 @@ export function ProductSidebar({
   );
 
   /**
-   * 우리 크루 상품으로 등록 (피벗 후 유일한 primary 액션)
+   * 제작 가능 여부 확인 요청 (피벗 후 유일한 primary 액션 — 등록 전 필수 게이트)
    */
-  const handleRegisterToStore = async () => {
+  const handleRequestReview = () => {
     if (!hasCurrentDesign || !productId) return;
     // 비크루는 게이트 모달로 인터셉트
     if (!isCrewStaff) {
       setCrewGateOpen(true);
       return;
     }
-    setRegisteringStore(true);
-    try {
-      const res = await fetch("/api/store/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId,
-          colorId: selectedColor,
-          designLayers: currentColorLayers,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || "등록 실패");
-      }
-      posthog.capture("store_goods_registered", {
-        product_id: productId,
-        color: selectedColor,
-      });
-      toast.success("우리 크루 상점에 등록되었습니다!");
-      // toast 의존 폐지 — 상점 관리로 즉시 이동
-      router.push(`/store/${json.data.storeToken}/manage`);
-    } catch (err) {
-      toast.error(
-        err instanceof Error && err.message
-          ? err.message
-          : "크루 상품 등록에 실패했습니다.",
-      );
-    } finally {
-      setRegisteringStore(false);
-    }
+    posthog.capture("manufacture_review_requested", {
+      product_id: productId,
+      color: selectedColor,
+    });
+    setReviewDialogOpen(true);
   };
 
   return (
@@ -240,10 +213,10 @@ export function ProductSidebar({
           )}
         </div>
 
-        {/* 우리 크루 상품으로 등록 — 유일한 primary CTA */}
+        {/* 제작 가능 여부 확인 요청 — 유일한 primary CTA (등록 전 필수 게이트) */}
         <Button
-          onClick={handleRegisterToStore}
-          disabled={!hasCurrentDesign || registeringStore}
+          onClick={handleRequestReview}
+          disabled={!hasCurrentDesign}
           className={`w-full h-11 text-base lg:h-9 lg:text-sm rounded transform transition-all ${
             hasCurrentDesign
               ? "bg-black hover:bg-gray-900 hover:-translate-y-0.5"
@@ -253,18 +226,27 @@ export function ProductSidebar({
           <Store className='mr-1.5 h-3.5 w-3.5' />
           {!hasCurrentDesign
             ? "디자인을 먼저 추가하세요"
-            : registeringStore
-              ? "등록 중..."
-              : "우리 크루 상품으로 등록"}
+            : "제작 가능 여부 확인 요청"}
         </Button>
         <p className='text-[10px] leading-relaxed text-gray-400'>
-          등록하면 우리 크루 상점에 굿즈로 올라가고, 링크를 공유해 크루원들의
-          사이즈를 취합할 수 있어요.
+          공장에서 제작 가능한지 먼저 확인해요. 승인되면 &lsquo;내 제작
+          문의&rsquo;에서 우리 크루 상점에 굿즈로 등록할 수 있어요.
         </p>
 
       </div>
 
-      {/* 크루 게이트 모달 — 비크루가 등록을 누르면 */}
+      {/* 제작 문의 다이얼로그 (크루) */}
+      {productId && (
+        <ReviewRequestDialog
+          open={reviewDialogOpen}
+          onOpenChange={setReviewDialogOpen}
+          productId={productId}
+          colorId={selectedColor}
+          designLayers={currentColorLayers}
+        />
+      )}
+
+      {/* 크루 게이트 모달 — 비크루가 요청을 누르면 */}
       <Dialog open={crewGateOpen} onOpenChange={setCrewGateOpen}>
         <DialogContent className='max-w-md'>
           <DialogHeader>

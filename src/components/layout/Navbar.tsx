@@ -26,6 +26,7 @@ import {
   Instagram,
   Globe,
   Store,
+  ClipboardCheck,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -61,6 +62,15 @@ export function Navbar() {
   const navLinks = [
     { href: "/", label: t("common.studio"), icon: Home },
     { href: "/gallery", label: t("common.showcase"), icon: Image },
+    ...(isCrewStaff
+      ? [
+          {
+            href: "/manufacture-reviews",
+            label: "내 제작 문의",
+            icon: ClipboardCheck,
+          },
+        ]
+      : []),
     ...(myStoreToken
       ? [
           {
