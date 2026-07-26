@@ -16,7 +16,6 @@ import {
 import { toast } from "sonner";
 import posthog from "posthog-js";
 import type { PriceTier } from "@/domain/product/types";
-import { getUnitPrice, getDiscountRate } from "@/lib/pricing/price-calculator";
 import { PricingTableModal } from "./PricingTableModal";
 import { CrewLoginInline } from "@/components/cart/CrewLoginInline";
 import {
@@ -64,17 +63,10 @@ export function ProductSidebar({
   const basePrice = productBasePrice ?? config.basePrice;
   const displayName = productName || t("product.name");
 
-  // 상품별 사이즈가 있으면 사용, 없으면 기본값
+  // 상품별 사이즈가 있으면 사용, 없으면 기본값 (안내용 — 선택은 상점에서 크루원이 함)
   const sizes =
     productSizes && productSizes.length > 0 ? productSizes : DEFAULT_SIZES;
-  const [selectedSize, setSelectedSize] = useState(sizes[0] || "FREE");
-  const [quantity, setQuantity] = useState(1);
   const [pricingModalOpen, setPricingModalOpen] = useState(false);
-
-  // 수량 기반 할인가 계산
-  const currentUnitPrice = getUnitPrice(basePrice, quantity, priceTiers);
-  const discountRate = getDiscountRate(basePrice, quantity, priceTiers);
-  const isDiscounted = currentUnitPrice < basePrice;
   const hasPriceTiers = priceTiers && priceTiers.length > 0;
 
   // 디자인 스토어에서 색상별 디자인 정보 가져오기
@@ -188,91 +180,26 @@ export function ProductSidebar({
           )}
         </div>
 
-        {/* Size Selection */}
+        {/* 가격 안내 — 사이즈·수량은 상점에서 크루원이 정함 */}
         <div className='space-y-2'>
           <Label className='text-[10px] text-gray-500 font-bold uppercase'>
-            {t("common.size")}
-          </Label>
-          <div
-            className={`grid gap-1.5 ${
-              sizes.length <= 3
-                ? "grid-cols-3"
-                : sizes.length === 4
-                  ? "grid-cols-4"
-                  : "grid-cols-5"
-            }`}
-          >
-            {sizes.map((size) => (
-              <button
-                key={size}
-                onClick={() => setSelectedSize(size)}
-                className={`py-2.5 text-sm lg:py-1.5 lg:text-xs border rounded hover:border-black transition-colors ${
-                  selectedSize === size
-                    ? "bg-black text-white border-black"
-                    : "bg-white text-gray-700"
-                }`}
-              >
-                {size}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Quantity for new item */}
-        <div className='space-y-2'>
-          <Label className='text-[10px] text-gray-500 font-bold uppercase'>
-            {t("common.quantity")}
+            단가 안내
           </Label>
           <div className='bg-gray-50 rounded p-2.5 space-y-2 border border-gray-100'>
             <div className='flex justify-between items-center'>
-              <div className='flex items-center bg-white border rounded'>
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className='px-3.5 py-1.5 lg:px-2 lg:py-0.5 hover:bg-gray-100 border-r text-sm lg:text-xs'
-                >
-                  -
-                </button>
-                <span className='px-3 py-1.5 lg:px-2.5 lg:py-0.5 text-sm lg:text-xs font-medium min-w-[28px] lg:min-w-[24px] text-center'>
-                  {quantity}
-                </span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className='px-3.5 py-1.5 lg:px-2 lg:py-0.5 hover:bg-gray-100 border-l text-sm lg:text-xs'
-                >
-                  +
-                </button>
-              </div>
-              <div className='text-right'>
-                {isDiscounted ? (
-                  <>
-                    <span className='text-[10px] text-gray-400 line-through mr-0.5'>
-                      {basePrice.toLocaleString()}원
-                    </span>
-                    <span className='text-xs font-bold text-orange-600'>
-                      {currentUnitPrice.toLocaleString()}원
-                    </span>
-                    <span className='ml-0.5 text-[10px] text-red-500 font-semibold'>
-                      -{discountRate}%
-                    </span>
-                  </>
-                ) : (
-                  <span className='text-xs font-bold'>
-                    {basePrice.toLocaleString()}원
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* 현재 선택 소계 */}
-            <div className='flex justify-between items-center pt-1.5 border-t border-gray-200'>
-              <span className='text-[10px] text-gray-500'>
-                {quantity}개 소계
-              </span>
+              <span className='text-[10px] text-gray-500'>1장당</span>
               <span className='text-sm font-bold text-gray-900'>
-                {(currentUnitPrice * quantity).toLocaleString()}원
+                {basePrice.toLocaleString()}원
               </span>
             </div>
-
+            {sizes.length > 0 && (
+              <div className='flex justify-between items-center pt-1.5 border-t border-gray-200'>
+                <span className='text-[10px] text-gray-500'>제공 사이즈</span>
+                <span className='text-[11px] font-medium text-gray-700'>
+                  {sizes.join(" · ")}
+                </span>
+              </div>
+            )}
             {/* 할인 가격표 보기 버튼 */}
             {hasPriceTiers && (
               <button
@@ -283,6 +210,10 @@ export function ProductSidebar({
                 대량 구매 할인 가격표 보기
               </button>
             )}
+            <p className='text-[10px] leading-relaxed text-gray-400 pt-0.5'>
+              사이즈·수량은 상점에서 크루원이 직접 선택해요. 여기선 디자인만
+              완성하면 됩니다.
+            </p>
           </div>
         </div>
 

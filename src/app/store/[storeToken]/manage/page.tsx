@@ -565,6 +565,29 @@ function GoodsCard({
 
   const ordered = p.status === "ordered";
 
+  // 참여자 수 (제출 묶음 기준)
+  const participantCount = new Set(
+    p.responses.map((r) => r.submissionId ?? r.id),
+  ).size;
+
+  const handleDelete = () => {
+    const message =
+      participantCount > 0
+        ? `주문한 사람이 ${participantCount}명 있습니다.\n정말 '${p.title}'을(를) 지우겠습니까?\n제출한 사이즈 내역도 함께 삭제됩니다.`
+        : `'${p.title}'을(를) 삭제할까요?`;
+    if (!confirm(message)) return;
+    patch(
+      {
+        product: {
+          token: p.token,
+          action: "delete",
+          force: participantCount > 0,
+        },
+      },
+      "삭제했습니다.",
+    );
+  };
+
   return (
     <div className="rounded-xl border border-hairline-soft p-3">
       <div className="flex items-start justify-between gap-3">
@@ -665,10 +688,7 @@ function GoodsCard({
                 </button>
                 <button
                   disabled={busy}
-                  onClick={() => {
-                    if (confirm(`'${p.title}'을(를) 삭제할까요? 제출 내역도 함께 삭제됩니다.`))
-                      patch({ product: { token: p.token, action: "delete" } }, "삭제했습니다.");
-                  }}
+                  onClick={handleDelete}
                   className="rounded-md border border-danger px-2.5 py-1 text-[11px] font-bold text-danger"
                 >
                   삭제

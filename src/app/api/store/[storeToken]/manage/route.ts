@@ -119,6 +119,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         title?: string;
         unitPrice?: number;
         deadline?: string | null;
+        force?: boolean; // 참여자 있는 굿즈 삭제 확인
       };
     };
 
@@ -170,6 +171,22 @@ export async function PATCH(request: NextRequest, { params }: Params) {
             { status: 400 },
           );
         }
+        // 참여자(취합 제출)가 있으면 명시적 확인(force) 없이는 거부
+        const { count: responseCount } = await supabase
+          .from("size_collection_responses")
+          .select("id", { count: "exact", head: true })
+          .eq("collection_id", col.id);
+        if ((responseCount ?? 0) > 0 && !body.product.force) {
+          return NextResponse.json(
+            {
+              error: "참여자가 있는 굿즈입니다.",
+              needsConfirm: true,
+              participantCount: responseCount,
+            },
+            { status: 409 },
+          );
+        }
+        // FK ON DELETE CASCADE로 제출 내역도 함께 삭제됨
         const { error: delError } = await supabase
           .from("size_collections")
           .delete()
