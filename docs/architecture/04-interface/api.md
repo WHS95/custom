@@ -68,6 +68,7 @@
 |-------------|------|------|
 | `POST /api/manufacture-reviews` | 🧑‍🤝‍🧑 | 디자인+참고첨부(multipart) 심사 제출 → pending, 공장 채널 Discord |
 | `GET /api/manufacture-reviews` | 🧑‍🤝‍🧑 | 내 제작 문의 목록(상태·등록여부·공장의견) |
+| `GET /api/notifications` | 🧑‍🤝‍🧑 | 알림 피드 — 제작 판정+내 상점 신규 주문 시간순 병합(파생, 이벤트 테이블 없음). 화면 `/notifications`, 읽음은 localStorage |
 | `GET /api/manufacture-reviews/[token]` | 🟢 | 공장 확인 페이지 데이터(시안·색상뷰·첨부) |
 | `POST /api/manufacture-reviews/[token]/decision` | 🟢 | 제작가능/불가 판정(pending 원자적, 중복 차단) → 운영자 채널 Discord |
 
