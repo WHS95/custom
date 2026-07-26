@@ -143,15 +143,20 @@ export async function POST(request: NextRequest) {
         .eq("id", review.id);
     }
 
-    // 공장 채널 Discord 알림
-    const origin = request.nextUrl.origin;
+    // 공장 채널 Discord 알림 — 운영은 고정 베이스(NEXT_PUBLIC_SITE_URL),
+    // 로컬은 요청 origin으로 폴백
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ??
+      (request.nextUrl.hostname === "localhost"
+        ? request.nextUrl.origin
+        : "https://runhouse-custom.vercel.app");
     notifyFactoryReviewRequest({
       crewName,
       productName: product.name,
       colorLabel: variant.label,
       attachmentCount: attachments.length,
       note: note || undefined,
-      reviewUrl: `${origin}/review/${reviewToken}`,
+      reviewUrl: `${siteUrl}/review/${reviewToken}`,
     }).catch((err) => console.error("[Discord] 공장 알림 실패:", err));
 
     return NextResponse.json({ success: true, data: { reviewId: review.id } });
