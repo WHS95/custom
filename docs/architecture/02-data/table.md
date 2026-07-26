@@ -64,6 +64,15 @@
 `id(PK)`, `tenant_id→tenants`, `creator_user_id`, `crew_name`, `store_token`,
 `open_from`·`open_until`(mig 009 — 상점 운영기간, NULL=상시). **RLS.**
 
+### manufacture_reviews (mig 010)
+`id(PK)`, `tenant_id→tenants(CASCADE)`, `creator_user_id→customer_auth_users(CASCADE)`,
+`crew_name`, `product_id`, `color_id`, `design_snapshot(JSONB)`, `attachments(JSONB)`,
+`note`, `status`(pending/approved/rejected), `review_token`(UNIQUE, 공장 링크),
+`factory_comment`, `reviewed_at`, `registered_collection_id→size_collections(SET NULL)`. **RLS.**
+> 등록 전 제작 가능 여부 게이트(BR-0a). 승인된 리뷰만 상점 등록 가능,
+> `registered_collection_id`로 리뷰당 등록 1회. 첨부는 order-attachments 버킷
+> `manufacture-reviews/{id}/` 재사용.
+
 ## 결제 정산 (mig 006)
 
 ### groble_webhook_events

@@ -3,8 +3,13 @@
 코드에 구현된 도메인 규칙을 단일 출처로 정리한다. 각 규칙은 근거 파일을 명시한다.
 
 ## 서비스 정의 — BR-0 (2026-07-25 피벗)
-- **크루 상점이 메인.** 유일한 메인 루프: 크루 운영진 커스텀 → 상점 굿즈 등록 →
-  링크 공유 → 크루원 취합(이름+뒷4자리, 로그인 불필요) → 일괄 주문(convert/convert-all).
+- **크루 상점이 메인.** 유일한 메인 루프: 크루 운영진 커스텀 → **공장 제작 가능 여부 확인(필수)**
+  → 상점 굿즈 등록 → 링크 공유 → 크루원 취합(이름+뒷4자리, 로그인 불필요) → 일괄 주문(convert/convert-all).
+- **제작 가능 게이트 — BR-0a**: 등록 전 `manufacture_reviews` 승인이 필수.
+  크루장 요청(pending) → 공장 사장님 토큰 링크(`/review/{token}`)로 제작가능/불가 판정
+  → 승인(`approved`)된 리뷰의 디자인만 상점 등록 가능(`POST /api/store/register`는 reviewId+approved 검증).
+  알림은 Discord 웹훅(공장 채널: 신규 문의 / 운영자 채널: 판정 결과). 리뷰 1건당 등록 1회
+  (`registered_collection_id`로 중복 차단). 근거: `api/manufacture-reviews/*`, `lib/discord-notify.ts`.
 - **개인 장바구니·직접 구매는 보류(휴면)**: `/cart`·`/api/cart`·cart-store는 코드 유지,
   UI 진입점만 제거. 삭제 아님 — 부활 가능성 유지 (오너 결정).
 - 가입 = 크루 단일 트랙 (`individual` 유형 신규 발급 중단, 기존 계정 유지).

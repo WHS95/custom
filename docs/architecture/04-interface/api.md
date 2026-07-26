@@ -62,6 +62,19 @@
 > 그래서 이 라우트에서 **service_role**로 처리하고, `user_id`는 세션 쿠키에서 서버가 도출한다(클라이언트 값 미신뢰).
 > 클라이언트 `cart-store`의 `syncFromDB`/`syncToDB`가 이 엔드포인트를 호출한다.
 
+## 제작 가능 여부 확인 (Manufacture Reviews · mig 010)
+
+| 메서드/경로 | 인증 | 설명 |
+|-------------|------|------|
+| `POST /api/manufacture-reviews` | 🧑‍🤝‍🧑 | 디자인+참고첨부(multipart) 심사 제출 → pending, 공장 채널 Discord |
+| `GET /api/manufacture-reviews` | 🧑‍🤝‍🧑 | 내 제작 문의 목록(상태·등록여부·공장의견) |
+| `GET /api/manufacture-reviews/[token]` | 🟢 | 공장 확인 페이지 데이터(시안·색상뷰·첨부) |
+| `POST /api/manufacture-reviews/[token]/decision` | 🟢 | 제작가능/불가 판정(pending 원자적, 중복 차단) → 운영자 채널 Discord |
+
+> 화면: `/review/[token]`(공장, 공개·토큰), `/manufacture-reviews`(크루 내 문의).
+> 등록 게이트: `POST /api/store/register`는 이제 `reviewId`(approved) 필수 — 스튜디오는
+> 직접 등록하지 않고 이 심사를 거친다. Discord 웹훅: `DISCORD_FACTORY_WEBHOOK_URL`·`DISCORD_OPERATOR_WEBHOOK_URL`.
+
 ## 관리자
 
 | 경로 | 설명 |
