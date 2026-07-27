@@ -8,10 +8,16 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Store } from "lucide-react";
+import { ArrowLeft, Store, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
+import type { DesignLayer } from "@/components/shared/HatDesignCanvas";
+import {
+  DesignReviewDetail,
+  type DesignColorInfo,
+} from "@/components/shared/DesignReviewDetail";
+import { cn } from "@/lib/utils";
 
 interface ReviewItem {
   reviewId: string;
@@ -24,6 +30,8 @@ interface ReviewItem {
   reviewedAt: string | null;
   registered: boolean;
   createdAt: string;
+  designLayers: DesignLayer[] | null;
+  designColor: DesignColorInfo | null;
 }
 
 const STATUS_META: Record<
@@ -40,6 +48,7 @@ export default function ManufactureReviewsPage() {
   const { isLoading: authLoading, isAuthenticated, profile } = useAuth();
   const [reviews, setReviews] = useState<ReviewItem[] | null>(null);
   const [registering, setRegistering] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const isCrewStaff = profile?.user_type === "crew_staff";
 
@@ -121,25 +130,59 @@ export default function ManufactureReviewsPage() {
         ) : (
           reviews.map((r) => {
             const meta = STATUS_META[r.status];
+            const isOpen = expanded === r.reviewId;
             return (
               <div
                 key={r.reviewId}
                 className="rounded-xl border border-hairline-soft p-4"
               >
-                <div className="flex items-start justify-between gap-2">
+                {/* 헤더 — 누르면 상세(시안·로고) 펼치기 */}
+                <button
+                  type="button"
+                  onClick={() => setExpanded(isOpen ? null : r.reviewId)}
+                  className="flex w-full items-start justify-between gap-2 text-left"
+                >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold">{r.productName}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {r.colorLabel} · 첨부 {r.attachmentCount}개 ·{" "}
-                      {new Date(r.createdAt).toLocaleDateString("ko-KR")}
+                      {r.colorLabel} ·{" "}
+                      {new Date(r.createdAt).toLocaleDateString("ko-KR")} ·{" "}
+                      <span className="text-ink">상세 보기</span>
                     </p>
                   </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${meta.cls}`}
-                  >
-                    {meta.label}
+                  <span className="flex shrink-0 items-center gap-1.5">
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${meta.cls}`}
+                    >
+                      {meta.label}
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 text-mute transition-transform",
+                        isOpen && "rotate-180",
+                      )}
+                    />
                   </span>
-                </div>
+                </button>
+
+                {/* 상세: 시안(스튜디오식) + 요청 메모 + 로고 다운로드 */}
+                {isOpen && (
+                  <div className="mt-4 border-t border-hairline-soft pt-4">
+                    <DesignReviewDetail
+                      designLayers={r.designLayers}
+                      designColor={r.designColor}
+                      size="sm"
+                    />
+                    {r.note && (
+                      <div className="mt-3 rounded-md bg-soft-cloud px-3 py-2 text-xs">
+                        <span className="font-bold text-muted-foreground">
+                          내 요청{" "}
+                        </span>
+                        {r.note}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {r.factoryComment && (
                   <div className="mt-2 rounded-md bg-soft-cloud px-3 py-2 text-xs">

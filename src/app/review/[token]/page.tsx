@@ -10,11 +10,8 @@ import { CheckCircle2, XCircle, FileText, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  HatDesignCanvas,
-  type DesignLayer,
-} from "@/components/shared/HatDesignCanvas";
-import type { HatView } from "@/lib/store/studio-context";
+import type { DesignLayer } from "@/components/shared/HatDesignCanvas";
+import { DesignReviewDetail } from "@/components/shared/DesignReviewDetail";
 
 interface Attachment {
   name: string;
@@ -52,7 +49,6 @@ export default function FactoryReviewPage({
   const [notFound, setNotFound] = useState(false);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [view, setView] = useState<HatView | null>(null);
 
   const load = () => {
     fetch(`/api/manufacture-reviews/${token}`)
@@ -107,11 +103,6 @@ export default function FactoryReviewPage({
     );
   }
 
-  const views: HatView[] =
-    data.designLayers && data.designLayers.length > 0
-      ? ([...new Set(data.designLayers.map((l) => l.view))] as HatView[])
-      : [];
-  const activeView = view ?? views[0] ?? "front";
   const decided = data.status !== "pending";
 
   return (
@@ -135,47 +126,11 @@ export default function FactoryReviewPage({
         )}
       </div>
 
-      {/* 시안 */}
-      {data.designLayers && data.designColor && (
-        <div>
-          <div className="mx-auto w-64">
-            <HatDesignCanvas
-              hatColor={data.designColor.id}
-              currentView={activeView}
-              layers={data.designLayers}
-              editable={false}
-              showSafeZone={false}
-              showViewLabel={false}
-              productColors={[
-                {
-                  id: data.designColor.id,
-                  label: data.designColor.label,
-                  hex: data.designColor.hex,
-                  views: data.designColor.views as Record<HatView, string>,
-                },
-              ]}
-              className="aspect-square w-full rounded-lg border border-hairline"
-            />
-          </div>
-          {views.length > 1 && (
-            <div className="mt-2 flex justify-center gap-2">
-              {views.map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className={`rounded-full border px-3 py-1 text-xs font-bold transition ${
-                    activeView === v
-                      ? "border-ink bg-ink text-canvas"
-                      : "border-hairline text-muted-foreground"
-                  }`}
-                >
-                  {v === "front" ? "앞면" : v === "back" ? "뒷면" : v}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {/* 시안 상세 (스튜디오식 뷰 전환 + 로고 다운로드) */}
+      <DesignReviewDetail
+        designLayers={data.designLayers}
+        designColor={data.designColor}
+      />
 
       {/* 요청 메모 */}
       {data.note && (

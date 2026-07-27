@@ -184,7 +184,7 @@ export async function GET() {
     const { data: reviews, error } = await supabase
       .from("manufacture_reviews")
       .select(
-        "id, product_id, color_id, status, factory_comment, note, attachments, reviewed_at, registered_collection_id, created_at",
+        "id, product_id, color_id, design_snapshot, status, factory_comment, note, attachments, reviewed_at, registered_collection_id, created_at",
       )
       .eq("creator_user_id", user.id)
       .order("created_at", { ascending: false });
@@ -204,6 +204,14 @@ export async function GET() {
       const variant = product?.variants.find(
         (v: { id: string }) => v.id === r.color_id,
       );
+      // 상세 미리보기용 색상 뷰 이미지
+      const views = product
+        ? Object.fromEntries(
+            product.images
+              .filter((img: { colorId: string }) => img.colorId === r.color_id)
+              .map((img: { view: string; url: string }) => [img.view, img.url]),
+          )
+        : {};
       return {
         reviewId: r.id,
         productName: product?.name ?? "상품",
@@ -215,6 +223,15 @@ export async function GET() {
         reviewedAt: r.reviewed_at,
         registered: !!r.registered_collection_id,
         createdAt: r.created_at,
+        designLayers: r.design_snapshot,
+        designColor: variant
+          ? {
+              id: variant.id,
+              label: variant.label,
+              hex: variant.hex,
+              views,
+            }
+          : null,
       };
     });
 
