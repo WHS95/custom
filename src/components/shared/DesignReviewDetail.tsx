@@ -6,8 +6,10 @@
  * 스튜디오처럼 뷰(앞/뒤/…)를 전환해 확인하고, 각 뷰에 올라간 로고 파일을 내려받는다.
  */
 
-import { useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Download, ImageDown } from "lucide-react";
+import { toPng } from "html-to-image";
+import { toast } from "sonner";
 import {
   HatDesignCanvas,
   type DesignLayer,
@@ -56,9 +58,34 @@ export function DesignReviewDetail({
     [designLayers],
   );
   const [view, setView] = useState<HatView | null>(null);
+  // 시안 캡처용 offscreen 노드 refs (뷰별)
+  const shotRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [capturing, setCapturing] = useState<string | null>(null);
 
   if (!designLayers || designLayers.length === 0 || !designColor) return null;
   const activeView = view ?? views[0] ?? "front";
+
+  const downloadMockup = async (v: HatView) => {
+    const node = shotRefs.current[v];
+    if (!node) return;
+    setCapturing(v);
+    try {
+      const dataUrl = await toPng(node, {
+        pixelRatio: 2,
+        cacheBust: true,
+        backgroundColor: "#f5f5f5",
+      });
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `시안-${VIEW_LABEL[v] ?? v}.png`;
+      a.click();
+    } catch (err) {
+      console.error("시안 캡처 실패:", err);
+      toast.error("시안 이미지 생성에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setCapturing(null);
+    }
+  };
 
   // 이미지(로고) 레이어를 뷰별로 그룹
   const logosByView = new Map<string, DesignLayer[]>();
@@ -120,6 +147,68 @@ export function DesignReviewDetail({
       <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
         {designColor.label}
       </p>
+
+      {/* 시안 다운로드 (로고·텍스트 합성 이미지, 뷰별) */}
+      <div className="mt-3">
+        <p className="mb-1.5 text-xs font-bold text-muted-foreground">
+          디자인 시안 다운로드
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {views.map((v) => (
+            <button
+              key={v}
+              type="button"
+              disabled={capturing !== null}
+              onClick={() => downloadMockup(v)}
+              className="flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs font-bold transition-colors hover:bg-soft-cloud disabled:opacity-50"
+            >
+              <ImageDown className="h-3.5 w-3.5" />
+              {capturing === v
+                ? "생성 중..."
+                : `${VIEW_LABEL[v] ?? v} 시안`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 캡처용 offscreen 렌더 (화면 밖, 고정 크기) */}
+      <div
+        aria-hidden
+        style={{
+          position: "fixed",
+          left: -99999,
+          top: 0,
+          pointerEvents: "none",
+        }}
+      >
+        {views.map((v) => (
+          <div
+            key={v}
+            ref={(el) => {
+              shotRefs.current[v] = el;
+            }}
+            style={{ width: 640, height: 640 }}
+          >
+            <HatDesignCanvas
+              hatColor={designColor.id}
+              currentView={v}
+              layers={designLayers}
+              editable={false}
+              showSafeZone={false}
+              showViewLabel={false}
+              productColors={[
+                {
+                  id: designColor.id,
+                  label: designColor.label,
+                  hex: designColor.hex,
+                  views: designColor.views as Record<HatView, string>,
+                },
+              ]}
+              className="h-full w-full"
+            />
+          </div>
+        ))}
+      </div>
 
       {/* 텍스트 사양 (견적서식 — 위치·내용·폰트·크기·색상) */}
       {textLayers.length > 0 && (
