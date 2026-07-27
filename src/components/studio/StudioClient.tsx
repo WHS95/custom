@@ -32,6 +32,18 @@ export function StudioClient({ product, mode }: StudioClientProps) {
     posthog.capture("hat_studio_opened", { product_id: product.id });
   }, [product.id]);
 
+  // 스튜디오는 항상 최상단(캔버스)에서 시작 — dynamic 로드 레이아웃 시프트·스크롤 복원으로
+  // 하단 제품 상세로 스크롤된 채 열리는 것 방지
+  useEffect(() => {
+    if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    window.scrollTo(0, 0);
+    // 캔버스가 dynamic 로드되며 늦게 채워지는 경우 대비, 다음 프레임에 한 번 더
+    const raf = requestAnimationFrame(() => window.scrollTo(0, 0));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   const scrollToDetail = () => {
     const detailSection = document.getElementById("product-detail-section");
     if (detailSection) {
