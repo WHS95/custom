@@ -23,6 +23,9 @@ interface Attachment {
 }
 interface ReviewData {
   crewName: string | null;
+  handle: string | null;
+  requesterName: string | null;
+  phone: string | null;
   productName: string;
   note: string | null;
   status: "pending" | "approved" | "rejected";
@@ -121,6 +124,15 @@ export default function FactoryReviewPage({
         <p className="mt-1 text-sm text-muted-foreground">
           {data.crewName} · {data.designColor?.label}
         </p>
+        {(data.handle || data.requesterName || data.phone) && (
+          <p className="mt-1 flex flex-wrap justify-center gap-x-2 gap-y-0.5 font-mono text-xs text-muted-foreground">
+            {data.handle && <span>📸 {data.handle}</span>}
+            {data.requesterName && data.requesterName !== data.crewName && (
+              <span>🙋 {data.requesterName}</span>
+            )}
+            {data.phone && <span>📞 {data.phone}</span>}
+          </p>
+        )}
       </div>
 
       {/* 시안 */}

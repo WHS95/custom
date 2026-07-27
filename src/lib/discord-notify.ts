@@ -37,8 +37,33 @@ async function post(webhookUrl: string | undefined, content: string) {
 
 const DIVIDER = "━━━━━━━━━━━━━━━━";
 
+/** SSO stub 이메일에서 인스타 핸들 추출: sso-{handle}@runhouse-sso.internal → @{handle} */
+export function crewHandleFromEmail(email?: string | null): string | null {
+  if (!email) return null;
+  const m = email.match(/^sso-(.+)@runhouse-sso\.internal$/);
+  return m ? `@${m[1]}` : null;
+}
+
+/** 요청자 식별 라인 (크루명 · 핸들 · 담당자 · 연락처) */
+function requesterLines(p: {
+  crewName: string;
+  handle?: string | null;
+  requesterName?: string | null;
+  phone?: string | null;
+}): string[] {
+  const lines = [`🏃 크루: ${p.crewName}`];
+  if (p.handle) lines.push(`📸 인스타: ${p.handle}`);
+  if (p.requesterName && p.requesterName !== p.crewName)
+    lines.push(`🙋 담당: ${p.requesterName}`);
+  if (p.phone) lines.push(`📞 연락처: ${p.phone}`);
+  return lines;
+}
+
 export interface FactoryReviewRequestPayload {
   crewName: string;
+  handle?: string | null;
+  requesterName?: string | null;
+  phone?: string | null;
   productName: string;
   colorLabel: string;
   attachmentCount: number;
@@ -53,7 +78,7 @@ export async function notifyFactoryReviewRequest(
   const lines = [
     "🧵 **제작 가능 여부 문의**",
     DIVIDER,
-    `🏃 크루: ${p.crewName}`,
+    ...requesterLines(p),
     `👕 상품: ${p.productName} · ${p.colorLabel}`,
     `📎 첨부: ${p.attachmentCount}개`,
     p.note ? `📝 요청: ${p.note}` : "",
@@ -65,6 +90,9 @@ export async function notifyFactoryReviewRequest(
 
 export interface OperatorReviewResultPayload {
   crewName: string;
+  handle?: string | null;
+  requesterName?: string | null;
+  phone?: string | null;
   productName: string;
   colorLabel: string;
   approved: boolean;
@@ -78,7 +106,7 @@ export async function notifyOperatorReviewResult(
   const lines = [
     p.approved ? "✅ **제작 가능 — 승인**" : "🚫 **제작 불가 — 반려**",
     DIVIDER,
-    `🏃 크루: ${p.crewName}`,
+    ...requesterLines(p),
     `👕 상품: ${p.productName} · ${p.colorLabel}`,
     p.factoryComment ? `💬 공장 의견: ${p.factoryComment}` : "",
   ].filter(Boolean);

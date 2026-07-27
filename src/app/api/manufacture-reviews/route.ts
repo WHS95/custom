@@ -14,7 +14,10 @@ import { DEFAULT_TENANT_ID } from "@/application/tenant-service";
 import { getProductById } from "@/application/product-service";
 import { getCurrentAuthState } from "@/lib/auth/server-auth";
 import { uploadReviewAttachment } from "@/infrastructure/supabase/storage";
-import { notifyFactoryReviewRequest } from "@/lib/discord-notify";
+import {
+  notifyFactoryReviewRequest,
+  crewHandleFromEmail,
+} from "@/lib/discord-notify";
 import type { Json } from "@/infrastructure/supabase/database.types";
 
 const ALLOWED_EXT = [".ai", ".eps", ".pdf", ".psd", ".png", ".jpg", ".jpeg"];
@@ -152,6 +155,9 @@ export async function POST(request: NextRequest) {
         : "https://runhouse-custom.vercel.app");
     notifyFactoryReviewRequest({
       crewName,
+      handle: crewHandleFromEmail(user.email),
+      requesterName: profile?.name,
+      phone: profile?.phone,
       productName: product.name,
       colorLabel: variant.label,
       attachmentCount: attachments.length,

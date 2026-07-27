@@ -7,7 +7,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/infrastructure/supabase";
 import { getProductById } from "@/application/product-service";
-import { notifyOperatorReviewResult } from "@/lib/discord-notify";
+import {
+  notifyOperatorReviewResult,
+  crewHandleFromEmail,
+} from "@/lib/discord-notify";
 
 interface Params {
   params: Promise<{ token: string }>;
@@ -31,7 +34,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     const supabase = createServerSupabaseClient();
     const { data: review } = await supabase
       .from("manufacture_reviews")
-      .select("id, status, crew_name, product_id, color_id")
+      .select("id, status, crew_name, product_id, color_id, creator_user_id")
       .eq("review_token", token)
       .maybeSingle();
     if (!review) {
@@ -59,13 +62,26 @@ export async function POST(request: NextRequest, { params }: Params) {
       .eq("status", "pending"); // 원자적 — 동시 판정 방지
     if (updateError) throw new Error(updateError.message);
 
-    // 운영자 채널 알림
+    // 운영자 채널 알림 — 요청자 식별 정보 조회
     const product = await getProductById(review.product_id);
     const variant = product?.variants.find(
       (v: { id: string }) => v.id === review.color_id,
     );
+    const { data: creator } = await supabase
+      .from("customer_auth_users")
+      .select("email")
+      .eq("id", review.creator_user_id)
+      .maybeSingle();
+    const { data: creatorProfile } = await supabase
+      .from("user_profiles")
+      .select("name, phone")
+      .eq("user_id", review.creator_user_id)
+      .maybeSingle();
     notifyOperatorReviewResult({
       crewName: review.crew_name ?? "크루",
+      handle: crewHandleFromEmail(creator?.email),
+      requesterName: creatorProfile?.name,
+      phone: creatorProfile?.phone,
       productName: product?.name ?? "상품",
       colorLabel: variant?.label ?? review.color_id,
       approved: body.approved,

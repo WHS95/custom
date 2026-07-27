@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/infrastructure/supabase";
 import { getProductById } from "@/application/product-service";
+import { crewHandleFromEmail } from "@/lib/discord-notify";
 import type { HatView } from "@/lib/store/studio-context";
 
 interface Params {
@@ -34,6 +35,18 @@ export async function GET(_request: NextRequest, { params }: Params) {
       (v: { id: string }) => v.id === review.color_id,
     );
 
+    // 요청자 식별 정보 (핸들·담당자·연락처)
+    const { data: creator } = await supabase
+      .from("customer_auth_users")
+      .select("email")
+      .eq("id", review.creator_user_id)
+      .maybeSingle();
+    const { data: creatorProfile } = await supabase
+      .from("user_profiles")
+      .select("name, phone")
+      .eq("user_id", review.creator_user_id)
+      .maybeSingle();
+
     // 색상 뷰 이미지 (HatDesignCanvas 렌더용)
     const views = product
       ? Object.fromEntries(
@@ -47,6 +60,9 @@ export async function GET(_request: NextRequest, { params }: Params) {
       success: true,
       data: {
         crewName: review.crew_name,
+        handle: crewHandleFromEmail(creator?.email),
+        requesterName: creatorProfile?.name ?? null,
+        phone: creatorProfile?.phone || null,
         productName: product?.name ?? "상품",
         note: review.note,
         status: review.status,
