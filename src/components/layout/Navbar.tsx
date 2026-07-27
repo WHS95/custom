@@ -101,7 +101,7 @@ export function Navbar() {
     ...(myStoreToken
       ? [
           {
-            href: `/store/${myStoreToken}/manage`,
+            href: `/store/${myStoreToken}`,
             label: "내 상점",
             icon: Store,
           },
