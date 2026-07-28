@@ -77,6 +77,13 @@ export default async function Home() {
                 갤러리 보기
               </Link>
             </div>
+            <Link
+              href="/guide"
+              className="mt-4 inline-flex items-center gap-1.5 text-sm text-stone underline underline-offset-4 hover:text-canvas transition-colors"
+            >
+              처음이세요? 주문·운영이 어떻게 되는지 보기
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </section>
