@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -33,6 +34,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [crewName, setCrewName] = useState("");
+  const [phone, setPhone] = useState("");
   const [instagram, setInstagram] = useState("");
   const [mapRegistered, setMapRegistered] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,12 +42,16 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email.trim() || !password || !name.trim() || !crewName.trim()) {
+    if (!email.trim() || !password || !name.trim() || !crewName.trim() || !phone.trim()) {
       toast.error("필수 항목을 모두 입력해 주세요.");
       return;
     }
     if (password.length < 6) {
       toast.error("비밀번호는 최소 6자 이상이어야 합니다.");
+      return;
+    }
+    if (phone.replace(/\D/g, "").length < 10) {
+      toast.error("올바른 연락처를 입력해 주세요.");
       return;
     }
 
@@ -57,6 +63,7 @@ export default function SignupPage() {
         name: name.trim(),
         userType: "crew_staff",
         crewName: crewName.trim(),
+        phone: phone.trim(),
         instagram: instagram.trim() || undefined,
         runhouseMapRegistered: mapRegistered,
       });
@@ -130,6 +137,12 @@ export default function SignupPage() {
                   placeholder="홍길동"
                   required
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="phone">연락처 *</Label>
+                <PhoneInput id="phone" value={phone} onChange={setPhone} required />
+                <p className="text-xs text-mute">문의 사항 관련 연락에 사용돼요.</p>
               </div>
 
               <div className="space-y-1.5">

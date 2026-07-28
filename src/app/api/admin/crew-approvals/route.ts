@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase
       .from("user_profiles")
       .select(
-        "id, user_id, name, crew_name, instagram, runhouse_map_registered, created_at",
+        "id, user_id, name, phone, crew_name, instagram, runhouse_map_registered, created_at",
       )
       .eq("discount_status", "pending")
       .order("created_at", { ascending: false });
@@ -78,6 +78,7 @@ export async function GET(request: NextRequest) {
         id: p.id,
         userId: p.user_id,
         name: p.name,
+        phone: p.phone,
         crewName: p.crew_name,
         instagram: p.instagram,
         runhouseMapRegistered: p.runhouse_map_registered,

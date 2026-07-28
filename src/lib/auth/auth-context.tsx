@@ -90,8 +90,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * 회원가입
    */
   const signUp = async (params: SignUpParams) => {
-    const { email, password, name, userType, crewName, instagram, runhouseMapRegistered } =
-      params;
+    const {
+      email,
+      password,
+      name,
+      userType,
+      crewName,
+      instagram,
+      runhouseMapRegistered,
+      phone,
+    } = params;
 
     try {
       const { error } = await authStrategy.signUp({
@@ -102,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         crewName,
         instagram,
         runhouseMapRegistered,
+        phone,
       });
 
       if (error) {

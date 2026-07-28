@@ -36,6 +36,8 @@ export async function POST(request: NextRequest) {
         ? body.instagram.trim().replace(/^@/, "")
         : null;
     const runhouseMapRegistered = body.runhouseMapRegistered === true;
+    const phone =
+      typeof body.phone === "string" ? body.phone.trim() : "";
 
     if (!email || !password || !name) {
       return NextResponse.json(
@@ -98,7 +100,7 @@ export async function POST(request: NextRequest) {
         .insert({
           user_id: userId,
           name,
-          phone: "",
+          phone,
           // 가입 즉시 크루 운영진(상점·제작·알림 전체 기능). 할인만 승인 대기.
           user_type: isCrew ? "crew_staff" : "individual",
           crew_name: crewName,
@@ -124,6 +126,7 @@ export async function POST(request: NextRequest) {
         instagram,
         requesterName: name,
         email,
+        phone,
         runhouseMapRegistered,
         approveUrl: `${base}/admin/login`,
       }).catch((err) => console.error("Discord 할인 요청 알림 실패:", err));

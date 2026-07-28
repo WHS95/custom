@@ -17,6 +17,7 @@ import {
   Calendar,
   Instagram,
   MapPin,
+  Phone,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,6 +25,7 @@ interface PendingItem {
   id: string;
   userId: string;
   name: string;
+  phone: string | null;
   crewName: string;
   instagram: string | null;
   runhouseMapRegistered: boolean;
@@ -195,6 +197,12 @@ export function AdminCrewApprovalsClient({
                               <Mail className="w-3 h-3" />
                               {item.email}
                             </span>
+                            {item.phone && (
+                              <span className="flex items-center gap-1">
+                                <Phone className="w-3 h-3" />
+                                {item.phone}
+                              </span>
+                            )}
                             {item.instagram && (
                               <span className="flex items-center gap-1">
                                 <Instagram className="w-3 h-3" />

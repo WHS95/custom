@@ -37,8 +37,8 @@
 | `PATCH /api/auth/password`, `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` | 비번 변경/재설정 |
 
 > **인증 전환(mig 011)**: 런하우스맵 SSO 연동을 끊고 **이메일 회원가입으로 일원화**.
-> `/login`=이메일/비번 폼, `/signup`=크루 가입 폼(이메일·비번·담당자·크루명·인스타·크루맵
-> 등록 체크박스). `POST /api/auth/signup`은 크루 가입 시 `user_type='crew_staff'` +
+> `/login`=이메일/비번 폼, `/signup`=크루 가입 폼(이메일·비번·담당자·연락처·크루명·인스타·크루맵
+> 등록 체크박스). 연락처(`phone`)는 문의 대응용 — `user_profiles.phone`에 저장, Discord·관리자 목록 노출. `POST /api/auth/signup`은 크루 가입 시 `user_type='crew_staff'` +
 > `discount_status='pending'`로 생성하고 **Discord OPERATOR 웹훅**(`notifyCrewDiscountRequest`)을
 > fire-and-forget 발송(크루맵 등록여부 포함). `/onboarding`은 `/signup`으로 리다이렉트.
 > SSO 백엔드(`crewLoginInline`, `/sso/*`, `/api/crews/search`)는 잔존하나 진입점 제거됨(후속 정리).

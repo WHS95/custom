@@ -93,6 +93,7 @@ export interface CrewDiscountRequestPayload {
   instagram?: string | null;
   requesterName?: string | null;
   email: string;
+  phone?: string | null;
   runhouseMapRegistered: boolean;
   approveUrl?: string; // 관리자 승인 페이지 링크
 }
@@ -113,6 +114,7 @@ export async function notifyCrewDiscountRequest(
     handle ? `📸 인스타: ${handle}` : "",
     p.requesterName ? `🙋 담당: ${p.requesterName}` : "",
     `✉️ 이메일: ${p.email}`,
+    p.phone ? `📞 연락처: ${p.phone}` : "",
     `🗺️ 런하우스크루맵 등록: ${p.runhouseMapRegistered ? "예 ✅" : "아니오 ❌"}`,
     DIVIDER,
     p.approveUrl ? `🔗 승인/거절: ${p.approveUrl}` : "👉 관리자 크루 승인 페이지에서 확인하세요",
