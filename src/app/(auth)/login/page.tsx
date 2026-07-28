@@ -1,9 +1,11 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { CrewLoginInline } from "@/components/cart/CrewLoginInline";
 import { useAuth } from "@/lib/auth/auth-context";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -11,10 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, ArrowLeft, ShieldCheck, ArrowUpRight } from "lucide-react";
+import { Loader2, ArrowLeft, ShieldCheck } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-
-const CREW_REGISTER_URL = "https://www.runhouse.club/register";
 
 const SSO_ERROR_MESSAGES: Record<string, string> = {
   sso_missing_params: "SSO 파라미터가 누락되었습니다. 다시 시도해 주세요.",
@@ -26,10 +26,38 @@ const SSO_ERROR_MESSAGES: Record<string, string> = {
 function LoginContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { refreshProfile } = useAuth();
+  const { signIn } = useAuth();
   const redirectTo = searchParams.get("redirect") || "/";
   const errorKey = searchParams.get("error");
-  const errorMessage = errorKey ? (SSO_ERROR_MESSAGES[errorKey] ?? "로그인 중 오류가 발생했습니다.") : null;
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const errorMessage =
+    formError ??
+    (errorKey ? (SSO_ERROR_MESSAGES[errorKey] ?? "로그인 중 오류가 발생했습니다.") : null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    if (!email.trim() || !password) {
+      setFormError("이메일과 비밀번호를 입력해 주세요.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const { error } = await signIn(email.trim(), password);
+      if (error) {
+        setFormError("이메일 또는 비밀번호가 올바르지 않습니다.");
+        return;
+      }
+      router.replace(redirectTo);
+    } catch {
+      setFormError("로그인 중 오류가 발생했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -78,7 +106,7 @@ function LoginContent() {
             <CardHeader className="text-center pb-2">
               <CardTitle className="text-2xl font-bold text-ink">크루 로그인</CardTitle>
               <CardDescription className="text-mute">
-                RunHouse에 등록된 러닝크루로 로그인하세요
+                이메일과 비밀번호로 로그인하세요
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -88,16 +116,42 @@ function LoginContent() {
                 </div>
               )}
 
-              {/* 인라인 크루 로그인 (인스타 핸들 + PIN, 리다이렉트 없음) */}
-              <CrewLoginInline
-                onSuccess={async () => {
-                  // 세션 쿠키가 생겼으니 클라이언트 인증 상태를 갱신한 뒤 이동
-                  // (갱신 없이는 AuthProvider의 profile이 null로 남아
-                  //  크루 전용 UI가 표시되지 않는다)
-                  await refreshProfile();
-                  router.replace(redirectTo);
-                }}
-              />
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">이메일</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password">비밀번호</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••"
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                      로그인 중...
+                    </>
+                  ) : (
+                    "로그인"
+                  )}
+                </Button>
+              </form>
 
               {/* 혜택 안내 */}
               <div className="rounded-[4px] border border-hairline bg-soft-cloud p-4 space-y-2">
@@ -106,24 +160,21 @@ function LoginContent() {
                   <span className="font-medium">크루 계정 혜택</span>
                 </div>
                 <ul className="space-y-1.5 text-sm text-mute pl-6">
-                  <li>· RunHouse 등록 크루 즉시 10% 할인</li>
+                  <li>· 관리자 승인 시 10% 크루 할인</li>
+                  <li>· 상점 개설·제작 문의는 가입 즉시</li>
                   <li>· 주문·디자인 이력 크루 계정에 귀속</li>
-                  <li>· 별도 회원가입 불필요</li>
                 </ul>
               </div>
 
-              {/* 크루 등록 안내 (inline 링크) */}
+              {/* 가입 안내 */}
               <p className="text-xs text-center text-mute pt-1">
                 처음이신가요?{" "}
-                <a
-                  href={CREW_REGISTER_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-0.5 font-medium text-ink underline underline-offset-2 hover:opacity-70 transition-opacity"
+                <Link
+                  href="/signup"
+                  className="font-medium text-ink underline underline-offset-2 hover:opacity-70 transition-opacity"
                 >
-                  크루 등록하기
-                  <ArrowUpRight className="w-3 h-3" />
-                </a>
+                  크루 회원가입
+                </Link>
               </p>
             </CardContent>
           </Card>
