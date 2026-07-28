@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from 'react'
+import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
   DialogContent,
@@ -13,17 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
-import {
-  Package,
-  Truck,
-  User,
-  Phone,
-  MapPin,
-  Building,
-  CheckCircle,
-  Loader2,
-  AlertCircle,
-} from 'lucide-react'
+import { Package, Truck, User, Phone, MapPin, Building, CheckCircle, AlertCircle } from "lucide-react";
 import { useCartStore, CartItem } from '@/lib/store/cart-store'
 import { useDesignStore } from '@/lib/store/design-store'
 import { toast } from 'sonner'
@@ -406,7 +397,7 @@ export function OrderDialog({ open, onOpenChange }: OrderDialogProps) {
         {/* 처리 중 */}
         {step === 'confirming' && (
           <div className="py-12 flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+            <Spinner className="w-12 h-12 text-blue-600" />
             <p className="text-gray-600">주문을 처리하고 있습니다...</p>
             <p className="text-sm text-gray-400">잠시만 기다려주세요.</p>
           </div>

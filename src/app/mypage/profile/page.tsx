@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
@@ -9,16 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import {
-  Loader2,
-  ArrowLeft,
-  User,
-  MapPin,
-  Lock,
-  Users,
-  Building,
-  Save,
-} from "lucide-react";
+import { ArrowLeft, User, MapPin, Lock, Users, Building, Save } from "lucide-react";
 
 export default function ProfilePage() {
   const { user, profile, isLoading: authLoading, refreshProfile, updatePassword } = useAuth();
@@ -162,7 +154,7 @@ export default function ProfilePage() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        <Spinner className="w-8 h-8" />
       </div>
     );
   }
@@ -347,7 +339,7 @@ export default function ProfilePage() {
           >
             {isSaving ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Spinner className="w-4 h-4 mr-2" />
                 저장 중...
               </>
             ) : (
@@ -413,7 +405,7 @@ export default function ProfilePage() {
               >
                 {isChangingPassword ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Spinner className="w-4 h-4 mr-2" />
                     변경 중...
                   </>
                 ) : (

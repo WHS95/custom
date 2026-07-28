@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { useParams, useRouter } from "next/navigation";
 import { useAdminAuth } from "@/lib/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
@@ -15,18 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  Upload,
-  Loader2,
-  Trash2,
-  Image as ImageIcon,
-  Save,
-  Target,
-  FileText,
-  MessageSquare,
-  Star,
-} from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Image as ImageIcon, Save, Target, FileText, MessageSquare, Star } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type {
   Product,
@@ -191,7 +181,7 @@ function PrintAreaEditor({
         </div>
         <Button size='sm' onClick={handleSave} disabled={isSaving}>
           {isSaving ? (
-            <Loader2 className='h-4 w-4 animate-spin mr-1' />
+            <Spinner />
           ) : (
             <Save className='h-4 w-4 mr-1' />
           )}
@@ -719,7 +709,7 @@ export default function ProductDetailPage() {
     return (
       <div className='container mx-auto py-8 flex items-center justify-center min-h-[400px]'>
         <div className='text-center space-y-4'>
-          <Loader2 className='h-8 w-8 animate-spin mx-auto text-gray-400' />
+          <Spinner />
           <p className='text-gray-500'>상품 정보를 불러오는 중...</p>
         </div>
       </div>
@@ -892,7 +882,7 @@ export default function ProductDetailPage() {
                                     disabled={isUploading}
                                   />
                                   {isUploading ? (
-                                    <Loader2 className='h-8 w-8 animate-spin text-gray-400' />
+                                    <Spinner />
                                   ) : (
                                     <>
                                       <ImageIcon className='h-8 w-8 text-gray-400 mb-2' />
@@ -1021,7 +1011,7 @@ export default function ProductDetailPage() {
                         />
                         <div className='p-2 bg-white rounded-lg shadow hover:bg-gray-100 transition-colors'>
                           {uploadingDetailImage ? (
-                            <Loader2 className='h-4 w-4 animate-spin' />
+                            <Spinner />
                           ) : (
                             <Upload className='h-4 w-4' />
                           )}
@@ -1050,7 +1040,7 @@ export default function ProductDetailPage() {
                       disabled={uploadingDetailImage}
                     />
                     {uploadingDetailImage ? (
-                      <Loader2 className='h-12 w-12 animate-spin text-gray-400 mb-4' />
+                      <Spinner />
                     ) : (
                       <FileText className='h-12 w-12 text-gray-400 mb-4' />
                     )}
@@ -1119,7 +1109,7 @@ export default function ProductDetailPage() {
                 className='w-full sm:w-auto'
               >
                 {savingAdminMessage ? (
-                  <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                  <Spinner />
                 ) : (
                   <Save className='h-4 w-4 mr-2' />
                 )}

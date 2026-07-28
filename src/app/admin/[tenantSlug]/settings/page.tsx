@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { useRouter, useParams } from "next/navigation";
 import { useAdminAuth } from "@/lib/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
@@ -14,15 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  Upload,
-  Loader2,
-  Trash2,
-  Image as ImageIcon,
-  Save,
-  Plus,
-} from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Image as ImageIcon, Save, Plus } from "lucide-react";
 import type { HatView } from "@/lib/store/studio-context";
 import {
   PRINT_COLOR_PALETTE,
@@ -426,7 +419,7 @@ export default function AdminSettingsPage() {
     return (
       <div className='container mx-auto py-8 flex items-center justify-center min-h-[400px]'>
         <div className='text-center space-y-4'>
-          <Loader2 className='h-8 w-8 animate-spin mx-auto text-gray-400' />
+          <Spinner />
           <p className='text-gray-500'>설정을 불러오는 중...</p>
         </div>
       </div>
@@ -509,7 +502,7 @@ export default function AdminSettingsPage() {
                       disabled={isUploadingLogo}
                     />
                     {isUploadingLogo ? (
-                      <Loader2 className='h-8 w-8 animate-spin text-gray-400' />
+                      <Spinner />
                     ) : (
                       <>
                         <ImageIcon className='h-12 w-12 text-gray-400 mb-2' />
@@ -621,7 +614,7 @@ export default function AdminSettingsPage() {
               className='w-full'
             >
               {isSaving ? (
-                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                <Spinner />
               ) : (
                 <Save className='mr-2 h-4 w-4' />
               )}
@@ -732,7 +725,7 @@ export default function AdminSettingsPage() {
                   className='w-full'
                 >
                   {isSaving ? (
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                    <Spinner />
                   ) : (
                     <Save className='mr-2 h-4 w-4' />
                   )}

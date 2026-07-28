@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Star, X, Upload } from "lucide-react";
+import { Star, X, Upload } from "lucide-react";
 import type { CreateReviewDTO } from "@/domain/review/types";
 
 export interface ReviewCreateDialogProps {
@@ -249,7 +250,7 @@ export default function ReviewCreateDialog({
             취소
           </Button>
           <Button onClick={handleCreate} disabled={isCreating}>
-            {isCreating && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+            {isCreating && <Spinner />}
             등록
           </Button>
         </DialogFooter>

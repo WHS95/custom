@@ -1,13 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { Lock, Loader2 } from "lucide-react"
+import { Lock } from "lucide-react";
 
 export default function AdminLoginPage() {
   const [username, setUsername] = useState("")
@@ -92,7 +93,7 @@ export default function AdminLoginPage() {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Spinner className="mr-2 h-4 w-4" />
                   로그인 중...
                 </>
               ) : (

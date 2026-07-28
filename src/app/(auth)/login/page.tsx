@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const SSO_ERROR_MESSAGES: Record<string, string> = {
@@ -144,7 +145,7 @@ function LoginContent() {
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                      <Spinner className="w-4 h-4 mr-1.5" />
                       로그인 중...
                     </>
                   ) : (
@@ -198,7 +199,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-mute" />
+          <Spinner className="w-8 h-8" />
         </div>
       }
     >

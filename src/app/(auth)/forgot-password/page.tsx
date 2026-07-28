@@ -5,6 +5,7 @@
  * 이메일 입력 → 재설정 링크 메일 발송. 계정 존재 여부는 노출하지 않는다.
  */
 import { useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowLeft, Loader2, MailCheck } from "lucide-react";
+import { ArrowLeft, MailCheck } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -119,7 +120,7 @@ export default function ForgotPasswordPage() {
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                      <Spinner className="w-4 h-4 mr-1.5" />
                       전송 중...
                     </>
                   ) : (

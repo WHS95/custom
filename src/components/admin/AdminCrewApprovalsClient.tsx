@@ -1,24 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Users,
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  RefreshCw,
-  ArrowLeft,
-  Mail,
-  Calendar,
-  Instagram,
-  MapPin,
-  Phone,
-} from "lucide-react";
+import { Users, CheckCircle2, XCircle, RefreshCw, ArrowLeft, Mail, Calendar, Instagram, MapPin, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 interface PendingItem {
@@ -163,7 +152,7 @@ export function AdminCrewApprovalsClient({
           <TabsContent value="pending">
             {isLoading ? (
               <div className="flex justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                <Spinner className="w-6 h-6" />
               </div>
             ) : pendingItems.length === 0 ? (
               <Card>
@@ -223,7 +212,7 @@ export function AdminCrewApprovalsClient({
                             disabled={processingId === item.userId}
                           >
                             {processingId === item.userId ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <Spinner className="w-4 h-4" />
                             ) : (
                               <>
                                 <XCircle className="w-4 h-4 mr-1" />
@@ -238,7 +227,7 @@ export function AdminCrewApprovalsClient({
                             disabled={processingId === item.userId}
                           >
                             {processingId === item.userId ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <Spinner className="w-4 h-4" />
                             ) : (
                               <>
                                 <CheckCircle2 className="w-4 h-4 mr-1" />
@@ -258,7 +247,7 @@ export function AdminCrewApprovalsClient({
           <TabsContent value="completed">
             {isLoading ? (
               <div className="flex justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                <Spinner className="w-6 h-6" />
               </div>
             ) : completedItems.length === 0 ? (
               <Card>

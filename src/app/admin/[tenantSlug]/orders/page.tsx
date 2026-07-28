@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Spinner } from "@/components/ui/spinner";
 import { useRouter, useParams } from "next/navigation"
 import { useAdminAuth } from "@/lib/hooks/useAdminAuth"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,36 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Package,
-  Search,
-  RefreshCw,
-  Eye,
-  Edit,
-  Clock,
-  Truck,
-  Factory,
-  Palette,
-  PackageCheck,
-  XCircle,
-  Building,
-  Phone,
-  MapPin,
-  ArrowLeft,
-  Loader2,
-  User,
-  Mail,
-  CreditCard,
-  Save,
-  X,
-  History,
-  FileText,
-  Copy,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  BarChart3,
-} from "lucide-react"
+import { Package, Search, RefreshCw, Eye, Edit, Clock, Truck, Factory, Palette, PackageCheck, XCircle, Building, Phone, MapPin, ArrowLeft, User, Mail, CreditCard, Save, X, History, FileText, Copy, Check, ChevronDown, ChevronUp, BarChart3 } from "lucide-react";
 import { toast } from "sonner"
 import {
   ORDER_STATUS_LABELS,
@@ -423,7 +395,7 @@ export default function AdminOrdersPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <Spinner className="h-8 w-8" />
       </div>
     )
   }

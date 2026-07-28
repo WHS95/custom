@@ -1,21 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Separator } from "@/components/ui/separator";
-import {
-  Save,
-  RotateCcw,
-  RotateCw,
-  FlipHorizontal,
-  FlipVertical,
-  Trash2,
-  Upload,
-  AlertCircle,
-  Loader2,
-  Download,
-  Paperclip,
-  Image as ImageIcon,
-} from "lucide-react";
+import { Save, RotateCcw, RotateCw, FlipHorizontal, FlipVertical, Trash2, Upload, AlertCircle, Download, Paperclip, Image as ImageIcon } from "lucide-react";
 import type { DesignLayer } from "@/components/shared/HatDesignCanvas";
 
 export interface OrderToolsPanelProps {
@@ -86,7 +74,7 @@ export default function OrderToolsPanel({
           className="w-full"
         >
           {saving ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            <Spinner className="w-4 h-4 mr-2" />
           ) : (
             <Save className="w-4 h-4 mr-2" />
           )}

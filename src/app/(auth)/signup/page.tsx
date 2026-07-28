@@ -9,6 +9,7 @@
  * 가입 시 크루맵 등록 여부(자가신고)가 Discord 운영자 채널로 전달된다.
  */
 import { useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -23,7 +24,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SignupPage() {
@@ -192,7 +193,7 @@ export default function SignupPage() {
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                    <Spinner className="w-4 h-4 mr-1.5" />
                     가입 중...
                   </>
                 ) : (

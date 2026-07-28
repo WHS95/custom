@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +21,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Loader2, Trash2, Tag } from "lucide-react";
+import { Plus, Trash2, Tag } from "lucide-react";
 import type {
   Product,
   ProductVariant,
@@ -468,7 +469,7 @@ export default function ProductFormDialog({
             취소
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+            {isSaving && <Spinner />}
             {editingProduct ? "수정" : "생성"}
           </Button>
         </DialogFooter>

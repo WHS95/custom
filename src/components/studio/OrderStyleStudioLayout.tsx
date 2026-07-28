@@ -1,23 +1,12 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  ArrowLeft,
-  Save,
-  Loader2,
-  Upload,
-  Type,
-  RotateCcw,
-  RotateCw,
-  FlipHorizontal,
-  FlipVertical,
-  Trash2,
-  Image as ImageIcon,
-} from "lucide-react";
+import { ArrowLeft, Save, Upload, Type, RotateCcw, RotateCw, FlipHorizontal, FlipVertical, Trash2, Image as ImageIcon } from "lucide-react";
 import type {
   ProductImage,
   ProductWithAreas,
@@ -358,7 +347,7 @@ export function OrderStyleStudioLayout({
               className='w-full'
             >
               {isSaving ? (
-                <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                <Spinner />
               ) : (
                 <Save className='w-4 h-4 mr-2' />
               )}

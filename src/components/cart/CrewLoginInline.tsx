@@ -11,8 +11,9 @@
  * 폴백으로 노출한다.
  */
 import { useState, useTransition, useEffect, useCallback } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
-import { Users as UsersIcon, Loader2, ExternalLink } from "lucide-react";
+import { Users as UsersIcon, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -225,7 +226,7 @@ export function CrewLoginInline({ onSuccess }: CrewLoginInlineProps) {
         >
           {isPending ? (
             <>
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              <Spinner className="mr-1.5 h-3.5 w-3.5" />
               로그인 중...
             </>
           ) : (

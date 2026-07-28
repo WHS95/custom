@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckCircle, Loader2, ArrowLeft } from "lucide-react";
+import { CheckCircle, ArrowLeft } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -61,7 +62,7 @@ export function ConfirmationStep({
           >
             {isSubmitting ? (
               <>
-                <Loader2 className='h-5 w-5 animate-spin mr-2' />
+                <Spinner />
                 주문 처리 중...
               </>
             ) : (

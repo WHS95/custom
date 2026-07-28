@@ -5,6 +5,7 @@
  * 담당자명 + 연락처로 조회 → 마스킹된 이메일 표시.
  */
 import { useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowLeft, Loader2, UserSearch } from "lucide-react";
+import { ArrowLeft, UserSearch } from "lucide-react";
 
 export default function FindAccountPage() {
   const [name, setName] = useState("");
@@ -113,7 +114,7 @@ export default function FindAccountPage() {
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                      <Spinner className="w-4 h-4 mr-1.5" />
                       조회 중...
                     </>
                   ) : (

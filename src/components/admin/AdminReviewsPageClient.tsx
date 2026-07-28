@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 import { useAdminAuth } from "@/lib/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import ReviewStatusFilter from "@/components/admin/reviews/ReviewStatusFilter";
 import ReviewCreateDialog from "@/components/admin/reviews/ReviewCreateDialog";
 import ReviewEditDialog from "@/components/admin/reviews/ReviewEditDialog";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Plus, MessageSquare } from "lucide-react";
+import { ArrowLeft, Plus, MessageSquare } from "lucide-react";
 import type { Review, ReviewStatus } from "@/domain/review/types";
 import { REVIEW_STATUS_LABELS } from "@/domain/review/types";
 
@@ -152,7 +153,7 @@ export function AdminReviewsPageClient({
     return (
       <div className='container mx-auto py-8 flex items-center justify-center min-h-[400px]'>
         <div className='text-center space-y-4'>
-          <Loader2 className='h-8 w-8 animate-spin mx-auto text-gray-400' />
+          <Spinner />
           <p className='text-gray-500'>후기 목록을 불러오는 중...</p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 import { useAdminAuth } from "@/lib/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import AdminProductCard from "@/components/admin/products/ProductCard";
 import ProductFormDialog from "@/components/admin/products/ProductFormDialog";
 import { toast } from "sonner";
-import { Plus, Package, ArrowLeft, Loader2 } from "lucide-react";
+import { Plus, Package, ArrowLeft } from "lucide-react";
 import type { Product } from "@/domain/product/types";
 
 interface AdminProductsPageClientProps {
@@ -124,7 +125,7 @@ export function AdminProductsPageClient({
     return (
       <div className='container mx-auto py-8 flex items-center justify-center min-h-[400px]'>
         <div className='text-center space-y-4'>
-          <Loader2 className='h-8 w-8 animate-spin mx-auto text-gray-400' />
+          <Spinner />
           <p className='text-gray-500'>상품 목록을 불러오는 중...</p>
         </div>
       </div>

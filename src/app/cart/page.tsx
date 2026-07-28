@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/lib/store/cart-store";
@@ -10,20 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import posthog from "posthog-js";
-import {
-  ArrowLeft,
-  Trash2,
-  Minus,
-  Plus,
-  ShoppingBag,
-  Loader2,
-  ChevronDown,
-  ChevronUp,
-  Eye,
-  Pencil,
-  Layers,
-  User,
-} from "lucide-react";
+import { ArrowLeft, Trash2, Minus, Plus, ShoppingBag, ChevronDown, ChevronUp, Eye, Pencil, Layers, User } from "lucide-react";
 import { useDesignStore } from "@/lib/store/design-store";
 import { OrderFormData } from "@/components/cart/StepOrderForm";
 import { OrderModal } from "@/components/cart/OrderModal";
@@ -586,7 +574,7 @@ export default function CartPage() {
 
                 {authLoading ? (
                   <Button className="w-full" size="lg" disabled>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Spinner className="mr-2 h-4 w-4" />
                     로딩 중...
                   </Button>
                 ) : isAuthenticated ? (
@@ -606,7 +594,7 @@ export default function CartPage() {
                     >
                       {isLoadingMessages ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <Spinner className="mr-2 h-4 w-4" />
                           로딩 중...
                         </>
                       ) : (
@@ -625,7 +613,7 @@ export default function CartPage() {
                     >
                       {isLoadingMessages ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <Spinner className="mr-2 h-4 w-4" />
                           로딩 중...
                         </>
                       ) : (
@@ -673,7 +661,7 @@ export default function CartPage() {
             </div>
             {authLoading ? (
               <Button disabled className="px-8">
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Spinner className="h-4 w-4" />
               </Button>
             ) : (
               <Button
@@ -682,7 +670,7 @@ export default function CartPage() {
                 className="px-8"
               >
                 {isLoadingMessages ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Spinner className="h-4 w-4" />
                 ) : (
                   "주문하기"
                 )}

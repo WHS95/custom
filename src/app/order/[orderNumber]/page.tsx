@@ -4,12 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Package,
-  Loader2,
-  ListOrdered,
-  Wrench,
-} from "lucide-react";
+import { Package, ListOrdered, Wrench } from "lucide-react";
 import {
   Sheet,
   SheetContent,

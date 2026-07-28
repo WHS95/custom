@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -14,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft, Star, Upload, X, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Star, Upload, X, AlertCircle } from "lucide-react";
 
 interface WriteReviewClientProps {
   orderNumber?: string;
@@ -305,7 +306,7 @@ export function WriteReviewClient({
               disabled={isSubmitting}
             >
               {isSubmitting && (
-                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                <Spinner />
               )}
               후기 제출
             </Button>

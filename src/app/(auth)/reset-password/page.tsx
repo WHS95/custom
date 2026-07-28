@@ -5,6 +5,7 @@
  * forgot-password 메일의 링크로 진입. 토큰 검증·비번 갱신은 /api/auth/reset-password.
  */
 import { Suspense, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -122,7 +123,7 @@ function ResetPasswordContent() {
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                      <Spinner className="w-4 h-4 mr-1.5" />
                       변경 중...
                     </>
                   ) : (
@@ -151,7 +152,7 @@ export default function ResetPasswordPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-mute" />
+          <Spinner className="w-8 h-8" />
         </div>
       }
     >

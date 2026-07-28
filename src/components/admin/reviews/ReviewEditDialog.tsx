@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import type { Review } from "@/domain/review/types";
 
 export interface ReviewEditDialogProps {
@@ -176,7 +177,7 @@ export default function ReviewEditDialog({
             취소
           </Button>
           <Button onClick={handleEdit} disabled={isEditing}>
-            {isEditing && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+            {isEditing && <Spinner />}
             저장
           </Button>
         </DialogFooter>

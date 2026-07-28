@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 import { useStudioConfig } from "@/lib/store/studio-context";
 import { useAdminAuth } from "@/lib/hooks/useAdminAuth";
@@ -15,19 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import {
-  ExternalLink,
-  RefreshCw,
-  Loader2,
-  Package,
-  ClipboardList,
-  ArrowRight,
-  Cog,
-  LogOut,
-  Settings,
-  MessageSquare,
-  Users,
-} from "lucide-react";
+import { ExternalLink, RefreshCw, Package, ClipboardList, ArrowRight, Cog, LogOut, Settings, MessageSquare, Users } from "lucide-react";
 
 interface AdminDashboardClientProps {
   tenantSlugParam: string;
@@ -100,7 +89,7 @@ export function AdminDashboardClient({
     return (
       <div className='container mx-auto py-8 flex items-center justify-center min-h-[400px]'>
         <div className='text-center space-y-4'>
-          <Loader2 className='h-8 w-8 animate-spin mx-auto text-gray-400' />
+          <Spinner />
           <p className='text-gray-500'>설정을 불러오는 중...</p>
         </div>
       </div>
@@ -122,7 +111,7 @@ export function AdminDashboardClient({
           </p>
           {isSaving && (
             <p className='text-sm text-blue-500 mt-1 flex items-center gap-2'>
-              <Loader2 className='h-3 w-3 animate-spin' />
+              <Spinner />
               저장 중...
             </p>
           )}
@@ -299,7 +288,7 @@ export function AdminDashboardClient({
           </div>
           <Button onClick={handleShippingSave} disabled={isSaving}>
             {isSaving ? (
-              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              <Spinner />
             ) : null}
             설정 저장
           </Button>
