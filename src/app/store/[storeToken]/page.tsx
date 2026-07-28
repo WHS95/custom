@@ -179,31 +179,40 @@ export default function CrewStorePage({
 
       {/* ── 탭바 ── */}
       <div className="sticky top-16 z-40 border-b border-hairline bg-canvas/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4">
-          <div className="flex gap-6">
-            <button className="border-b-2 border-ink py-3 text-sm font-bold">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4">
+          <div className="flex shrink-0 gap-4 sm:gap-6">
+            <button className="whitespace-nowrap border-b-2 border-ink py-3 text-sm font-bold">
               샵홈
             </button>
-            <span className="py-3 text-sm text-muted-foreground">
+            <span className="whitespace-nowrap py-3 text-sm text-muted-foreground">
               굿즈 <sup className="text-xs">{data.products.length}</sup>
             </span>
           </div>
-          <div className="flex gap-2 py-2">
+          <div className="flex shrink-0 gap-1.5 py-2 sm:gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setMyOrdersOpen(true)}
+              aria-label="내 주문"
             >
-              <PackageSearch className="h-4 w-4" /> 내 주문
+              <PackageSearch className="h-4 w-4" />
+              <span className="hidden sm:inline">내 주문</span>
             </Button>
             {data.isOwner && (
               <>
-                <Button variant="outline" size="sm" onClick={copyStoreLink}>
-                  <Copy className="h-4 w-4" /> 링크 복사
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyStoreLink}
+                  aria-label="링크 복사"
+                >
+                  <Copy className="h-4 w-4" />
+                  <span className="hidden sm:inline">링크 복사</span>
                 </Button>
-                <Button size="sm" asChild>
+                <Button size="sm" asChild aria-label="상점 관리">
                   <Link href={`/store/${storeToken}/manage`}>
-                    <Settings className="h-4 w-4" /> 상점 관리
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline">상점 관리</span>
                   </Link>
                 </Button>
               </>
