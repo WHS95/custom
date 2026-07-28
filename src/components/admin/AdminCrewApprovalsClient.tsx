@@ -15,6 +15,8 @@ import {
   ArrowLeft,
   Mail,
   Calendar,
+  Instagram,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,6 +25,8 @@ interface PendingItem {
   userId: string;
   name: string;
   crewName: string;
+  instagram: string | null;
+  runhouseMapRegistered: boolean;
   email: string;
   createdAt: string;
 }
@@ -32,7 +36,9 @@ interface CompletedItem {
   userId: string;
   name: string;
   crewName: string;
-  userType: string;
+  instagram: string | null;
+  runhouseMapRegistered: boolean;
+  discountStatus: "approved" | "rejected";
   createdAt: string;
   updatedAt: string;
 }
@@ -127,9 +133,9 @@ export function AdminCrewApprovalsClient({
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">크루 멤버 승인</h1>
+              <h1 className="text-2xl font-bold">크루 할인 승인</h1>
               <p className="text-sm text-gray-500">
-                크루 멤버 인증 요청을 관리합니다
+                크루 10% 할인가 적용 요청을 관리합니다
               </p>
             </div>
           </div>
@@ -171,17 +177,30 @@ export function AdminCrewApprovalsClient({
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="font-semibold">{item.name}</span>
                             <Badge variant="outline" className="text-xs">
                               {item.crewName}
                             </Badge>
+                            <Badge
+                              variant={item.runhouseMapRegistered ? "default" : "secondary"}
+                              className="text-xs gap-1"
+                            >
+                              <MapPin className="w-3 h-3" />
+                              {item.runhouseMapRegistered ? "크루맵 등록" : "크루맵 미등록"}
+                            </Badge>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-gray-500">
+                          <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
                             <span className="flex items-center gap-1">
                               <Mail className="w-3 h-3" />
                               {item.email}
                             </span>
+                            {item.instagram && (
+                              <span className="flex items-center gap-1">
+                                <Instagram className="w-3 h-3" />
+                                @{item.instagram}
+                              </span>
+                            )}
                             <span className="flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
                               {formatDate(item.createdAt)}
@@ -254,10 +273,10 @@ export function AdminCrewApprovalsClient({
                               </Badge>
                             )}
                             <Badge
-                              variant={item.userType === "crew_staff" ? "default" : "secondary"}
+                              variant={item.discountStatus === "approved" ? "default" : "secondary"}
                               className="text-xs"
                             >
-                              {item.userType === "crew_staff" ? "승인됨" : "거절됨"}
+                              {item.discountStatus === "approved" ? "승인됨" : "거절됨"}
                             </Badge>
                           </div>
                           <div className="text-xs text-gray-500">

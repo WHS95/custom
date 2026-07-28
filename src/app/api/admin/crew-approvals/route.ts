@@ -1,8 +1,11 @@
 /**
- * 관리자 크루 승인 API
+ * 관리자 크루 할인 승인 API
  *
- * GET /api/admin/crew-approvals - crew_pending 목록 조회
- * PUT /api/admin/crew-approvals - 승인/거절 처리
+ * GET /api/admin/crew-approvals - discount_status='pending' 목록 조회
+ * PUT /api/admin/crew-approvals - 할인 승인/거절 처리 (discount_status)
+ *
+ * 기능 접근(user_type=crew_staff)은 가입 즉시 부여되며, 여기서는 10% 할인가
+ * 적용 여부(discount_status)만 관리한다.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -26,7 +29,7 @@ async function checkAdminAuth() {
 }
 
 /**
- * GET - crew_pending / crew_staff 목록 조회
+ * GET - 할인 승인 대기(pending) / 처리 완료(approved·rejected) 목록 조회
  */
 export async function GET(request: NextRequest) {
   if (!(await checkAdminAuth())) {
@@ -41,8 +44,10 @@ export async function GET(request: NextRequest) {
   if (status === "pending") {
     const { data, error } = await supabase
       .from("user_profiles")
-      .select("id, user_id, name, user_type, crew_name, created_at")
-      .eq("user_type", "crew_pending")
+      .select(
+        "id, user_id, name, crew_name, instagram, runhouse_map_registered, created_at",
+      )
+      .eq("discount_status", "pending")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -74,19 +79,22 @@ export async function GET(request: NextRequest) {
         userId: p.user_id,
         name: p.name,
         crewName: p.crew_name,
+        instagram: p.instagram,
+        runhouseMapRegistered: p.runhouse_map_registered,
         email: emailMap[p.user_id] || "",
         createdAt: p.created_at,
       })),
     });
   }
 
-  // 처리 완료 목록 (crew_staff + individual 중 crew_name이 있는 것)
+  // 처리 완료 목록 (승인/거절 완료된 할인 심사)
   const { data, error } = await supabase
     .from("user_profiles")
-    .select("id, user_id, name, user_type, crew_name, created_at, updated_at")
-    .in("user_type", ["crew_staff", "individual"])
-    .not("crew_name", "is", null)
-    .order("updated_at", { ascending: false })
+    .select(
+      "id, user_id, name, crew_name, instagram, runhouse_map_registered, discount_status, discount_reviewed_at, created_at, updated_at",
+    )
+    .in("discount_status", ["approved", "rejected"])
+    .order("discount_reviewed_at", { ascending: false })
     .limit(50);
 
   if (error) {
@@ -100,9 +108,11 @@ export async function GET(request: NextRequest) {
       userId: p.user_id,
       name: p.name,
       crewName: p.crew_name,
-      userType: p.user_type,
+      instagram: p.instagram,
+      runhouseMapRegistered: p.runhouse_map_registered,
+      discountStatus: p.discount_status,
       createdAt: p.created_at,
-      updatedAt: p.updated_at,
+      updatedAt: p.discount_reviewed_at || p.updated_at,
     })),
   });
 }
@@ -134,34 +144,26 @@ export async function PUT(request: NextRequest) {
 
     const supabase = getAdminClient();
 
-    if (action === "approve") {
-      const { error } = await supabase
-        .from("user_profiles")
-        .update({ user_type: "crew_staff" })
-        .eq("user_id", userId)
-        .eq("user_type", "crew_pending");
-
-      if (error) {
-        console.error("승인 처리 에러:", error);
-        return NextResponse.json({ error: "승인 처리 실패" }, { status: 500 });
-      }
-
-      return NextResponse.json({ success: true, message: "승인 완료" });
-    }
-
-    // 거절
+    // 기능 접근(user_type=crew_staff)은 유지하고 할인 승인 상태만 변경한다.
+    const nextStatus = action === "approve" ? "approved" : "rejected";
     const { error } = await supabase
       .from("user_profiles")
-      .update({ user_type: "individual", crew_name: null })
+      .update({
+        discount_status: nextStatus,
+        discount_reviewed_at: new Date().toISOString(),
+      })
       .eq("user_id", userId)
-      .eq("user_type", "crew_pending");
+      .eq("discount_status", "pending");
 
     if (error) {
-      console.error("거절 처리 에러:", error);
-      return NextResponse.json({ error: "거절 처리 실패" }, { status: 500 });
+      console.error("할인 승인 처리 에러:", error);
+      return NextResponse.json({ error: "처리 실패" }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, message: "거절 완료" });
+    return NextResponse.json({
+      success: true,
+      message: action === "approve" ? "승인 완료" : "거절 완료",
+    });
   } catch (error) {
     console.error("승인/거절 처리 에러:", error);
     return NextResponse.json({ error: "처리 중 오류" }, { status: 500 });
