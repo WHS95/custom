@@ -1,7 +1,7 @@
 /**
- * /guide — 크루 굿즈 주문·운영 온보딩 (다크 브랜드 인포그래픽)
- * 러닝 코스(루트) 메타포 + 결과를 보여주는 "증명 카드"로 6단계 여정을 설명.
- * 메인 히어로의 "주문·운영 보기"에서 진입.
+ * /guide — 크루 굿즈 주문·운영 온보딩
+ * 마라톤 코스 메타포: START → 6개 LEG 체크포인트 → FINISH.
+ * 러닝/지도 주제에 근거를 두고 라임은 절제(루트·핵심 액센트만), 라벨은 모노.
  */
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -17,20 +17,21 @@ import {
   ArrowRight,
   ArrowLeft,
   Check,
+  Flag,
 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "운영 가이드 — 크루 굿즈는 이렇게 운영해요",
   description:
-    "디자인부터 제작 확인, 상점 오픈, 사이즈 취합, 일괄 주문까지 — 크루 운영진의 6단계 여정.",
+    "START부터 FINISH까지, 디자인·제작 확인·상점·취합·일괄 주문 6개 코스로 보는 크루 운영.",
 };
 
 type RoleKey = "operator" | "member" | "factory" | "admin";
-const ROLE: Record<RoleKey, { label: string; dot: string; pill: string }> = {
-  operator: { label: "운영진", dot: "bg-[#C7FF00]", pill: "bg-[#C7FF00] text-[#0B0C0A]" },
-  member: { label: "크루원", dot: "bg-white", pill: "bg-white text-[#0B0C0A]" },
-  factory: { label: "공장", dot: "bg-amber-400", pill: "bg-amber-400 text-[#0B0C0A]" },
-  admin: { label: "관리자", dot: "bg-white/30", pill: "border border-white/25 text-stone" },
+const ROLE: Record<RoleKey, string> = {
+  operator: "운영진",
+  member: "크루원",
+  factory: "공장",
+  admin: "관리자",
 };
 
 interface Leg {
@@ -99,21 +100,6 @@ const MANAGE = [
   { icon: ClipboardCheck, title: "내 제작 문의", body: "심사 상태·공장 의견을 추적하고 바로 상점에 등록." },
 ];
 
-function RolePills({ roles }: { roles: RoleKey[] }) {
-  return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      {roles.map((r) => (
-        <span
-          key={r}
-          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide ${ROLE[r].pill}`}
-        >
-          {ROLE[r].label}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 export default function GuidePage() {
   return (
     <div className="min-h-screen bg-ink text-canvas">
@@ -121,10 +107,9 @@ export default function GuidePage() {
       <section className="relative overflow-hidden">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-[#C7FF00] opacity-[0.10] blur-[120px]"
+          className="pointer-events-none absolute -right-32 -top-32 h-[28rem] w-[28rem] rounded-full bg-[#C7FF00] opacity-[0.07] blur-[130px]"
         />
-
-        <div className="relative mx-auto max-w-3xl px-5 pb-16 pt-12 sm:pb-24 sm:pt-16">
+        <div className="relative mx-auto max-w-3xl px-5 pb-14 pt-12 sm:pb-20 sm:pt-16">
           <Link
             href="/"
             className="mb-10 inline-flex items-center gap-1 text-sm text-stone transition-colors hover:text-canvas"
@@ -132,19 +117,24 @@ export default function GuidePage() {
             <ArrowLeft className="h-4 w-4" />홈으로
           </Link>
 
-          <p className="text-kicker mb-5 text-[#C7FF00]">· HOW CREW OPS WORK ·</p>
-          <h1 className="font-display text-[44px] uppercase leading-[0.92] tracking-[0] sm:text-[72px]">
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-[#C7FF00]">
+            How crew ops work
+          </p>
+          <h1 className="mt-5 font-display text-[44px] uppercase leading-[0.92] tracking-[0] sm:text-[72px]">
             크루 굿즈,
             <br />
             이렇게 <span className="text-[#C7FF00]">운영해요</span>
           </h1>
           <p className="mt-6 max-w-lg text-base leading-relaxed text-stone sm:text-lg">
             디자인 한 번이면 제작 확인부터 크루원 사이즈 취합, 일괄 주문까지.
-            운영진이 달리는 6개의 코스를 따라가 보세요.
+            START에서 FINISH까지 6개 코스를 따라가 보세요.
           </p>
 
-          {/* Toss식 증명 카드 — 결과를 먼저 보여준다 */}
-          <div className="mt-10 max-w-sm rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm">
+          {/* 증명 카드 — 결과를 먼저 */}
+          <div className="mt-10 max-w-sm rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.25em] text-stone/70">
+              Finish line
+            </p>
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#C7FF00] text-[#0B0C0A]">
                 <Check className="h-5 w-5" strokeWidth={3} />
@@ -154,80 +144,94 @@ export default function GuidePage() {
                 <p className="text-sm text-stone">굿즈 3종 · 24명 참여 · 한 번에 주문</p>
               </div>
             </div>
-            <div className="mt-4 flex items-center gap-2 border-t border-white/10 pt-3 text-xs text-[#C7FF00]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#C7FF00]" />
-              링크 하나로 취합·결제까지 끝
-            </div>
           </div>
         </div>
       </section>
 
-      {/* ── 역할 범례 ── */}
-      <section className="border-y border-white/10 bg-white/[0.02]">
-        <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-6 gap-y-2 px-5 py-4 text-sm text-stone">
-          <span className="text-xs uppercase tracking-widest text-stone/60">함께하는 사람</span>
-          {(Object.keys(ROLE) as RoleKey[]).map((r) => (
-            <span key={r} className="inline-flex items-center gap-2">
-              <span className={`h-2.5 w-2.5 rounded-full ${ROLE[r].dot}`} />
-              {ROLE[r].label}
+      {/* ── 코스: START → 6 LEG → FINISH ── */}
+      <section className="mx-auto max-w-3xl px-5 pb-6 sm:pb-10">
+        {/* START */}
+        <div className="mb-4 flex items-center gap-4">
+          <div className="flex w-12 shrink-0 justify-center">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#C7FF00]" />
+          </div>
+          <div className="flex flex-1 items-center gap-2.5">
+            <span className="font-mono text-xs uppercase tracking-[0.3em] text-[#C7FF00]">
+              Start
             </span>
-          ))}
+            <span className="h-px flex-1 bg-white/10" />
+          </div>
         </div>
-      </section>
 
-      {/* ── 6개 LEG — 스택 카드 + 라임 넘버 ── */}
-      <section className="mx-auto max-w-3xl px-5 py-16 sm:py-24">
-        <div className="space-y-4 sm:space-y-5">
-          {LEGS.map((leg) => {
+        <ol>
+          {LEGS.map((leg, i) => {
             const Icon = leg.icon;
+            const last = i === LEGS.length - 1;
             return (
-              <article
-                key={leg.n}
-                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] p-6 transition-colors hover:border-[#C7FF00]/40 hover:bg-white/[0.04] sm:p-8"
-              >
-                {/* 큰 라임 아웃라인 넘버 (구조적 장치 — 실제 순서) */}
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute -right-1 top-2 select-none font-display text-[88px] font-black leading-none tracking-tighter text-transparent sm:text-[120px]"
-                  style={{ WebkitTextStroke: "1px rgba(199,255,0,0.16)" }}
-                >
-                  {leg.n}
-                </span>
-
-                <div className="relative flex items-start gap-4 sm:gap-5">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#C7FF00] text-[#0B0C0A] sm:h-12 sm:w-12">
-                    <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                      <span className="font-display text-xs tracking-widest text-[#C7FF00]">
-                        LEG {leg.n}
-                      </span>
-                      <RolePills roles={leg.roles} />
-                    </div>
-                    <h2 className="mt-1.5 text-xl font-bold text-canvas sm:text-2xl">
-                      {leg.title}
-                    </h2>
-                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-stone sm:text-base">
-                      {leg.body}
-                    </p>
-                    <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 text-xs text-stone">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#C7FF00]" />
-                      {leg.where}
-                    </p>
+              <li key={leg.n} className="flex gap-4">
+                {/* 레일 컬럼: 배번 + 연결선 */}
+                <div className="flex w-12 shrink-0 flex-col items-center">
+                  <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-ink">
+                    <span
+                      aria-hidden
+                      className="absolute inset-x-2 top-0 h-[3px] rounded-b bg-[#C7FF00]"
+                    />
+                    <span className="font-display text-lg leading-none text-canvas">
+                      {leg.n}
+                    </span>
                   </div>
+                  {!last && <span aria-hidden className="mt-1 w-px flex-1 bg-white/12" />}
                 </div>
-              </article>
+
+                {/* 내용 */}
+                <div className="flex-1 pb-9">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] uppercase tracking-[0.18em] text-stone/70">
+                    <span className="text-[#C7FF00]">LEG {leg.n}</span>
+                    <span className="text-white/20">/</span>
+                    {leg.roles.map((r) => (
+                      <span key={r}>{ROLE[r]}</span>
+                    ))}
+                  </div>
+                  <h2 className="mt-1.5 flex items-center gap-2 text-xl font-bold text-canvas sm:text-2xl">
+                    <Icon className="h-5 w-5 shrink-0 text-stone" />
+                    {leg.title}
+                  </h2>
+                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-stone sm:text-[15px]">
+                    {leg.body}
+                  </p>
+                  <p className="mt-3 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wide text-stone/60">
+                    <span className="h-1 w-1 rounded-full bg-[#C7FF00]" />
+                    {leg.where}
+                  </p>
+                </div>
+              </li>
             );
           })}
+        </ol>
+
+        {/* FINISH */}
+        <div className="flex items-center gap-4">
+          <div className="flex w-12 shrink-0 justify-center">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#C7FF00] text-[#0B0C0A]">
+              <Flag className="h-3 w-3" strokeWidth={3} />
+            </span>
+          </div>
+          <div className="flex flex-1 items-center gap-2.5">
+            <span className="font-mono text-xs uppercase tracking-[0.3em] text-[#C7FF00]">
+              Finish
+            </span>
+            <span className="h-px flex-1 bg-white/10" />
+          </div>
         </div>
       </section>
 
       {/* ── 운영 대시보드 ── */}
-      <section className="border-t border-white/10">
-        <div className="mx-auto max-w-3xl px-5 py-16 sm:py-20">
-          <p className="text-kicker mb-3 text-[#C7FF00]">· 언제든 여기서 관리해요 ·</p>
-          <h2 className="font-display text-2xl uppercase tracking-wide sm:text-3xl">
+      <section className="mt-10 border-t border-white/10">
+        <div className="mx-auto max-w-3xl px-5 py-14 sm:py-20">
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-stone/70">
+            After the finish
+          </p>
+          <h2 className="mt-3 font-display text-2xl uppercase tracking-wide sm:text-3xl">
             운영 대시보드
           </h2>
           <p className="mt-3 max-w-lg text-sm text-stone sm:text-base">
@@ -241,7 +245,7 @@ export default function GuidePage() {
                   key={m.title}
                   className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 transition-colors hover:border-white/20"
                 >
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#C7FF00] text-[#0B0C0A]">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-canvas">
                     <Icon className="h-5 w-5" />
                   </span>
                   <h3 className="mt-3 font-bold text-canvas">{m.title}</h3>
@@ -255,7 +259,7 @@ export default function GuidePage() {
 
       {/* ── CTA ── */}
       <section className="border-t border-white/10">
-        <div className="mx-auto max-w-3xl px-5 py-16 text-center sm:py-20">
+        <div className="mx-auto max-w-3xl px-5 py-14 text-center sm:py-20">
           <h2 className="font-display text-2xl uppercase tracking-wide sm:text-4xl">
             이제 코스를 출발해요
           </h2>
