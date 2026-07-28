@@ -88,6 +88,38 @@ export async function notifyFactoryReviewRequest(
   return post(FACTORY_WEBHOOK_URL, lines.join("\n"));
 }
 
+export interface CrewDiscountRequestPayload {
+  crewName: string;
+  instagram?: string | null;
+  requesterName?: string | null;
+  email: string;
+  runhouseMapRegistered: boolean;
+  approveUrl?: string; // 관리자 승인 페이지 링크
+}
+
+/** 운영자 채널: 신규 크루 할인 승인 요청 */
+export async function notifyCrewDiscountRequest(
+  p: CrewDiscountRequestPayload,
+): Promise<boolean> {
+  const handle = p.instagram
+    ? p.instagram.startsWith("@")
+      ? p.instagram
+      : `@${p.instagram}`
+    : null;
+  const lines = [
+    "🎟️ **크루 할인 승인 요청**",
+    DIVIDER,
+    `🏃 크루: ${p.crewName}`,
+    handle ? `📸 인스타: ${handle}` : "",
+    p.requesterName ? `🙋 담당: ${p.requesterName}` : "",
+    `✉️ 이메일: ${p.email}`,
+    `🗺️ 런하우스크루맵 등록: ${p.runhouseMapRegistered ? "예 ✅" : "아니오 ❌"}`,
+    DIVIDER,
+    p.approveUrl ? `🔗 승인/거절: ${p.approveUrl}` : "👉 관리자 크루 승인 페이지에서 확인하세요",
+  ].filter(Boolean);
+  return post(OPERATOR_WEBHOOK_URL, lines.join("\n"));
+}
+
 export interface OperatorReviewResultPayload {
   crewName: string;
   handle?: string | null;

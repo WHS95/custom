@@ -13,6 +13,7 @@ import {
   getSessionCookieOptions,
   normalizeEmail,
 } from "@/lib/auth/session";
+import { notifyCrewDiscountRequest } from "@/lib/discord-notify";
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,10 +31,23 @@ export async function POST(request: NextRequest) {
       typeof body.crewName === "string" && body.crewName.trim()
         ? body.crewName.trim()
         : null;
+    const instagram =
+      typeof body.instagram === "string" && body.instagram.trim()
+        ? body.instagram.trim().replace(/^@/, "")
+        : null;
+    const runhouseMapRegistered = body.runhouseMapRegistered === true;
 
     if (!email || !password || !name) {
       return NextResponse.json(
         { error: "필수 정보가 누락되었습니다." },
+        { status: 400 },
+      );
+    }
+
+    // 크루 가입은 크루명 필수 (개인 가입은 crewName 없이 허용)
+    if (userType !== "individual" && !crewName) {
+      return NextResponse.json(
+        { error: "크루명을 입력해 주세요." },
         { status: 400 },
       );
     }
@@ -78,14 +92,19 @@ export async function POST(request: NextRequest) {
 
     try {
       const supabase = createServerSupabaseClient();
+      const isCrew = userType !== "individual";
       const { error: profileError } = await supabase
         .from("user_profiles")
         .insert({
           user_id: userId,
           name,
           phone: "",
-          user_type: userType,
+          // 가입 즉시 크루 운영진(상점·제작·알림 전체 기능). 할인만 승인 대기.
+          user_type: isCrew ? "crew_staff" : "individual",
           crew_name: crewName,
+          instagram,
+          runhouse_map_registered: runhouseMapRegistered,
+          discount_status: isCrew ? "pending" : null,
         });
 
       if (profileError) {
@@ -94,6 +113,19 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       await deleteAuthUser(userId);
       throw error;
+    }
+
+    // 크루 가입이면 운영자 Discord로 할인 승인 요청 발송 (fire-and-forget)
+    if (userType !== "individual" && crewName) {
+      const origin = request.nextUrl.origin;
+      notifyCrewDiscountRequest({
+        crewName,
+        instagram,
+        requesterName: name,
+        email,
+        runhouseMapRegistered,
+        approveUrl: `${origin}/admin`,
+      }).catch((err) => console.error("Discord 할인 요청 알림 실패:", err));
     }
 
     const { token, expiresAt } = await createSessionForUser(userId);
