@@ -20,6 +20,11 @@ export interface UserProfile {
   phone: string;
   user_type: "individual" | "crew_staff" | "crew_pending";
   crew_name: string | null;
+  instagram: string | null;
+  runhouse_map_registered: boolean;
+  /** 할인 승인 상태 — null(개인) | pending | approved | rejected */
+  discount_status: "pending" | "approved" | "rejected" | null;
+  discount_reviewed_at: string | null;
   default_address: {
     recipientName: string;
     phone: string;
@@ -40,6 +45,8 @@ export interface SignUpParams {
   name: string;
   userType: "individual" | "crew_staff" | "crew_pending";
   crewName?: string;
+  instagram?: string;
+  runhouseMapRegistered?: boolean;
 }
 
 export interface AuthStatePayload {

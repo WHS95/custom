@@ -999,11 +999,15 @@ export type Database = {
           created_at: string
           crew_name: string | null
           default_address: Json | null
+          discount_reviewed_at: string | null
+          discount_status: string | null
           id: string
+          instagram: string | null
           marketing_agreed: boolean
           marketing_agreed_at: string | null
           name: string
           phone: string
+          runhouse_map_registered: boolean
           tenant_id: string
           updated_at: string
           user_id: string
@@ -1013,11 +1017,15 @@ export type Database = {
           created_at?: string
           crew_name?: string | null
           default_address?: Json | null
+          discount_reviewed_at?: string | null
+          discount_status?: string | null
           id?: string
+          instagram?: string | null
           marketing_agreed?: boolean
           marketing_agreed_at?: string | null
           name: string
           phone?: string
+          runhouse_map_registered?: boolean
           tenant_id?: string
           updated_at?: string
           user_id: string
@@ -1027,11 +1035,15 @@ export type Database = {
           created_at?: string
           crew_name?: string | null
           default_address?: Json | null
+          discount_reviewed_at?: string | null
+          discount_status?: string | null
           id?: string
+          instagram?: string | null
           marketing_agreed?: boolean
           marketing_agreed_at?: string | null
           name?: string
           phone?: string
+          runhouse_map_registered?: boolean
           tenant_id?: string
           updated_at?: string
           user_id?: string
