@@ -73,6 +73,7 @@
 | `GET /api/manufacture-reviews` | 🧑‍🤝‍🧑 | 내 제작 문의 목록(상태·등록여부·공장의견) |
 | `GET /api/notifications` | 🧑‍🤝‍🧑 | 알림 피드 — 크루 할인 승인/반려 + 제작 판정 + 내 상점 신규 주문 시간순 병합(파생, 이벤트 테이블 없음). 할인 알림은 `profile.discount_status`+`discount_reviewed_at`에서 파생. 화면 `/notifications`, 읽음은 localStorage |
 | `GET /api/manufacture-reviews/[token]` | 🟢 | 공장 확인 페이지 데이터(시안·색상뷰·첨부) |
+| `GET /api/factory/order/[token]` | 🟢 | 공장 제작 주문 확인(orders.factory_token) — 굿즈별 시안(design_snapshot)·사이즈·수량·배송지. 화면 `/factory/order/[token]`(DesignReviewDetail 재사용). 주문 확정(convert/convert-all) 시 토큰 발급+공장 Discord 알림(notifyFactoryOrder) |
 | `POST /api/manufacture-reviews/[token]/decision` | 🟢 | 제작가능/불가 판정(pending 원자적, 중복 차단) → 운영자 채널 Discord |
 
 > 화면: `/review/[token]`(공장, 공개·토큰), `/manufacture-reviews`(크루 내 문의).

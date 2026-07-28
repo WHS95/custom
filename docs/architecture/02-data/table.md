@@ -27,7 +27,9 @@
 `id(PK)`, `tenant_id→tenants`, `customer_id→customers`, `user_id→customer_auth_users(SET NULL)`,
 `order_number`, `customer_name/phone/email`, `subtotal`, `shipping_cost`, `total_amount`,
 `shipping_info(JSONB)`, `status`(enum order_status), `admin_memo`, `attachment_files(JSONB)`,
-`payment_link`, `payment_status`, `paid_at`.
+`payment_link`, `payment_status`, `paid_at`, `factory_token`(UNIQUE, nullable — mig 012).
+> mig 012: 크루 스토어 주문 확정 시 발급하는 공장 확인용 추측불가 토큰.
+> 공장이 `/factory/order/{token}`에서 주문 아이템의 시안(design_snapshot)·사이즈·수량·배송지 확인.
 
 ### order_items
 `id(PK)`, `order_id→orders`, `product_id`, `product_name`, `color`, `color_label`, `size`,
