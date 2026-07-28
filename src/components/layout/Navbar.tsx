@@ -22,7 +22,6 @@ import {
   Menu,
   Home,
   Image,
-  Package,
   Instagram,
   Globe,
   Store,
@@ -91,9 +90,6 @@ export function Navbar() {
             icon: ClipboardCheck,
           },
         ]
-      : []),
-    ...(isAuthenticated
-      ? [{ href: "/mypage/orders", label: t("common.myOrders"), icon: Package }]
       : []),
   ];
 
@@ -176,7 +172,7 @@ export function Navbar() {
           ) : isAuthenticated ? (
             <div className="flex items-center gap-1">
               <Link href="/mypage">
-                <Button variant="ghost" size="sm" className="gap-2">
+                <Button size="sm" className="gap-2">
                   {profile?.user_type === "crew_staff" ? (
                     <Users className="w-4 h-4 text-[#C7FF00]" />
                   ) : (
