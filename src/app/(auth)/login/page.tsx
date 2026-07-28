@@ -151,6 +151,15 @@ function LoginContent() {
                     "로그인"
                   )}
                 </Button>
+                <div className="flex items-center justify-center gap-2 text-xs text-mute pt-1">
+                  <Link href="/find-account" className="hover:text-ink underline underline-offset-2">
+                    아이디 찾기
+                  </Link>
+                  <span className="text-hairline">·</span>
+                  <Link href="/forgot-password" className="hover:text-ink underline underline-offset-2">
+                    비밀번호 찾기
+                  </Link>
+                </div>
               </form>
 
               {/* 혜택 안내 */}

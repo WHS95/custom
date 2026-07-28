@@ -34,7 +34,8 @@
 | `POST /api/auth/signup` `\|` `/login` `\|` `/logout`, `GET /api/auth/session` | 이메일/비번 인증·세션 |
 | `POST /api/auth/check-email` | 이메일 중복 확인 |
 | `POST|PATCH /api/auth/profile` | 프로필 생성/수정 |
-| `PATCH /api/auth/password`, `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` | 비번 변경/재설정 |
+| `PATCH /api/auth/password`, `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` | 비번 변경/재설정. forgot-password는 Edge Function `auth-email`(Resend)로 재설정 링크 메일 발송(env 미설정 시 스킵). UI: `/forgot-password`·`/reset-password` |
+| `POST /api/auth/find-email` | 아이디(이메일) 찾기 — 담당자명+연락처→마스킹 이메일(SSO 스텁·연락처 없는 계정 제외). UI: `/find-account` |
 
 > **인증 전환(mig 011)**: 런하우스맵 SSO 연동을 끊고 **이메일 회원가입으로 일원화**.
 > `/login`=이메일/비번 폼, `/signup`=크루 가입 폼(이메일·비번·담당자·연락처·크루명·인스타·크루맵
