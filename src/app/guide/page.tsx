@@ -119,16 +119,6 @@ export default function GuidePage() {
     <div className="min-h-screen bg-ink text-canvas">
       {/* ── Hero ── */}
       <section className="relative overflow-hidden">
-        {/* 카토그래픽 그리드 텍스처 */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.06]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
-        />
         <div
           aria-hidden
           className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-[#C7FF00] opacity-[0.10] blur-[120px]"
