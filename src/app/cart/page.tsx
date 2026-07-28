@@ -295,8 +295,8 @@ export default function CartPage() {
     return sum + (base - item.unitPrice) * item.quantity;
   }, 0);
 
-  // 크루 할인 계산
-  const isCrewMember = profile?.user_type === "crew_staff";
+  // 크루 할인 계산 — 관리자 승인(discount_status='approved') 시에만 적용
+  const isCrewMember = profile?.discount_status === "approved";
   const subtotal = getTotalPrice();
   const crewDiscount = getCrewDiscountAmount(subtotal, isCrewMember);
   const finalTotal = subtotal - crewDiscount;
@@ -573,9 +573,14 @@ export default function CartPage() {
                     크루 회원 {getCrewDiscountLabel()} 할인 적용 중
                   </Badge>
                 )}
-                {!isCrewMember && isAuthenticated && (
+                {!isCrewMember && isAuthenticated && profile?.discount_status === "pending" && (
                   <p className="text-xs text-center text-gray-500">
-                    크루 회원으로 가입하면 {getCrewDiscountLabel()} 추가 할인!
+                    크루 할인 승인 대기 중이에요. 승인되면 {getCrewDiscountLabel()} 할인이 적용돼요.
+                  </p>
+                )}
+                {!isCrewMember && isAuthenticated && profile?.discount_status !== "pending" && (
+                  <p className="text-xs text-center text-gray-500">
+                    크루로 가입하면 승인 후 {getCrewDiscountLabel()} 할인!
                   </p>
                 )}
 

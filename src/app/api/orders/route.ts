@@ -96,10 +96,10 @@ export async function POST(request: NextRequest) {
         const { data: profile } = await supabase
           .schema("runhousecustom")
           .from("user_profiles")
-          .select("user_type")
+          .select("discount_status")
           .eq("user_id", body.userId)
           .maybeSingle();
-        isCrewMember = profile?.user_type === "crew_staff";
+        isCrewMember = profile?.discount_status === "approved";
       } catch (err) {
         console.error("크루 회원 확인 에러:", err);
       }
