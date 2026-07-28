@@ -117,14 +117,15 @@ export async function POST(request: NextRequest) {
 
     // 크루 가입이면 운영자 Discord로 할인 승인 요청 발송 (fire-and-forget)
     if (userType !== "individual" && crewName) {
-      const origin = request.nextUrl.origin;
+      const base =
+        process.env.NEXT_PUBLIC_SITE_URL ?? "https://runhouse-custom.vercel.app";
       notifyCrewDiscountRequest({
         crewName,
         instagram,
         requesterName: name,
         email,
         runhouseMapRegistered,
-        approveUrl: `${origin}/admin`,
+        approveUrl: `${base}/admin/login`,
       }).catch((err) => console.error("Discord 할인 요청 알림 실패:", err));
     }
 
