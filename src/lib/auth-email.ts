@@ -4,6 +4,10 @@
  */
 const AUTH_EMAIL_FUNCTION_URL = process.env.SUPABASE_AUTH_EMAIL_FUNCTION_URL;
 const AUTH_EMAIL_SECRET = process.env.AUTH_EMAIL_FUNCTION_SECRET;
+// Supabase Edge Function 게이트웨이는 기본적으로 유효한 Supabase JWT를 요구한다.
+// anon 키(공개)를 Authorization으로 전달해 게이트웨이를 통과시키고,
+// 실제 인증은 함수 내부의 x-auth-email-secret로 한다.
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<boolean> {
   if (!AUTH_EMAIL_FUNCTION_URL || !AUTH_EMAIL_SECRET) {
@@ -19,6 +23,12 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
       headers: {
         "Content-Type": "application/json",
         "x-auth-email-secret": AUTH_EMAIL_SECRET,
+        ...(SUPABASE_ANON_KEY
+          ? {
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+              apikey: SUPABASE_ANON_KEY,
+            }
+          : {}),
       },
       body: JSON.stringify({ type: "password_reset", to, resetUrl }),
     });
