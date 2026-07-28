@@ -36,11 +36,13 @@
 | `POST|PATCH /api/auth/profile` | 프로필 생성/수정 |
 | `PATCH /api/auth/password`, `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` | 비번 변경/재설정 |
 
-> **로그인 UI 주의**: `/login` 페이지는 **크루 SSO 로그인 전용**(인스타 핸들 + PIN →
-> `crewLoginInline` 서버 액션 → IdP `/api/sso/verify-pin` 백채널). 이메일/비번 로그인은
-> `POST /api/auth/login` API만 존재하고 **이를 쓰는 UI 페이지는 현재 없다**.
-> SSO 계정(`sso-{핸들}@runhouse-sso.internal`)은 `password_hash="sso-no-password"`로
-> 이메일 로그인이 의도적으로 차단됨.
+> **인증 전환(mig 011)**: 런하우스맵 SSO 연동을 끊고 **이메일 회원가입으로 일원화**.
+> `/login`=이메일/비번 폼, `/signup`=크루 가입 폼(이메일·비번·담당자·크루명·인스타·크루맵
+> 등록 체크박스). `POST /api/auth/signup`은 크루 가입 시 `user_type='crew_staff'` +
+> `discount_status='pending'`로 생성하고 **Discord OPERATOR 웹훅**(`notifyCrewDiscountRequest`)을
+> fire-and-forget 발송(크루맵 등록여부 포함). `/onboarding`은 `/signup`으로 리다이렉트.
+> SSO 백엔드(`crewLoginInline`, `/sso/*`, `/api/crews/search`)는 잔존하나 진입점 제거됨(후속 정리).
+> 기존 SSO 계정(`sso-{핸들}@runhouse-sso.internal`)은 `password_hash="sso-no-password"`로 이메일 로그인 차단.
 >
 > **클라이언트 인증 상태 갱신 규칙**: `AuthProvider`는 마운트 시 1회만 세션을 로드한다.
 > 따라서 **로그인 성공 콜백은 반드시 `refreshProfile()`을 호출한 뒤 이동**해야 한다
@@ -68,7 +70,7 @@
 |-------------|------|------|
 | `POST /api/manufacture-reviews` | 🧑‍🤝‍🧑 | 디자인+참고첨부(multipart) 심사 제출 → pending, 공장 채널 Discord |
 | `GET /api/manufacture-reviews` | 🧑‍🤝‍🧑 | 내 제작 문의 목록(상태·등록여부·공장의견) |
-| `GET /api/notifications` | 🧑‍🤝‍🧑 | 알림 피드 — 제작 판정+내 상점 신규 주문 시간순 병합(파생, 이벤트 테이블 없음). 화면 `/notifications`, 읽음은 localStorage |
+| `GET /api/notifications` | 🧑‍🤝‍🧑 | 알림 피드 — 크루 할인 승인/반려 + 제작 판정 + 내 상점 신규 주문 시간순 병합(파생, 이벤트 테이블 없음). 할인 알림은 `profile.discount_status`+`discount_reviewed_at`에서 파생. 화면 `/notifications`, 읽음은 localStorage |
 | `GET /api/manufacture-reviews/[token]` | 🟢 | 공장 확인 페이지 데이터(시안·색상뷰·첨부) |
 | `POST /api/manufacture-reviews/[token]/decision` | 🟢 | 제작가능/불가 판정(pending 원자적, 중복 차단) → 운영자 채널 Discord |
 
@@ -81,7 +83,7 @@
 | 경로 | 설명 |
 |------|------|
 | `POST /api/admin/login` `\|` `/logout`, `GET /api/admin/me` | 관리자 JWT 세션 |
-| `GET|PUT /api/admin/crew-approvals` | crew_pending 목록 / 승인·거부 |
+| `GET|PUT /api/admin/crew-approvals` | 할인 승인 대기(`discount_status='pending'`) 목록(인스타·크루맵 등록여부 포함) / 승인·거부(`discount_status`+`discount_reviewed_at`, `user_type`은 유지) |
 
 ## 크루 취합 (Collections)
 
@@ -116,8 +118,8 @@
 
 | 메서드/경로 | 인증 | 설명 |
 |-------------|------|------|
-| `GET /api/crews/search?q=` | 🟢 | 크로스앱 `public.crews` 검색 |
-| `POST /api/crew-approval/notify` | 내부 | 프로필 생성 후 Slack 통지(fire-and-forget) |
+| `GET /api/crews/search?q=` | 🟢 | 크로스앱 `public.crews` 검색 — **미사용(진입점 제거, mig 011)** |
+| `POST /api/crew-approval/notify` | 내부 | Slack 통지 — **미사용**(할인 요청은 signup에서 Discord OPERATOR로 대체, mig 011) |
 | `GET|POST /api/reviews`, `GET|PATCH|DELETE /api/reviews/[reviewId]` | 🟢/🔑 | 리뷰 CRUD/승인 |
 | `GET /api/sso/initiate` | 🟢 | 리다이렉트 SSO 시작(state 쿠키→IdP) |
 | `POST /api/webhooks/groble` | 🤝 | 결제 웹훅(HMAC 서명·멱등) |

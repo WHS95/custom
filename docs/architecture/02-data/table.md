@@ -92,7 +92,11 @@
 
 ### user_profiles
 `id(PK)`, `user_id→customer_auth_users(UNIQUE, CASCADE)`, `tenant_id→tenants`, `name`, `phone`,
-`user_type`(enum), `crew_name`, `default_address(JSONB)`, `marketing_agreed`(+`_at`).
+`user_type`(enum), `crew_name`, `default_address(JSONB)`, `marketing_agreed`(+`_at`),
+`instagram`·`runhouse_map_registered(bool)`·`discount_status`(null/pending/approved/rejected)·`discount_reviewed_at`(mig 011).
+> mig 011: 런하우스맵 SSO를 끊고 자체 이메일 가입으로 전환. 가입 즉시 `crew_staff`(전체 기능),
+> **10% 할인가만 `discount_status`로 관리자 승인 게이트**. 기존 `crew_staff`→`approved` 백필(할인 회귀 방지).
+> `runhouse_map_registered`는 가입자 자가신고(맵 연동을 끊어 자동 검증 없음) — 승인 심사 참고용.
 
 ### user_carts
 `id(PK)`, `user_id→customer_auth_users(CASCADE)`, `tenant_id→tenants`(NOT NULL, DEFAULT 기본 테넌트),

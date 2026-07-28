@@ -35,10 +35,12 @@
 - 근거: `src/lib/pricing/price-calculator.ts`.
 
 ## 크루 할인 — BR-4
-- `crew_staff` 회원에게 **정액 10%** 할인(`CREW_DISCOUNT_RATE = 0.1`).
-- `getCrewDiscountAmount(subtotal, isCrewMember) = floor(subtotal * 0.1)`.
+- **기능 접근과 할인 승인 분리(mig 011)**: 크루 가입 시 즉시 `crew_staff`(상점·제작·알림 전체 기능)가 되지만, **10% 할인가는 `discount_status='approved'`일 때만** 적용된다. `user_type`이 아닌 `discount_status`가 할인 게이트다.
+- `discount_status`: `null`(개인) | `pending`(가입 직후) | `approved` | `rejected`.
+- 정액 10% 할인(`CREW_DISCOUNT_RATE = 0.1`), `getCrewDiscountAmount(subtotal, isApproved) = floor(subtotal * 0.1)`.
 - **적용 순서: 수량 티어 할인 후 → 크루 할인**.
-- 근거: `src/lib/pricing/crew-discount.ts`, 적용 지점 `POST /api/orders`.
+- 승인 흐름: 가입 → `discount_status='pending'` + **Discord OPERATOR 웹훅**(`notifyCrewDiscountRequest`, 크루맵 등록여부 포함) → 관리자 `PUT /api/admin/crew-approvals` → `approved`/`rejected`(+`discount_reviewed_at`) → 가입자 마이페이지·알림에 반영.
+- 근거: `src/lib/pricing/crew-discount.ts`, 게이트 `src/app/cart/page.tsx`·`POST /api/orders`(`discount_status==='approved'`).
 
 ## 인쇄 색상 제약 — BR-5
 - 텍스트 레이어의 색상은 테넌트 인쇄 팔레트(`isAllowedPrintColor`) 내에서만 허용.

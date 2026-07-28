@@ -8,8 +8,9 @@
 |------|-------------|------|
 | 테넌트 | `Tenant` / `tenants` | 서비스를 사용하는 브랜드 단위. 기본 테넌트 `런하우스`(id `a0000000-…-0001`). 멀티테넌트. |
 | 고객 | `Customer` / `customers` | 주문 주체. 이메일/비번 회원 또는 게스트(전화번호). |
-| 사용자 프로필 | `user_profiles` | 인증 사용자 부가정보. `user_type` = individual / crew_staff / crew_pending. |
-| 크루 스태프 | `crew_staff` | 러닝 크루 대표. SSO로 로그인, 크루 취합/스토어 운영, 10% 할인. |
+| 사용자 프로필 | `user_profiles` | 인증 사용자 부가정보. `user_type` = individual / crew_staff / crew_pending. `instagram`·`runhouse_map_registered`·`discount_status`(mig 011). |
+| 크루 스태프 | `crew_staff` | 러닝 크루 대표. **이메일 회원가입(/signup)**으로 즉시 부여, 크루 취합/스토어 운영. 10% 할인은 `discount_status='approved'` 별도 승인 필요. |
+| 할인 승인 상태 | `discount_status` | 크루 10% 할인가 승인 상태(null/pending/approved/rejected). 기능 접근(`crew_staff`)과 분리(mig 011). |
 | 관리자 | `AdminSession` / `tenant_admins` | 테넌트 운영자. 별도 JWT 세션. |
 
 ## 상품 / 커스터마이즈
