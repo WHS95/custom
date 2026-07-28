@@ -52,6 +52,7 @@ interface UserProfileSummary {
   name: string;
   user_type: "individual" | "crew_staff" | "crew_pending";
   crew_name?: string | null;
+  discount_status?: "pending" | "approved" | "rejected" | null;
 }
 
 interface MyPageClientProps {
@@ -118,7 +119,8 @@ export function MyPageClient({ profile, email, orders }: MyPageClientProps) {
                     <div className='flex items-center gap-1 mt-1'>
                       <Users className='w-4 h-4 text-blue-600' />
                       <span className='text-sm text-blue-600 font-medium'>
-                        {profile.crew_name} 크루 (10% 할인)
+                        {profile.crew_name} 크루
+                        {profile.discount_status === "approved" && " (10% 할인)"}
                       </span>
                     </div>
                   )}
@@ -145,6 +147,54 @@ export function MyPageClient({ profile, email, orders }: MyPageClientProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* 크루 할인 승인 상태 */}
+        {isCrewStaff && profile.discount_status && (
+          <Card className='mb-6'>
+            <CardContent className='pt-6'>
+              {profile.discount_status === "pending" && (
+                <div className='flex items-start gap-3'>
+                  <span className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600'>
+                    <Clock className='w-5 h-5' />
+                  </span>
+                  <div>
+                    <p className='font-semibold'>크루 할인 승인 대기중</p>
+                    <p className='text-sm text-gray-500 mt-0.5'>
+                      관리자 확인 후 승인되면 주문 시 10% 크루 할인가가 적용돼요.
+                      승인 전에도 상점 개설·제작 문의·주문은 바로 가능해요.
+                    </p>
+                  </div>
+                </div>
+              )}
+              {profile.discount_status === "approved" && (
+                <div className='flex items-start gap-3'>
+                  <span className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-700'>
+                    <CheckCircle className='w-5 h-5' />
+                  </span>
+                  <div>
+                    <p className='font-semibold'>크루 할인 승인 완료</p>
+                    <p className='text-sm text-gray-500 mt-0.5'>
+                      주문 시 10% 크루 할인가가 자동으로 적용돼요.
+                    </p>
+                  </div>
+                </div>
+              )}
+              {profile.discount_status === "rejected" && (
+                <div className='flex items-start gap-3'>
+                  <span className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600'>
+                    <Users className='w-5 h-5' />
+                  </span>
+                  <div>
+                    <p className='font-semibold'>크루 할인 신청 반려</p>
+                    <p className='text-sm text-gray-500 mt-0.5'>
+                      할인 신청이 반려되었어요. 자세한 사항은 관리자에게 문의해 주세요.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card className='mb-6'>
           <CardHeader>

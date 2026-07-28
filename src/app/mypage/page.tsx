@@ -57,6 +57,11 @@ export default async function MyPage() {
           | "crew_staff"
           | "crew_pending",
         crew_name: profile.crew_name as string | null | undefined,
+        discount_status: (profile.discount_status ?? null) as
+          | "pending"
+          | "approved"
+          | "rejected"
+          | null,
       }}
       email={user.email}
       orders={orders}

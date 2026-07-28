@@ -16,7 +16,12 @@ const FEED_LIMIT = 40;
 
 export interface NotificationItem {
   id: string;
-  type: "review_approved" | "review_rejected" | "store_order";
+  type:
+    | "review_approved"
+    | "review_rejected"
+    | "store_order"
+    | "discount_approved"
+    | "discount_rejected";
   title: string;
   description: string;
   createdAt: string;
@@ -32,6 +37,25 @@ export async function GET() {
 
     const supabase = createServerSupabaseClient();
     const items: NotificationItem[] = [];
+
+    // ── 0) 크루 할인 승인/거절 알림 (profile에서 파생, 추가 쿼리 없음) ──
+    if (
+      (profile.discount_status === "approved" ||
+        profile.discount_status === "rejected") &&
+      profile.discount_reviewed_at
+    ) {
+      const approved = profile.discount_status === "approved";
+      items.push({
+        id: `discount-${profile.discount_status}-${profile.discount_reviewed_at}`,
+        type: approved ? "discount_approved" : "discount_rejected",
+        title: approved ? "크루 할인 승인" : "크루 할인 반려",
+        description: approved
+          ? "이제 주문 시 10% 크루 할인가가 적용돼요."
+          : "크루 할인 신청이 반려되었어요. 문의해 주세요.",
+        createdAt: profile.discount_reviewed_at,
+        href: "/mypage",
+      });
+    }
 
     // ── 1) 제작 리뷰 판정 알림 ──
     const { data: reviews } = await supabase

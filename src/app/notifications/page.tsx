@@ -13,6 +13,7 @@ import {
   XCircle,
   ShoppingBag,
   BellOff,
+  BadgePercent,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,12 @@ import { markNotificationsSeen } from "@/lib/notifications";
 
 interface NotificationItem {
   id: string;
-  type: "review_approved" | "review_rejected" | "store_order";
+  type:
+    | "review_approved"
+    | "review_rejected"
+    | "store_order"
+    | "discount_approved"
+    | "discount_rejected";
   title: string;
   description: string;
   createdAt: string;
@@ -31,6 +37,8 @@ const ICON = {
   review_approved: { Icon: CheckCircle2, cls: "text-green-600 bg-green-50" },
   review_rejected: { Icon: XCircle, cls: "text-red-600 bg-red-50" },
   store_order: { Icon: ShoppingBag, cls: "text-ink bg-soft-cloud" },
+  discount_approved: { Icon: BadgePercent, cls: "text-green-700 bg-green-50" },
+  discount_rejected: { Icon: XCircle, cls: "text-red-600 bg-red-50" },
 } as const;
 
 function relativeTime(iso: string): string {
