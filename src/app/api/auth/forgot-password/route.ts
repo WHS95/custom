@@ -4,6 +4,7 @@ import {
   findAuthUserByEmail,
 } from "@/lib/auth/server-auth";
 import { normalizeEmail } from "@/lib/auth/session";
+import { sendPasswordResetEmail } from "@/lib/auth-email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,18 +27,23 @@ export async function POST(request: NextRequest) {
     }
 
     const { token } = await createPasswordResetTokenForUser(user.id);
-    const origin = request.headers.get("origin") || process.env.NEXT_PUBLIC_SITE_URL || "";
-    const previewUrl = origin
-      ? `${origin}/reset-password?token=${encodeURIComponent(token)}`
-      : undefined;
+    // 외부로 나가는 링크 베이스 URL은 SITE_URL 컨벤션 우선(요청 origin은 localhost 폴백)
+    const base =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      request.headers.get("origin") ||
+      "https://runhouse-custom.vercel.app";
+    const resetUrl = `${base}/reset-password?token=${encodeURIComponent(token)}`;
 
-    if (previewUrl) {
-      console.log("[Auth] password reset link:", previewUrl);
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Auth] password reset link:", resetUrl);
     }
+
+    // 실제 메일 발송 (Edge Function). env 미설정 시 조용히 스킵 → 개발 previewUrl로 대체.
+    await sendPasswordResetEmail(user.email, resetUrl);
 
     return NextResponse.json({
       success: true,
-      previewUrl: process.env.NODE_ENV !== "production" ? previewUrl : undefined,
+      previewUrl: process.env.NODE_ENV !== "production" ? resetUrl : undefined,
     });
   } catch (error) {
     console.error("비밀번호 재설정 요청 에러:", error);
