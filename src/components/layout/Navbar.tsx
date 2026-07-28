@@ -45,19 +45,8 @@ export function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // 내 크루 상점 (crew_staff 로그인 시 조회 — 상점 재발견 진입점)
+  // 내 크루 상점 진입은 안정 URL /store/mine로 통일 (상점 유무 무관)
   const isCrewStaff = profile?.user_type === "crew_staff";
-  const [myStoreToken, setMyStoreToken] = useState<string | null>(null);
-  useEffect(() => {
-    if (!isCrewStaff) {
-      setMyStoreToken(null);
-      return;
-    }
-    fetch("/api/store/mine")
-      .then((res) => res.json())
-      .then((json) => setMyStoreToken(json.store?.storeToken ?? null))
-      .catch(() => setMyStoreToken(null));
-  }, [isCrewStaff]);
 
   // 알림 미읽음 수 (crew_staff)
   const [unread, setUnread] = useState(0);
@@ -87,6 +76,11 @@ export function Navbar() {
     ...(isCrewStaff
       ? [
           {
+            href: "/store/mine",
+            label: "내 상점",
+            icon: Store,
+          },
+          {
             href: "/notifications",
             label: unread > 0 ? `알림 (${unread})` : "알림",
             icon: Bell,
@@ -95,15 +89,6 @@ export function Navbar() {
             href: "/manufacture-reviews",
             label: "내 제작 문의",
             icon: ClipboardCheck,
-          },
-        ]
-      : []),
-    ...(myStoreToken
-      ? [
-          {
-            href: `/store/${myStoreToken}`,
-            label: "내 상점",
-            icon: Store,
           },
         ]
       : []),

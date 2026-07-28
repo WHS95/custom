@@ -135,6 +135,14 @@ export function MyPageClient({ profile, email, orders }: MyPageClientProps) {
                 </div>
               </div>
               <div className='flex gap-2'>
+                {isCrewStaff && (
+                  <Link href='/store/mine'>
+                    <Button size='sm'>
+                      <Store className='w-4 h-4 mr-1.5' />
+                      내 상점
+                    </Button>
+                  </Link>
+                )}
                 <Link href='/mypage/profile'>
                   <Button variant='outline' size='sm'>
                     프로필 관리
