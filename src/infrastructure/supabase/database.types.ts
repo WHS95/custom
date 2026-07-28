@@ -408,6 +408,7 @@ export type Database = {
           customer_id: string | null
           customer_name: string
           customer_phone: string
+          factory_token: string | null
           id: string
           order_number: string
           paid_at: string | null
@@ -430,6 +431,7 @@ export type Database = {
           customer_id?: string | null
           customer_name: string
           customer_phone: string
+          factory_token?: string | null
           id?: string
           order_number: string
           paid_at?: string | null
@@ -452,6 +454,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string
           customer_phone?: string
+          factory_token?: string | null
           id?: string
           order_number?: string
           paid_at?: string | null

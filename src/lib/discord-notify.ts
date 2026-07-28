@@ -122,6 +122,35 @@ export async function notifyCrewDiscountRequest(
   return post(OPERATOR_WEBHOOK_URL, lines.join("\n"));
 }
 
+export interface FactoryOrderPayload {
+  crewName: string;
+  handle?: string | null;
+  requesterName?: string | null;
+  phone?: string | null;
+  orderNumber: string;
+  productCount: number; // 굿즈 종류 수
+  totalQuantity: number; // 총 장수
+  address?: string | null; // 배송지
+  viewUrl: string; // 공장 확인 링크(시안·사이즈·배송지)
+}
+
+/** 공장 채널: 크루 스토어 주문 확정 — 제작 접수 */
+export async function notifyFactoryOrder(
+  p: FactoryOrderPayload,
+): Promise<boolean> {
+  const lines = [
+    "📦 **제작 주문 접수** — 크루 스토어",
+    DIVIDER,
+    `🧾 주문번호: ${p.orderNumber}`,
+    ...requesterLines(p),
+    `👕 굿즈: ${p.productCount}종 · 총 ${p.totalQuantity}장`,
+    p.address ? `🚚 배송지: ${p.address}` : "",
+    DIVIDER,
+    `🔗 시안·사이즈·수량·배송지 확인: ${p.viewUrl}`,
+  ].filter(Boolean);
+  return post(FACTORY_WEBHOOK_URL, lines.join("\n"));
+}
+
 export interface OperatorReviewResultPayload {
   crewName: string;
   handle?: string | null;

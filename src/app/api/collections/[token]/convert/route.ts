@@ -11,6 +11,8 @@ import { findCollectionByToken } from "@/lib/collections";
 import type { CreateOrderDTO, CreateOrderItemDTO, ShippingInfo } from "@/domain/order";
 import { notifyNewOrder } from "@/lib/slack";
 import { notifyNewOrderByEmail } from "@/lib/order-email";
+import { notifyFactoryOrder } from "@/lib/discord-notify";
+import { randomBytes } from "crypto";
 
 interface Params {
   params: Promise<{ token: string }>;
@@ -186,6 +188,35 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     if (updateError) {
       console.error("취합 주문번호 기록 실패:", updateError);
+    }
+
+    // 공장 확인 토큰 발급 → 주문에 저장 → 공장 Discord 알림
+    const factoryToken = randomBytes(18).toString("base64url");
+    const { error: tokenError } = await supabase
+      .from("orders")
+      .update({ factory_token: factoryToken })
+      .eq("order_number", order.orderNumber);
+    if (tokenError) console.error("공장 토큰 기록 실패:", tokenError);
+    else {
+      const siteUrl =
+        process.env.NEXT_PUBLIC_SITE_URL ?? "https://runhouse-custom.vercel.app";
+      const totalQuantity = order.items.reduce(
+        (s: number, it: { quantity: number }) => s + it.quantity,
+        0,
+      );
+      const addr = [shippingInfo.address, shippingInfo.addressDetail]
+        .filter(Boolean)
+        .join(" ");
+      notifyFactoryOrder({
+        crewName: collection.crew_name || collection.title,
+        requesterName: customerName.trim(),
+        phone: customerPhone.trim(),
+        orderNumber: order.orderNumber,
+        productCount: 1,
+        totalQuantity,
+        address: addr || null,
+        viewUrl: `${siteUrl}/factory/order/${factoryToken}`,
+      }).catch((err) => console.error("[Discord] 공장 주문 알림 실패:", err));
     }
 
     // 알림 (실패해도 주문 처리에 영향 없음)
