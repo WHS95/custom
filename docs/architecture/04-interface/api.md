@@ -106,6 +106,8 @@
 | `POST/GET/PATCH/DELETE /api/store/[storeToken]/orders` | 🟢/👑 | 통합 주문: 여러 굿즈·사이즈별 수량을 한 번에(공통 submission_id). 본인 확인 = 이름+뒷4자리, owner 세션(👑)은 신원 매칭 없이 수정·삭제·현장 추가 가능 |
 | `GET/PATCH /api/store/[storeToken]/manage` | 👑 | 관리 데이터 일괄 조회 / 상점 설정(운영기간)·굿즈(수정·마감·재오픈·삭제) |
 | `POST /api/store/[storeToken]/convert-all` | 👑 | 열린 굿즈 전부를 **주문 1건**(주문번호 1개)으로 원자적 전환, 배송지 입력 |
+| `POST /api/store/[storeToken]/proposals` | 🟢 | 크루원 디자인 제안 접수(design_snapshot+메모+첨부, 비로그인). 화면 `/store/[token]/propose`→스튜디오 `?propose=` |
+| `GET\|PUT /api/store/[storeToken]/proposals` | 👑 | 제안함 목록 / 채택(→manufacture_reviews 공장 재승인)·반려. 화면 `/store/[token]/proposals` |
 
 > 화면: `/store/[storeToken]`(장바구니 시트·카트바·내 주문), `/store/[storeToken]/manage`
 > (취합현황·주문진행·굿즈·설정 탭). 입금 관리 UI 없음 — 취합은 확인 전용.

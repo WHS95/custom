@@ -64,6 +64,15 @@
 > (크로스 기기) 또는 `edit_token`(localStorage). 입금 관리는 UI에서 제거됨
 > (is_paid 컬럼은 유지).
 
+### design_proposals (mig 014)
+`id(PK)`, `tenant_id→tenants(CASCADE)`, `store_id→crew_stores(CASCADE)`, `product_id`,
+`color_id`, `design_snapshot(JSONB)`, `attachments(JSONB)`, `note`,
+`proposer_name`·`proposer_contact`(비로그인 크루원), `status`(pending/adopted/rejected),
+`adopted_review_id→manufacture_reviews(SET NULL)`, `decided_at`. **RLS(service_role).**
+> 크루원이 스튜디오에서 디자인을 만들어 운영진 상점에 제안. 운영진 채택 시
+> manufacture_reviews로 변환(공장 재승인) → 상점 등록. 제출은 공개(`POST /api/store/{token}/proposals`),
+> 목록·채택/반려는 상점 소유 운영진만.
+
 ### crew_stores (mig 008)
 `id(PK)`, `tenant_id→tenants`, `creator_user_id`, `crew_name`, `store_token`,
 `open_from`·`open_until`(mig 009 — 상점 운영기간, NULL=상시). **RLS.**
