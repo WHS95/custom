@@ -15,7 +15,11 @@ interface Group {
   productName: string;
   colorLabel: string;
   totalQuantity: number;
-  sizes: { size: string; quantity: number }[];
+  personalized: boolean;
+  roster:
+    | { customName: string; realName: string; size: string; quantity: number }[]
+    | null;
+  sizes: { size: string; quantity: number }[] | null;
   designLayers: DesignLayer[] | null;
   designColor: {
     id: string;
@@ -149,34 +153,81 @@ export default function FactoryOrderPage({
               size="sm"
             />
 
-            {/* 사이즈·수량 */}
-            <div className="mt-4">
-              <p className="mb-2 text-sm font-semibold">사이즈별 수량</p>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[280px] text-sm">
-                  <thead>
-                    <tr className="border-b border-hairline text-left text-muted-foreground">
-                      <th className="py-1.5 font-medium">사이즈</th>
-                      <th className="py-1.5 text-right font-medium">수량</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {g.sizes.map((s) => (
-                      <tr key={s.size} className="border-b border-hairline-soft">
-                        <td className="py-1.5">{s.size}</td>
-                        <td className="py-1.5 text-right font-medium">{s.quantity}장</td>
+            {/* 개인화: 사람별 명단 / 일반: 사이즈별 수량 */}
+            {g.personalized && g.roster ? (
+              <div className="mt-4">
+                <p className="mb-2 text-sm font-semibold">
+                  크루원별 명단 · 새길 이름{" "}
+                  <span className="text-muted-foreground">({g.roster.length}명)</span>
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[360px] text-sm">
+                    <thead>
+                      <tr className="border-b border-hairline text-left text-muted-foreground">
+                        <th className="py-1.5 font-medium">새길 이름</th>
+                        <th className="py-1.5 font-medium">사이즈</th>
+                        <th className="py-1.5 text-right font-medium">수량</th>
+                        <th className="py-1.5 pl-3 font-medium">주문자</th>
                       </tr>
-                    ))}
-                    <tr>
-                      <td className="py-1.5 font-semibold">합계</td>
-                      <td className="py-1.5 text-right font-bold">
-                        {g.totalQuantity}장
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {g.roster.map((r, ri) => (
+                        <tr key={ri} className="border-b border-hairline-soft">
+                          <td className="py-1.5 font-bold">{r.customName || "-"}</td>
+                          <td className="py-1.5">{r.size}</td>
+                          <td className="py-1.5 text-right">{r.quantity}장</td>
+                          <td className="py-1.5 pl-3 text-muted-foreground">
+                            {r.realName}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr>
+                        <td className="py-1.5 font-semibold" colSpan={2}>
+                          합계
+                        </td>
+                        <td className="py-1.5 text-right font-bold">
+                          {g.totalQuantity}장
+                        </td>
+                        <td />
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  ※ 개인화 굿즈 — 각 항목의 &lsquo;새길 이름&rsquo;을 디자인의 이름 자리에 새겨 제작해요.
+                </p>
               </div>
-            </div>
+            ) : (
+              <div className="mt-4">
+                <p className="mb-2 text-sm font-semibold">사이즈별 수량</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[280px] text-sm">
+                    <thead>
+                      <tr className="border-b border-hairline text-left text-muted-foreground">
+                        <th className="py-1.5 font-medium">사이즈</th>
+                        <th className="py-1.5 text-right font-medium">수량</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(g.sizes ?? []).map((s) => (
+                        <tr key={s.size} className="border-b border-hairline-soft">
+                          <td className="py-1.5">{s.size}</td>
+                          <td className="py-1.5 text-right font-medium">
+                            {s.quantity}장
+                          </td>
+                        </tr>
+                      ))}
+                      <tr>
+                        <td className="py-1.5 font-semibold">합계</td>
+                        <td className="py-1.5 text-right font-bold">
+                          {g.totalQuantity}장
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </section>
         ))}
       </div>
