@@ -7,7 +7,7 @@
 
 import { use, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Copy, Settings, Users, PackageSearch } from "lucide-react";
+import { Copy, Settings, Users, PackageSearch, Inbox } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -200,6 +200,12 @@ export default function CrewStorePage({
             </Button>
             {data.isOwner && (
               <>
+                <Button variant="ghost" size="sm" asChild aria-label="제안함">
+                  <Link href={`/store/${storeToken}/proposals`}>
+                    <Inbox className="h-4 w-4" />
+                    <span className="hidden sm:inline">제안함</span>
+                  </Link>
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"

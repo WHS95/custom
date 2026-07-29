@@ -7,11 +7,33 @@
  *   → design_proposals(pending) 생성. 운영진이 상점 관리 '제안함'에서 채택/반려.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 import { createServerSupabaseClient } from "@/infrastructure/supabase";
 import { getProductById } from "@/application/product-service";
 import { uploadReviewAttachment } from "@/infrastructure/supabase/storage";
+import { getCurrentAuthState } from "@/lib/auth/server-auth";
+import { notifyFactoryReviewRequest } from "@/lib/discord-notify";
 import type { Json } from "@/infrastructure/supabase/database.types";
 import type { DesignLayer } from "@/components/shared/HatDesignCanvas";
+
+/** 상점 소유 운영진 확인 */
+async function requireStoreOwner(storeToken: string) {
+  const { user, profile } = await getCurrentAuthState();
+  if (!user || profile?.user_type !== "crew_staff") {
+    return { error: "크루 운영진만 이용할 수 있습니다.", status: 403 as const };
+  }
+  const supabase = createServerSupabaseClient();
+  const { data: store } = await supabase
+    .from("crew_stores")
+    .select("id, tenant_id, crew_name, creator_user_id, store_token")
+    .eq("store_token", storeToken)
+    .maybeSingle();
+  if (!store) return { error: "상점을 찾을 수 없습니다.", status: 404 as const };
+  if (store.creator_user_id !== user.id) {
+    return { error: "이 상점의 운영진이 아닙니다.", status: 403 as const };
+  }
+  return { user, profile, store };
+}
 
 interface Params {
   params: Promise<{ storeToken: string }>;
@@ -144,5 +166,172 @@ export async function POST(request: NextRequest, { params }: Params) {
       { error: "제안 접수에 실패했습니다." },
       { status: 500 },
     );
+  }
+}
+
+// ── GET: 제안함 (운영진) ──
+export async function GET(_req: NextRequest, { params }: Params) {
+  try {
+    const { storeToken } = await params;
+    const auth = await requireStoreOwner(storeToken);
+    if ("error" in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+    const supabase = createServerSupabaseClient();
+    const { data: rows } = await supabase
+      .from("design_proposals")
+      .select(
+        "id, product_id, color_id, design_snapshot, attachments, note, proposer_name, proposer_contact, status, adopted_review_id, created_at",
+      )
+      .eq("store_id", auth.store.id)
+      .order("created_at", { ascending: false });
+
+    const proposals = rows ?? [];
+    const productIds = [...new Set(proposals.map((p) => p.product_id))];
+    const productMap = new Map(
+      (await Promise.all(productIds.map((id) => getProductById(id))))
+        .filter(Boolean)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((p: any) => [p.id, p]),
+    );
+
+    const items = proposals.map((p) => {
+      const product = productMap.get(p.product_id);
+      const variant = product?.variants.find(
+        (v: { id: string }) => v.id === p.color_id,
+      );
+      const views = product
+        ? Object.fromEntries(
+            product.images
+              .filter((img: { colorId: string }) => img.colorId === p.color_id)
+              .map((img: { view: string; url: string }) => [img.view, img.url]),
+          )
+        : {};
+      return {
+        proposalId: p.id,
+        productName: product?.name ?? "상품",
+        proposerName: p.proposer_name,
+        proposerContact: p.proposer_contact,
+        note: p.note,
+        status: p.status,
+        adopted: !!p.adopted_review_id,
+        attachments: Array.isArray(p.attachments) ? p.attachments : [],
+        createdAt: p.created_at,
+        designLayers: p.design_snapshot,
+        designColor: variant
+          ? { id: variant.id, label: variant.label, hex: variant.hex, views }
+          : null,
+      };
+    });
+
+    return NextResponse.json({ success: true, data: { items } });
+  } catch (error) {
+    console.error("GET /api/store/[storeToken]/proposals error:", error);
+    return NextResponse.json({ error: "조회에 실패했습니다." }, { status: 500 });
+  }
+}
+
+// ── PUT: 채택(→제작문의) / 반려 (운영진) ──
+export async function PUT(request: NextRequest, { params }: Params) {
+  try {
+    const { storeToken } = await params;
+    const auth = await requireStoreOwner(storeToken);
+    if ("error" in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+    const { user, profile, store } = auth;
+    const { proposalId, action } = (await request.json()) as {
+      proposalId?: string;
+      action?: "adopt" | "reject";
+    };
+    if (!proposalId || (action !== "adopt" && action !== "reject")) {
+      return NextResponse.json({ error: "잘못된 요청입니다." }, { status: 400 });
+    }
+
+    const supabase = createServerSupabaseClient();
+    const { data: proposal } = await supabase
+      .from("design_proposals")
+      .select("*")
+      .eq("id", proposalId)
+      .eq("store_id", store.id)
+      .maybeSingle();
+    if (!proposal) {
+      return NextResponse.json({ error: "제안을 찾을 수 없습니다." }, { status: 404 });
+    }
+    if (proposal.status !== "pending") {
+      return NextResponse.json(
+        { error: "이미 처리된 제안입니다." },
+        { status: 409 },
+      );
+    }
+
+    if (action === "reject") {
+      await supabase
+        .from("design_proposals")
+        .update({ status: "rejected", decided_at: new Date().toISOString() })
+        .eq("id", proposalId);
+      return NextResponse.json({ success: true });
+    }
+
+    // 채택 → 제작 문의(manufacture_reviews)로 변환, 공장 재승인
+    const product = await getProductById(proposal.product_id);
+    const variant = product?.variants.find(
+      (v: { id: string }) => v.id === proposal.color_id,
+    );
+    const crewName = store.crew_name || profile?.crew_name || "우리 크루";
+    const reviewToken = randomBytes(18).toString("base64url");
+
+    const { data: review, error: reviewErr } = await supabase
+      .from("manufacture_reviews")
+      .insert({
+        tenant_id: store.tenant_id,
+        creator_user_id: user.id,
+        crew_name: crewName,
+        product_id: proposal.product_id,
+        color_id: proposal.color_id,
+        design_snapshot: proposal.design_snapshot as Json,
+        attachments: (proposal.attachments ?? []) as Json,
+        note: proposal.note
+          ? `[크루원 제안: ${proposal.proposer_name}] ${proposal.note}`
+          : `[크루원 제안: ${proposal.proposer_name}]`,
+        review_token: reviewToken,
+        status: "pending",
+      })
+      .select("id")
+      .single();
+    if (reviewErr) throw new Error(reviewErr.message);
+
+    await supabase
+      .from("design_proposals")
+      .update({
+        status: "adopted",
+        adopted_review_id: review.id,
+        decided_at: new Date().toISOString(),
+      })
+      .eq("id", proposalId);
+
+    // 공장 채널 Discord (제작 재승인 요청)
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ??
+      (request.nextUrl.hostname === "localhost"
+        ? request.nextUrl.origin
+        : "https://runhouse-custom.vercel.app");
+    notifyFactoryReviewRequest({
+      crewName,
+      requesterName: profile?.name,
+      phone: profile?.phone,
+      productName: product?.name ?? "상품",
+      colorLabel: variant?.label ?? proposal.color_id,
+      attachmentCount: Array.isArray(proposal.attachments)
+        ? proposal.attachments.length
+        : 0,
+      note: proposal.note || undefined,
+      reviewUrl: `${siteUrl}/review/${reviewToken}`,
+    }).catch((err) => console.error("[Discord] 공장 알림 실패:", err));
+
+    return NextResponse.json({ success: true, data: { reviewId: review.id } });
+  } catch (error) {
+    console.error("PUT /api/store/[storeToken]/proposals error:", error);
+    return NextResponse.json({ error: "처리에 실패했습니다." }, { status: 500 });
   }
 }
