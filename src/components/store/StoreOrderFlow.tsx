@@ -30,6 +30,7 @@ import {
 } from "@/components/shared/HatDesignCanvas";
 import type { HatView } from "@/lib/store/studio-context";
 import { cn } from "@/lib/utils";
+import { hasNameField } from "@/lib/personalization";
 
 export interface OrderableProduct {
   token: string;
@@ -208,6 +209,8 @@ export function StoreOrderFlow({
   setMyOrdersOpen: (v: boolean) => void;
 }) {
   const [draft, setDraft] = useState<Record<string, number>>({});
+  // 개인화 굿즈: collectionToken → 새길 이름
+  const [customNames, setCustomNames] = useState<Record<string, string>>({});
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [name, setName] = useState("");
   const [phone4, setPhone4] = useState("");
@@ -255,8 +258,16 @@ export function StoreOrderFlow({
     return { kinds, count, amount };
   }, [cart, productByToken]);
 
+  const selectedPersonalized = selected
+    ? hasNameField(selected.designLayers)
+    : false;
+
   const addToCart = () => {
     if (!selected || draftCount === 0) return;
+    if (selectedPersonalized && !(customNames[selected.token] ?? "").trim()) {
+      toast.error("유니폼에 새길 이름을 입력해주세요.");
+      return;
+    }
     const cleaned = Object.fromEntries(
       Object.entries(draft).filter(([, q]) => q > 0),
     );
@@ -269,6 +280,11 @@ export function StoreOrderFlow({
     const next = { ...cart };
     delete next[token];
     setCart(next);
+    setCustomNames((prev) => {
+      const n = { ...prev };
+      delete n[token];
+      return n;
+    });
   };
 
   const submitOrder = async () => {
@@ -279,8 +295,25 @@ export function StoreOrderFlow({
     setSubmitting(true);
     try {
       const items = Object.entries(cart)
-        .map(([token, sizeQuantities]) => ({ token, sizeQuantities }))
+        .map(([token, sizeQuantities]) => ({
+          token,
+          sizeQuantities,
+          customName: (customNames[token] ?? "").trim() || undefined,
+        }))
         .filter((i) => Object.values(i.sizeQuantities).some((q) => q > 0));
+
+      // 개인화 굿즈는 새길 이름 필수
+      const missingName = items.find((i) => {
+        const p = productByToken.get(i.token);
+        return p && hasNameField(p.designLayers) && !i.customName;
+      });
+      if (missingName) {
+        const p = productByToken.get(missingName.token);
+        toast.error(`${p?.title ?? "굿즈"} — 유니폼에 새길 이름을 입력해주세요.`);
+        setSubmitting(false);
+        return;
+      }
+
       const res = await fetch(`/api/store/${storeToken}/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -292,6 +325,7 @@ export function StoreOrderFlow({
         description: "이름과 뒷 4자리로 언제든 확인·수정할 수 있어요.",
       });
       setCart({});
+      setCustomNames({});
       setCheckoutOpen(false);
       setNote("");
       onOrderComplete();
@@ -443,6 +477,29 @@ export function StoreOrderFlow({
                       {selected.productDescription}
                     </p>
                   )}
+                </div>
+              )}
+
+              {selectedPersonalized && (
+                <div className="mt-4 rounded-lg border border-hairline bg-soft-cloud p-3">
+                  <Label htmlFor="customName" className="text-xs font-semibold">
+                    유니폼에 새길 이름 *
+                  </Label>
+                  <p className="mb-2 mt-0.5 text-[11px] text-muted-foreground">
+                    이 굿즈는 개인별 이름이 들어가요. 새길 이름(닉네임·영문 등)을 적어주세요.
+                  </p>
+                  <Input
+                    id="customName"
+                    value={customNames[selected.token] ?? ""}
+                    onChange={(e) =>
+                      setCustomNames((prev) => ({
+                        ...prev,
+                        [selected.token]: e.target.value,
+                      }))
+                    }
+                    placeholder="예: WOOHYEOK / 우혁 / 7"
+                    maxLength={20}
+                  />
                 </div>
               )}
 

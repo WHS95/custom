@@ -35,6 +35,7 @@ interface Params {
 interface OrderItemInput {
   token: string; // collection token
   sizeQuantities: Record<string, number>; // { S: 1, M: 2 }
+  customName?: string; // 개인화 굿즈: 유니폼에 새길 이름
 }
 
 const PHONE4_RE = /^\d{4}$/;
@@ -78,14 +79,14 @@ async function validateItems(
   collections: Map<string, { id: string; token: string; status: string; deadline: string | null; product_id: string | null; design_color_id: string | null; title: string }>,
   items: OrderItemInput[],
 ): Promise<
-  | { ok: true; rows: Array<{ collection_id: string; color_id: string | null; size: string; quantity: number }> }
+  | { ok: true; rows: Array<{ collection_id: string; color_id: string | null; size: string; quantity: number; custom_name: string | null }> }
   | { ok: false; error: string }
 > {
   if (!Array.isArray(items) || items.length === 0) {
     return { ok: false, error: "주문할 굿즈를 선택해주세요." };
   }
 
-  const rows: Array<{ collection_id: string; color_id: string | null; size: string; quantity: number }> = [];
+  const rows: Array<{ collection_id: string; color_id: string | null; size: string; quantity: number; custom_name: string | null }> = [];
 
   for (const item of items) {
     const col = collections.get(item.token);
@@ -111,6 +112,11 @@ async function validateItems(
     if (entries.length === 0)
       return { ok: false, error: `'${col.title}'의 수량을 선택해주세요.` };
 
+    const customName =
+      typeof item.customName === "string" && item.customName.trim()
+        ? item.customName.trim().slice(0, 40)
+        : null;
+
     for (const [size, qty] of entries) {
       if (!Number.isInteger(qty) || qty < 1 || qty > 20)
         return { ok: false, error: "수량은 사이즈당 1~20 사이여야 합니다." };
@@ -121,6 +127,7 @@ async function validateItems(
         color_id: col.design_color_id ?? null,
         size,
         quantity: qty,
+        custom_name: customName,
       });
     }
   }
