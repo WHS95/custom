@@ -318,6 +318,12 @@ export function OrderStyleStudioLayout({
                 onFontSizeChange={(fontSize) =>
                   updateLayer(selectedTextLayer.id, { fontSize })
                 }
+                nameField={selectedTextLayer.nameField}
+                onNameFieldToggle={() =>
+                  updateLayer(selectedTextLayer.id, {
+                    nameField: !selectedTextLayer.nameField,
+                  })
+                }
               />
             )}
             <div className='w-full max-w-[600px]'>

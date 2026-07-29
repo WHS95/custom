@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, Type } from "lucide-react";
+import { ChevronDown, Type, UserSquare } from "lucide-react";
 import { COLOR_PRESETS, FONT_LIST } from "./constants";
 import { useStudioConfig } from "@/lib/store/studio-context";
 
@@ -12,6 +12,9 @@ interface TextEditToolbarProps {
   onFontFamilyChange: (fontFamily: string) => void;
   onColorChange: (color: string) => void;
   onFontSizeChange: (fontSize: number) => void;
+  /** 크루원 이름 자리(개인화) 지정 — 상점 주문 시 각자 이름이 들어감 */
+  nameField?: boolean;
+  onNameFieldToggle?: () => void;
 }
 
 export function TextEditToolbar({
@@ -21,6 +24,8 @@ export function TextEditToolbar({
   onFontFamilyChange,
   onColorChange,
   onFontSizeChange,
+  nameField,
+  onNameFieldToggle,
 }: TextEditToolbarProps) {
   const { config } = useStudioConfig();
   const textColorPresets =
@@ -159,6 +164,26 @@ export function TextEditToolbar({
           {fontSize}px
         </span>
       </div>
+
+      {/* 크루원 이름 자리 토글 (개인화) */}
+      {onNameFieldToggle && (
+        <>
+          <div className='w-px h-6 bg-gray-200' />
+          <button
+            type='button'
+            onClick={onNameFieldToggle}
+            title='크루원 이름 자리로 지정 (상점 주문 시 각자 이름이 들어가요)'
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+              nameField
+                ? "border-[#0B0C0A] bg-[#0B0C0A] text-white"
+                : "border-gray-200 text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            <UserSquare className='w-4 h-4' />
+            <span className='hidden sm:inline'>이름 자리</span>
+          </button>
+        </>
+      )}
     </div>
   );
 }

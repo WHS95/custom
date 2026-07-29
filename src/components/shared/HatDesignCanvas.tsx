@@ -36,6 +36,7 @@ export interface DesignLayer {
   color?: string;
   fontSize?: number;
   fontFamily?: string;
+  nameField?: boolean;
 }
 
 interface HatDesignCanvasProps {

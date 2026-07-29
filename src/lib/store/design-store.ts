@@ -23,6 +23,7 @@ export interface DesignLayer {
   color?: string; // 텍스트 색상 (텍스트 레이어용)
   fontSize?: number; // 폰트 크기 (텍스트 레이어용, 기본 24)
   fontFamily?: string; // 폰트 패밀리 (텍스트 레이어용)
+  nameField?: boolean; // 크루원 이름 자리(개인화) — 상점 주문 시 각자 이름이 들어감
 }
 
 /**
