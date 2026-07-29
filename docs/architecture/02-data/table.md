@@ -56,7 +56,9 @@
 ### size_collection_responses
 `id(PK)`, `collection_id→size_collections(CASCADE)`, `name`, `color_id`, `size`,
 `quantity`(CHECK 1–20), `note`, `is_paid`, `edit_token`,
-`phone_last4`·`submission_id`(mig 009). **RLS.**
+`phone_last4`·`submission_id`(mig 009), `custom_name`(mig 013). **RLS.**
+> `custom_name`: 개인화 굿즈(디자인에 `DesignLayer.nameField` 이름 자리 포함)일 때
+> 크루원이 유니폼에 새길 이름(실명 `name`과 별개). 공장 주문 뷰에서 사람별 명단으로 노출.
 > 1행 = 한 사람의 한 사이즈. 한 번의 제출(여러 사이즈·여러 굿즈)은 공통
 > `submission_id`로 묶인다(상품 경계를 넘음). 본인 확인은 `name`+`phone_last4`
 > (크로스 기기) 또는 `edit_token`(localStorage). 입금 관리는 UI에서 제거됨
