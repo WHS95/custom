@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Check, Palette, Tag, Store } from "lucide-react";
+import { Check, Palette, Tag, Store, Image as ImageIcon, Type } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useStudioConfig, ProductColor } from "@/lib/store/studio-context";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -216,9 +216,34 @@ export function ProductSidebar({
               </span>
             </div>
           ) : (
-            <div className='flex items-center gap-1.5 text-xs text-yellow-700'>
-              <Palette className='w-3 h-3' />
-              <span>로고를 업로드하여 디자인을 시작하세요</span>
+            <div className='space-y-2 text-xs text-yellow-800'>
+              <div className='flex items-center gap-1.5 font-bold'>
+                <Palette className='w-3.5 h-3.5' />
+                <span>이렇게 디자인을 추가해요</span>
+              </div>
+              <ol className='space-y-1.5 pl-0.5'>
+                <li className='flex items-start gap-1.5'>
+                  <span className='font-bold'>1.</span>
+                  <span className='flex flex-wrap items-center gap-1'>
+                    상단 툴바에서
+                    <span className='inline-flex items-center gap-0.5 rounded bg-white px-1.5 py-0.5 font-medium text-gray-700 border border-yellow-200'>
+                      <ImageIcon className='w-3 h-3' /> 로고
+                    </span>
+                    업로드 또는
+                    <span className='inline-flex items-center gap-0.5 rounded bg-white px-1.5 py-0.5 font-medium text-gray-700 border border-yellow-200'>
+                      <Type className='w-3 h-3' /> 텍스트
+                    </span>
+                    추가
+                  </span>
+                </li>
+                <li className='flex items-start gap-1.5'>
+                  <span className='font-bold'>2.</span>
+                  <span>캔버스에서 드래그로 위치·크기를 맞춰요</span>
+                </li>
+              </ol>
+              <p className='text-[11px] text-yellow-700/80'>
+                디자인을 추가하면 아래 버튼이 활성화돼요.
+              </p>
             </div>
           )}
         </div>
