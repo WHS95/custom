@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Store, ChevronDown } from "lucide-react";
+import { ArrowLeft, Store, ChevronDown, Paperclip, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ interface ReviewItem {
   factoryComment: string | null;
   note: string | null;
   attachmentCount: number;
+  attachments: { name: string; url: string; size: number }[];
   reviewedAt: string | null;
   registered: boolean;
   createdAt: string;
@@ -179,6 +180,32 @@ export default function ManufactureReviewsPage() {
                           내 요청{" "}
                         </span>
                         {r.note}
+                      </div>
+                    )}
+
+                    {/* 첨부한 레퍼런스 */}
+                    {r.attachments.length > 0 && (
+                      <div className="mt-3">
+                        <p className="mb-1.5 flex items-center gap-1 text-xs font-bold text-muted-foreground">
+                          <Paperclip className="h-3 w-3" /> 첨부한 레퍼런스{" "}
+                          {r.attachments.length}개
+                        </p>
+                        <ul className="space-y-1.5">
+                          {r.attachments.map((a, ai) => (
+                            <li key={ai}>
+                              <a
+                                href={a.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 rounded-md border border-hairline bg-soft-cloud px-2.5 py-1.5 text-xs hover:bg-hairline-soft"
+                              >
+                                <Paperclip className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                <span className="min-w-0 flex-1 truncate">{a.name}</span>
+                                <Download className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     )}
                   </div>

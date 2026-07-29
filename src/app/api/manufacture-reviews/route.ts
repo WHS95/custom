@@ -224,6 +224,7 @@ export async function GET() {
         factoryComment: r.factory_comment,
         note: r.note,
         attachmentCount: Array.isArray(r.attachments) ? r.attachments.length : 0,
+        attachments: Array.isArray(r.attachments) ? r.attachments : [],
         reviewedAt: r.reviewed_at,
         registered: !!r.registered_collection_id,
         createdAt: r.created_at,
