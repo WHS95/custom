@@ -20,7 +20,11 @@ import {
 } from "@/lib/discord-notify";
 import type { Json } from "@/infrastructure/supabase/database.types";
 
-const ALLOWED_EXT = [".ai", ".eps", ".pdf", ".psd", ".png", ".jpg", ".jpeg"];
+const ALLOWED_EXT = [
+  ".ai", ".eps", ".pdf", ".psd",
+  ".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".heic", ".tif", ".tiff",
+  ".zip",
+];
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
