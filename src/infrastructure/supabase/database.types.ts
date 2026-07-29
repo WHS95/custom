@@ -700,6 +700,7 @@ export type Database = {
         Row: {
           collection_id: string
           color_id: string | null
+          custom_name: string | null
           created_at: string
           edit_token: string
           id: string
@@ -715,6 +716,7 @@ export type Database = {
         Insert: {
           collection_id: string
           color_id?: string | null
+          custom_name?: string | null
           created_at?: string
           edit_token: string
           id?: string
@@ -730,6 +732,7 @@ export type Database = {
         Update: {
           collection_id?: string
           color_id?: string | null
+          custom_name?: string | null
           created_at?: string
           edit_token?: string
           id?: string
