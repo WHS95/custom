@@ -301,6 +301,60 @@ export type Database = {
           },
         ]
       }
+      design_proposals: {
+        Row: {
+          adopted_review_id: string | null
+          attachments: Json
+          color_id: string
+          created_at: string
+          decided_at: string | null
+          design_snapshot: Json
+          id: string
+          note: string | null
+          product_id: string
+          proposer_contact: string | null
+          proposer_name: string
+          status: string
+          store_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          adopted_review_id?: string | null
+          attachments?: Json
+          color_id: string
+          created_at?: string
+          decided_at?: string | null
+          design_snapshot: Json
+          id?: string
+          note?: string | null
+          product_id: string
+          proposer_contact?: string | null
+          proposer_name: string
+          status?: string
+          store_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          adopted_review_id?: string | null
+          attachments?: Json
+          color_id?: string
+          created_at?: string
+          decided_at?: string | null
+          design_snapshot?: Json
+          id?: string
+          note?: string | null
+          product_id?: string
+          proposer_contact?: string | null
+          proposer_name?: string
+          status?: string
+          store_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       groble_webhook_events: {
         Row: {
           created_at: string
