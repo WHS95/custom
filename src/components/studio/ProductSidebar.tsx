@@ -16,8 +16,9 @@ import posthog from "posthog-js";
 import type { PriceTier } from "@/domain/product/types";
 import { PricingTableModal } from "./PricingTableModal";
 import { ReviewRequestDialog } from "./ReviewRequestDialog";
+import { ProposalDialog } from "./ProposalDialog";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -53,8 +54,11 @@ export function ProductSidebar({
   const { t } = useLanguage();
   const { isAuthenticated, profile } = useAuth();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const proposeToken = searchParams.get("propose"); // 크루원 제안 모드
   const [crewGateOpen, setCrewGateOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [proposalDialogOpen, setProposalDialogOpen] = useState(false);
   const isCrewStaff = isAuthenticated && profile?.user_type === "crew_staff";
   const isCrewPending = isAuthenticated && profile?.user_type === "crew_pending";
 
@@ -95,6 +99,11 @@ export function ProductSidebar({
    */
   const handleRequestReview = () => {
     if (!hasCurrentDesign || !productId) return;
+    // 크루원 제안 모드(?propose=storeToken): 로그인 없이 제안
+    if (proposeToken) {
+      setProposalDialogOpen(true);
+      return;
+    }
     // 비크루는 게이트 모달로 인터셉트
     if (!isCrewStaff) {
       setCrewGateOpen(true);
@@ -227,14 +236,29 @@ export function ProductSidebar({
           <Store className='mr-1.5 h-3.5 w-3.5' />
           {!hasCurrentDesign
             ? "디자인을 먼저 추가하세요"
-            : "제작 가능 여부 확인 요청"}
+            : proposeToken
+              ? "우리 크루에 제안하기"
+              : "제작 가능 여부 확인 요청"}
         </Button>
         <p className='text-[10px] leading-relaxed text-gray-400'>
-          공장에서 제작 가능한지 먼저 확인해요. 승인되면 &lsquo;내 제작
-          문의&rsquo;에서 우리 크루 상점에 굿즈로 등록할 수 있어요.
+          {proposeToken
+            ? "만든 디자인을 크루 운영진에게 제안해요. 채택되면 공장 확인을 거쳐 상점에 올라가요."
+            : "공장에서 제작 가능한지 먼저 확인해요. 승인되면 ‘내 제작 문의’에서 우리 크루 상점에 굿즈로 등록할 수 있어요."}
         </p>
 
       </div>
+
+      {/* 크루원 제안 다이얼로그 (?propose 모드) */}
+      {productId && proposeToken && (
+        <ProposalDialog
+          open={proposalDialogOpen}
+          onOpenChange={setProposalDialogOpen}
+          storeToken={proposeToken}
+          productId={productId}
+          colorId={selectedColor}
+          designLayers={currentColorLayers}
+        />
+      )}
 
       {/* 제작 문의 다이얼로그 (크루) */}
       {productId && (
