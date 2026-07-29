@@ -12,12 +12,12 @@ import {
   useDesignStore,
   useCurrentColorLayers,
 } from "@/lib/store/design-store";
-import { toast } from "sonner";
 import posthog from "posthog-js";
 import type { PriceTier } from "@/domain/product/types";
 import { PricingTableModal } from "./PricingTableModal";
 import { ReviewRequestDialog } from "./ReviewRequestDialog";
-import { CrewLoginInline } from "@/components/cart/CrewLoginInline";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -51,7 +51,8 @@ export function ProductSidebar({
 }: ProductSidebarProps) {
   const { config } = useStudioConfig();
   const { t } = useLanguage();
-  const { isAuthenticated, profile, refreshProfile } = useAuth();
+  const { isAuthenticated, profile } = useAuth();
+  const pathname = usePathname();
   const [crewGateOpen, setCrewGateOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const isCrewStaff = isAuthenticated && profile?.user_type === "crew_staff";
@@ -254,17 +255,26 @@ export function ProductSidebar({
             <DialogDescription>
               {isCrewPending
                 ? "크루 등록 신청이 승인 대기 중이에요. 승인이 완료되면 굿즈를 등록할 수 있습니다."
-                : "RunHouse에 등록된 러닝크루로 로그인하면 이 디자인을 우리 크루 상점에 굿즈로 올릴 수 있어요."}
+                : "크루로 로그인하거나 가입하면 이 디자인을 우리 크루 상점에 굿즈로 올릴 수 있어요."}
             </DialogDescription>
           </DialogHeader>
           {!isCrewPending && (
-            <CrewLoginInline
-              onSuccess={async () => {
-                await refreshProfile();
-                setCrewGateOpen(false);
-                toast.success("크루 로그인 완료! 이제 등록할 수 있어요.");
-              }}
-            />
+            <div className="space-y-3">
+              <div className="rounded-lg border border-hairline bg-soft-cloud p-3 text-xs text-muted-foreground">
+                크루 회원가입은 <span className="font-semibold text-ink">무료</span>이고,
+                가입 즉시 상점 개설·제작 문의가 가능해요. (10% 할인은 관리자 승인 후)
+              </div>
+              <div className="flex gap-2">
+                <Button asChild variant="outline" className="flex-1">
+                  <Link href={`/login?redirect=${encodeURIComponent(pathname)}`}>
+                    크루 로그인
+                  </Link>
+                </Button>
+                <Button asChild className="flex-1">
+                  <Link href="/signup">크루 회원가입</Link>
+                </Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
