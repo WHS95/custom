@@ -37,6 +37,8 @@ export default function SignupPage() {
   const [crewName, setCrewName] = useState("");
   const [phone, setPhone] = useState("");
   const [instagram, setInstagram] = useState("");
+  const [region, setRegion] = useState("");
+  const [intro, setIntro] = useState("");
   const [mapRegistered, setMapRegistered] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -67,6 +69,8 @@ export default function SignupPage() {
         phone: phone.trim(),
         instagram: instagram.trim() || undefined,
         runhouseMapRegistered: mapRegistered,
+        crewRegion: region.trim() || undefined,
+        crewIntro: intro.trim() || undefined,
       });
 
       if (error) {
@@ -165,6 +169,27 @@ export default function SignupPage() {
                   onChange={(e) => setInstagram(e.target.value)}
                   placeholder="@runhouse.crew"
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="region">활동지역</Label>
+                <Input
+                  id="region"
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value)}
+                  placeholder="예: 서울 · 한강"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="intro">크루 소개글</Label>
+                <Input
+                  id="intro"
+                  value={intro}
+                  onChange={(e) => setIntro(e.target.value)}
+                  placeholder="우리 크루를 한 줄로 소개해 주세요."
+                />
+                <p className="text-xs text-mute">상점·둘러보기 카드에 표시돼요 (로고는 마이페이지에서).</p>
               </div>
 
               <label className="flex items-start gap-2.5 rounded-[4px] border border-hairline bg-soft-cloud p-3 cursor-pointer">

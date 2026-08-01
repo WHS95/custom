@@ -99,6 +99,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       instagram,
       runhouseMapRegistered,
       phone,
+      crewIntro,
+      crewRegion,
     } = params;
 
     try {
@@ -111,6 +113,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         instagram,
         runhouseMapRegistered,
         phone,
+        crewIntro,
+        crewRegion,
       });
 
       if (error) {

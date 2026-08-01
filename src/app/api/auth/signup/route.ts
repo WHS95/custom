@@ -38,6 +38,14 @@ export async function POST(request: NextRequest) {
     const runhouseMapRegistered = body.runhouseMapRegistered === true;
     const phone =
       typeof body.phone === "string" ? body.phone.trim() : "";
+    const crewIntro =
+      typeof body.crewIntro === "string" && body.crewIntro.trim()
+        ? body.crewIntro.trim().slice(0, 300)
+        : null;
+    const crewRegion =
+      typeof body.crewRegion === "string" && body.crewRegion.trim()
+        ? body.crewRegion.trim().slice(0, 60)
+        : null;
 
     if (!email || !password || !name) {
       return NextResponse.json(
@@ -107,6 +115,8 @@ export async function POST(request: NextRequest) {
           instagram,
           runhouse_map_registered: runhouseMapRegistered,
           discount_status: isCrew ? "pending" : null,
+          crew_intro: isCrew ? crewIntro : null,
+          crew_region: isCrew ? crewRegion : null,
         });
 
       if (profileError) {

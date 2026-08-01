@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
@@ -18,6 +19,11 @@ export default function ProfilePage() {
   // 폼 상태
   const [name, setName] = useState("");
   const [crewName, setCrewName] = useState("");
+  const [crewIntro, setCrewIntro] = useState("");
+  const [crewRegion, setCrewRegion] = useState("");
+  const [crewLogoUrl, setCrewLogoUrl] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   // 배송지 상태
@@ -40,6 +46,9 @@ export default function ProfilePage() {
     if (profile) {
       setName(profile.name);
       setCrewName(profile.crew_name || "");
+      setCrewIntro(profile.crew_intro || "");
+      setCrewRegion(profile.crew_region || "");
+      setCrewLogoUrl(profile.crew_logo_url || null);
       if (profile.default_address) {
         setAddress({
           recipientName: profile.default_address.recipientName || "",
@@ -80,6 +89,8 @@ export default function ProfilePage() {
         body: JSON.stringify({
           name: name.trim(),
           crewName,
+          crewIntro,
+          crewRegion,
           defaultAddress: address.recipientName
             ? {
                 recipientName: address.recipientName,
@@ -105,6 +116,28 @@ export default function ProfilePage() {
       toast.error("프로필 저장에 실패했습니다.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // 크루 로고 업로드
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("logo", file);
+      const res = await fetch("/api/auth/crew-logo", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "업로드 실패");
+      setCrewLogoUrl(data.data.url);
+      await refreshProfile();
+      toast.success("로고를 변경했어요.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "업로드에 실패했습니다.");
+    } finally {
+      setLogoUploading(false);
+      if (logoInputRef.current) logoInputRef.current.value = "";
     }
   };
 
@@ -224,18 +257,82 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* 크루 이름 (운영진만) */}
+              {/* 크루 정체성 (운영진만) — 상점 카드/둘러보기에 노출 */}
               {profile.user_type === "crew_staff" && (
-                <div className="space-y-2">
-                  <Label htmlFor="crewName">러닝크루 이름</Label>
-                  <div className="relative">
-                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <div className="space-y-4 rounded-lg border border-hairline p-3">
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    크루 소개 (상점·둘러보기 카드에 표시돼요)
+                  </p>
+
+                  {/* 로고 */}
+                  <div className="flex items-center gap-3">
+                    {crewLogoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={crewLogoUrl}
+                        alt=""
+                        className="h-14 w-14 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#C7FF00] text-lg font-black text-[#0B0C0A]">
+                        {(crewName || "?").trim().charAt(0) || "?"}
+                      </span>
+                    )}
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleLogoUpload}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={logoUploading}
+                      onClick={() => logoInputRef.current?.click()}
+                    >
+                      {logoUploading ? "업로드 중..." : "로고 변경"}
+                    </Button>
+                  </div>
+
+                  {/* 크루 이름 */}
+                  <div className="space-y-2">
+                    <Label htmlFor="crewName">러닝크루 이름</Label>
+                    <div className="relative">
+                      <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input
+                        id="crewName"
+                        value={crewName}
+                        onChange={(e) => setCrewName(e.target.value)}
+                        placeholder="러닝크루 이름"
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 활동지역 */}
+                  <div className="space-y-2">
+                    <Label htmlFor="crewRegion">활동지역</Label>
                     <Input
-                      id="crewName"
-                      value={crewName}
-                      onChange={(e) => setCrewName(e.target.value)}
-                      placeholder="러닝크루 이름"
-                      className="pl-10"
+                      id="crewRegion"
+                      value={crewRegion}
+                      onChange={(e) => setCrewRegion(e.target.value)}
+                      placeholder="예: 서울 · 한강"
+                      maxLength={60}
+                    />
+                  </div>
+
+                  {/* 소개글 */}
+                  <div className="space-y-2">
+                    <Label htmlFor="crewIntro">소개글</Label>
+                    <Textarea
+                      id="crewIntro"
+                      value={crewIntro}
+                      onChange={(e) => setCrewIntro(e.target.value)}
+                      placeholder="우리 크루를 한 줄로 소개해 주세요."
+                      rows={2}
+                      maxLength={300}
                     />
                   </div>
                 </div>

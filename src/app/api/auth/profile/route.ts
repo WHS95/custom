@@ -74,13 +74,21 @@ export async function PATCH(request: NextRequest) {
     }
 
     const defaultAddress = body.defaultAddress ?? null;
+    const isCrew = profile.user_type === "crew_staff";
+    const crewIntro =
+      typeof body.crewIntro === "string" ? body.crewIntro.trim().slice(0, 300) : null;
+    const crewRegion =
+      typeof body.crewRegion === "string" ? body.crewRegion.trim().slice(0, 60) : null;
     const supabase = createServerSupabaseClient();
     const { error } = await supabase
       .from("user_profiles")
       .update({
         name,
-        crew_name: profile.user_type === "crew_staff" ? crewName : null,
+        crew_name: isCrew ? crewName : null,
         default_address: defaultAddress,
+        ...(isCrew
+          ? { crew_intro: crewIntro || null, crew_region: crewRegion || null }
+          : {}),
       })
       .eq("user_id", user.id);
 

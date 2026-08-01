@@ -51,6 +51,8 @@ export interface SignUpParams {
   instagram?: string;
   runhouseMapRegistered?: boolean;
   phone?: string;
+  crewIntro?: string;
+  crewRegion?: string;
 }
 
 export interface AuthStatePayload {
