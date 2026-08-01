@@ -187,6 +187,12 @@ export default function CrewStorePage({
             <span className="whitespace-nowrap py-3 text-sm text-muted-foreground">
               굿즈 <sup className="text-xs">{data.products.length}</sup>
             </span>
+            <Link
+              href={`/store/${storeToken}/fan-letters`}
+              className="whitespace-nowrap py-3 text-sm text-muted-foreground hover:text-ink"
+            >
+              팬레터
+            </Link>
           </div>
           <div className="flex shrink-0 gap-1.5 py-2 sm:gap-2">
             <Button
