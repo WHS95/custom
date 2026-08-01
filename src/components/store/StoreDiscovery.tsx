@@ -42,16 +42,6 @@ interface Crew {
 const DEFAULT_INTRO = "러닝으로 함께 성장하는 크루예요.";
 const DEFAULT_REGION = "활동지역 미설정";
 
-// 카드뉴스식 배너 배경(소프트 파스텔) — 인덱스로 순환
-const BANNER_BG = [
-  "#FBD5DE",
-  "#CDEDE9",
-  "#E7E0F7",
-  "#FDE8CC",
-  "#D8EAD3",
-  "#D6E4F5",
-];
-
 const won = (n: number | null) => (n != null ? n.toLocaleString("ko-KR") + "원" : "");
 
 function GoodsPreview({ g, bare = false }: { g: Goods; bare?: boolean }) {
@@ -95,13 +85,6 @@ export function StoreDiscovery() {
   const [crews, setCrews] = useState<Crew[] | null>(null);
   const [goods, setGoods] = useState<Goods[]>([]);
 
-  // 크루별 대표 굿즈(첫 굿즈) — 배너 이미지용
-  const featuredByStore = useMemo(() => {
-    const m = new Map<string, Goods>();
-    for (const g of goods) if (!m.has(g.storeToken)) m.set(g.storeToken, g);
-    return m;
-  }, [goods]);
-
   useEffect(() => {
     fetch("/api/stores/discover")
       .then((r) => r.json())
@@ -134,58 +117,63 @@ export function StoreDiscovery() {
         </div>
       ) : (
         <>
-          {/* 크루 상점 — 카드뉴스식 배너 캐러셀 */}
+          {/* 크루 상점 — 다크 아이덴티티 배너 카드 */}
           <section className="mt-8">
             <h2 className="mb-3 text-lg font-bold text-ink">크루 상점</h2>
-            <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [&::-webkit-scrollbar]:hidden">
-              {crews.map((c, i) => {
-                const featured = featuredByStore.get(c.storeToken) ?? null;
-                return (
-                  <Link
-                    key={c.storeToken}
-                    href={`/store/${c.storeToken}`}
-                    className="group relative flex aspect-[3/4] w-[260px] shrink-0 snap-start flex-col justify-end overflow-hidden rounded-2xl p-5 sm:w-[300px]"
-                    style={{ backgroundColor: BANNER_BG[i % BANNER_BG.length] }}
+            <div className="grid gap-4 sm:grid-cols-2">
+              {crews.map((c) => (
+                <Link
+                  key={c.storeToken}
+                  href={`/store/${c.storeToken}`}
+                  className="group relative overflow-hidden rounded-2xl bg-ink p-5 text-canvas"
+                >
+                  {/* 워터마크 크루명 */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute -right-2 bottom-0 select-none font-display text-6xl font-black leading-none tracking-tight text-white/[0.05] sm:text-7xl"
                   >
-                    {/* eyebrow */}
-                    <span className="absolute left-5 top-5 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[#0B0C0A]/70">
-                      CREW STORE
-                    </span>
-                    {/* 대표 굿즈(시안) 플로팅 */}
-                    {featured?.designLayers && featured.designLayers.length > 0 && (
-                      <div className="pointer-events-none absolute inset-x-6 top-10 bottom-24 transition-transform duration-300 group-hover:-translate-y-1">
-                        <GoodsPreview g={featured} bare />
-                      </div>
-                    )}
-                    {/* 로고 */}
-                    {c.logoUrl && (
+                    {c.crewName}
+                  </span>
+                  <div className="relative flex items-start gap-4">
+                    {c.logoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={c.logoUrl}
                         alt=""
-                        className="absolute right-5 top-4 h-10 w-10 rounded-full border-2 border-white/70 object-cover"
+                        className="h-16 w-16 shrink-0 rounded-full object-cover"
                       />
+                    ) : (
+                      <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#C7FF00] text-2xl font-black text-[#0B0C0A]">
+                        {(c.crewName ?? "?").trim().charAt(0) || "?"}
+                      </span>
                     )}
-                    {/* 텍스트 */}
-                    <div className="relative">
-                      <p className="mb-1 inline-flex items-center gap-1 rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-medium text-[#0B0C0A]/70">
-                        <MapPin className="h-3 w-3" />
-                        {c.region?.trim() || DEFAULT_REGION}
-                      </p>
-                      <p className="font-display text-2xl font-black leading-tight text-[#0B0C0A]">
-                        {c.crewName}
-                      </p>
-                      <p className="mt-1 line-clamp-2 text-xs text-[#0B0C0A]/70">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="truncate font-display text-xl font-black text-canvas">
+                          {c.crewName}
+                        </span>
+                        <span className="shrink-0 rounded-[4px] bg-[#C7FF00] px-1.5 py-0.5 text-[10px] font-extrabold tracking-[0.1em] text-[#0B0C0A]">
+                          CREW STORE
+                        </span>
+                      </div>
+                      <p className="mt-1.5 line-clamp-2 text-sm text-stone">
                         {c.intro?.trim() || DEFAULT_INTRO}
                       </p>
-                      <p className="mt-2 flex items-center gap-1 text-[11px] text-[#0B0C0A]/60">
-                        <Package className="h-3 w-3" /> 굿즈 {c.goodsCount}종
-                        <ArrowRight className="ml-auto h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                      </p>
+                      <div className="mt-2 flex items-center gap-2 text-[11px] text-stone/80">
+                        <span className="inline-flex items-center gap-0.5">
+                          <MapPin className="h-3 w-3" />
+                          {c.region?.trim() || DEFAULT_REGION}
+                        </span>
+                        <span className="text-white/20">·</span>
+                        <span className="inline-flex items-center gap-0.5">
+                          <Package className="h-3 w-3" /> 굿즈 {c.goodsCount}종
+                        </span>
+                        <ArrowRight className="ml-auto h-4 w-4 text-stone transition-transform group-hover:translate-x-0.5" />
+                      </div>
                     </div>
-                  </Link>
-                );
-              })}
+                  </div>
+                </Link>
+              ))}
             </div>
           </section>
 
