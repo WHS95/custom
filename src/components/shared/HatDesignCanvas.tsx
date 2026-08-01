@@ -59,6 +59,8 @@ interface HatDesignCanvasProps {
   className?: string;
   showSafeZone?: boolean;
   showViewLabel?: boolean;
+  // 옷 목업 이미지 숨김 (투명 스티커 추출용 — 디자인 레이어만)
+  hideProduct?: boolean;
 
   // 상품별 색상/이미지 (제공되면 기본 config 대신 사용)
   productColors?: ProductColor[];
@@ -246,6 +248,7 @@ export function HatDesignCanvas({
   className = "",
   showSafeZone = true,
   showViewLabel = false,
+  hideProduct = false,
   productColors,
   productSafeZones,
 }: HatDesignCanvasProps) {
@@ -344,11 +347,11 @@ export function HatDesignCanvas({
   return (
     <div
       ref={canvasRef}
-      className={`relative aspect-square bg-gray-50 overflow-hidden ${className}`}
+      className={`relative aspect-square ${hideProduct ? "" : "bg-gray-50"} overflow-hidden ${className}`}
       onClick={handleCanvasClick}
     >
-      {/* 모자 이미지 - 캔버스 전체를 채움 */}
-      {hatImage && (
+      {/* 모자 이미지 - 캔버스 전체를 채움 (hideProduct면 숨김 — 투명 스티커용) */}
+      {hatImage && !hideProduct && (
         <img
           src={hatImage}
           alt={`${hatColor} hat ${currentView}`}

@@ -17,6 +17,8 @@ import type { PriceTier } from "@/domain/product/types";
 import { PricingTableModal } from "./PricingTableModal";
 import { ReviewRequestDialog } from "./ReviewRequestDialog";
 import { ProposalDialog } from "./ProposalDialog";
+import { DownloadDesignDialog } from "./DownloadDesignDialog";
+import { Download } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
@@ -59,6 +61,7 @@ export function ProductSidebar({
   const [crewGateOpen, setCrewGateOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [proposalDialogOpen, setProposalDialogOpen] = useState(false);
+  const [downloadOpen, setDownloadOpen] = useState(false);
   const isCrewStaff = isAuthenticated && profile?.user_type === "crew_staff";
   const isCrewPending = isAuthenticated && profile?.user_type === "crew_pending";
 
@@ -271,7 +274,36 @@ export function ProductSidebar({
             : "공장에서 제작 가능한지 먼저 확인해요. 승인되면 ‘내 제작 문의’에서 우리 크루 상점에 굿즈로 등록할 수 있어요."}
         </p>
 
+        {/* PNG 다운로드 — 무로그인, 인스타 스토리용 */}
+        <Button
+          variant="outline"
+          onClick={() => setDownloadOpen(true)}
+          disabled={!hasCurrentDesign}
+          className="w-full h-10 gap-1.5 rounded lg:h-9 lg:text-sm"
+        >
+          <Download className="h-4 w-4" />
+          PNG 다운로드 (스토리용)
+        </Button>
+
       </div>
+
+      {/* PNG 다운로드 다이얼로그 (무로그인) */}
+      <DownloadDesignDialog
+        open={downloadOpen}
+        onOpenChange={setDownloadOpen}
+        designLayers={currentColorLayers}
+        designColor={
+          selectedColorData
+            ? {
+                id: selectedColorData.id,
+                label: selectedColorData.label,
+                hex: selectedColorData.hex,
+                views: selectedColorData.views as Record<string, string>,
+              }
+            : null
+        }
+        productName={displayName}
+      />
 
       {/* 크루원 제안 다이얼로그 (?propose 모드) */}
       {productId && proposeToken && (

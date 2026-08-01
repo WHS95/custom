@@ -27,6 +27,7 @@ import {
   Store,
   ClipboardCheck,
   Bell,
+  Download,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -71,6 +72,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/", label: t("common.studio"), icon: Home },
+    { href: "/create", label: "무료 만들기", icon: Download },
     { href: "/stores", label: "크루 상점", icon: Store },
     { href: "/gallery", label: t("common.showcase"), icon: Image },
     ...(isCrewStaff

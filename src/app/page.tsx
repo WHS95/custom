@@ -77,13 +77,22 @@ export default async function Home() {
                 갤러리 보기
               </Link>
             </div>
-            <Link
-              href="/guide"
-              className="mt-4 inline-flex items-center gap-1.5 text-sm text-stone underline underline-offset-4 hover:text-canvas transition-colors"
-            >
-              처음이세요? 주문·운영이 어떻게 되는지 보기
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+              <Link
+                href="/create"
+                className="inline-flex items-center gap-1.5 rounded-full bg-canvas/10 px-4 py-2 text-sm font-medium text-canvas ring-1 ring-canvas/20 hover:bg-canvas/15 transition-colors"
+              >
+                🎽 무료로 만들어 인스타 스토리에 올리기
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+              <Link
+                href="/guide"
+                className="inline-flex items-center gap-1.5 text-sm text-stone underline underline-offset-4 hover:text-canvas transition-colors"
+              >
+                주문·운영이 어떻게 되나요?
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
