@@ -355,6 +355,69 @@ export type Database = {
         }
         Relationships: []
       }
+      fan_letters: {
+        Row: {
+          author_name: string
+          created_at: string
+          hidden: boolean
+          id: string
+          image_url: string | null
+          like_count: number
+          message: string
+          store_id: string
+          tenant_id: string
+        }
+        Insert: {
+          author_name: string
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          image_url?: string | null
+          like_count?: number
+          message: string
+          store_id: string
+          tenant_id: string
+        }
+        Update: {
+          author_name?: string
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          image_url?: string | null
+          like_count?: number
+          message?: string
+          store_id?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
+      fan_letter_comments: {
+        Row: {
+          author_name: string
+          created_at: string
+          fan_letter_id: string
+          id: string
+          is_owner: boolean
+          message: string
+        }
+        Insert: {
+          author_name: string
+          created_at?: string
+          fan_letter_id: string
+          id?: string
+          is_owner?: boolean
+          message: string
+        }
+        Update: {
+          author_name?: string
+          created_at?: string
+          fan_letter_id?: string
+          id?: string
+          is_owner?: boolean
+          message?: string
+        }
+        Relationships: []
+      }
       groble_webhook_events: {
         Row: {
           created_at: string
@@ -1171,6 +1234,7 @@ export type Database = {
     Functions: {
       generate_order_number: { Args: { p_tenant_id: string }; Returns: string }
       get_today_order_count: { Args: { p_tenant_id: string }; Returns: number }
+      increment_fan_letter_like: { Args: { p_id: string }; Returns: number }
     }
     Enums: {
       order_status:
