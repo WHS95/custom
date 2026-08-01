@@ -71,6 +71,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/", label: t("common.studio"), icon: Home },
+    { href: "/stores", label: "크루 상점", icon: Store },
     { href: "/gallery", label: t("common.showcase"), icon: Image },
     ...(isCrewStaff
       ? [
