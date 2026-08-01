@@ -6,7 +6,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Package, ArrowRight } from "lucide-react";
+import { Package, ArrowRight, MapPin } from "lucide-react";
 import {
   HatDesignCanvas,
   type DesignLayer,
@@ -34,7 +34,13 @@ interface Crew {
   crewName: string;
   storeToken: string;
   goodsCount: number;
+  logoUrl: string | null;
+  intro: string | null;
+  region: string | null;
 }
+
+const DEFAULT_INTRO = "러닝으로 함께 성장하는 크루예요.";
+const DEFAULT_REGION = "활동지역 미설정";
 
 const won = (n: number | null) => (n != null ? n.toLocaleString("ko-KR") + "원" : "");
 
@@ -105,25 +111,44 @@ export function StoreDiscovery() {
         </div>
       ) : (
         <>
-          {/* 크루 상점 (정체성) */}
+          {/* 크루 상점 (정체성 카드) */}
           <section className="mt-8">
             <h2 className="mb-3 text-lg font-bold text-ink">크루 상점</h2>
-            <div className="flex gap-3 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden">
+            <div className="grid gap-4 sm:grid-cols-2">
               {crews.map((c) => (
                 <Link
                   key={c.storeToken}
                   href={`/store/${c.storeToken}`}
-                  className="group flex w-40 shrink-0 flex-col items-center gap-2 rounded-xl border border-hairline p-4 transition-colors hover:border-ink"
+                  className="group flex items-center gap-4 rounded-2xl border border-hairline bg-canvas p-4 transition-colors hover:border-ink"
                 >
-                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#C7FF00] text-xl font-black text-[#0B0C0A]">
-                    {(c.crewName ?? "?").trim().charAt(0) || "?"}
-                  </span>
-                  <span className="w-full truncate text-center text-sm font-bold text-ink">
-                    {c.crewName}
-                  </span>
-                  <span className="flex items-center gap-1 text-[11px] text-mute">
-                    <Package className="h-3 w-3" /> 굿즈 {c.goodsCount}종
-                  </span>
+                  {c.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={c.logoUrl}
+                      alt=""
+                      className="h-16 w-16 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#C7FF00] text-2xl font-black text-[#0B0C0A]">
+                      {(c.crewName ?? "?").trim().charAt(0) || "?"}
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate font-bold text-ink">{c.crewName}</span>
+                      <span className="shrink-0 rounded-full bg-soft-cloud px-2 py-0.5 text-[11px] text-mute">
+                        <MapPin className="mr-0.5 inline h-3 w-3" />
+                        {c.region?.trim() || DEFAULT_REGION}
+                      </span>
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-xs text-mute">
+                      {c.intro?.trim() || DEFAULT_INTRO}
+                    </p>
+                    <p className="mt-1.5 flex items-center gap-1 text-[11px] text-mute">
+                      <Package className="h-3 w-3" /> 굿즈 {c.goodsCount}종
+                    </p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-mute transition-transform group-hover:translate-x-0.5" />
                 </Link>
               ))}
             </div>

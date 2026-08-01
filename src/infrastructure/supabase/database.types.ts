@@ -1121,6 +1121,9 @@ export type Database = {
         Row: {
           created_at: string
           crew_name: string | null
+          crew_intro: string | null
+          crew_logo_url: string | null
+          crew_region: string | null
           default_address: Json | null
           discount_reviewed_at: string | null
           discount_status: string | null
@@ -1139,6 +1142,9 @@ export type Database = {
         Insert: {
           created_at?: string
           crew_name?: string | null
+          crew_intro?: string | null
+          crew_logo_url?: string | null
+          crew_region?: string | null
           default_address?: Json | null
           discount_reviewed_at?: string | null
           discount_status?: string | null
@@ -1157,6 +1163,9 @@ export type Database = {
         Update: {
           created_at?: string
           crew_name?: string | null
+          crew_intro?: string | null
+          crew_logo_url?: string | null
+          crew_region?: string | null
           default_address?: Json | null
           discount_reviewed_at?: string | null
           discount_status?: string | null

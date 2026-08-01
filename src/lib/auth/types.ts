@@ -20,6 +20,9 @@ export interface UserProfile {
   phone: string;
   user_type: "individual" | "crew_staff" | "crew_pending";
   crew_name: string | null;
+  crew_logo_url: string | null;
+  crew_intro: string | null;
+  crew_region: string | null;
   instagram: string | null;
   runhouse_map_registered: boolean;
   /** 할인 승인 상태 — null(개인) | pending | approved | rejected */

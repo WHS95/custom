@@ -15,10 +15,29 @@ export async function GET() {
 
     const { data: stores } = await supabase
       .from("crew_stores")
-      .select("id, crew_name, store_token, created_at")
+      .select("id, crew_name, store_token, creator_user_id, created_at")
       .order("created_at", { ascending: false });
     const storeList = stores ?? [];
     const storeById = new Map(storeList.map((s) => [s.id, s]));
+
+    // 크루 정체성(로고·소개·지역) — creator 프로필에서
+    const creatorIds = [...new Set(storeList.map((s) => s.creator_user_id))];
+    const profileMap = new Map<
+      string,
+      { crew_logo_url: string | null; crew_intro: string | null; crew_region: string | null }
+    >();
+    if (creatorIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("user_profiles")
+        .select("user_id, crew_logo_url, crew_intro, crew_region")
+        .in("user_id", creatorIds);
+      for (const p of profiles ?? [])
+        profileMap.set(p.user_id, {
+          crew_logo_url: p.crew_logo_url,
+          crew_intro: p.crew_intro,
+          crew_region: p.crew_region,
+        });
+    }
 
     const storeIds = storeList.map((s) => s.id);
     let collections: Array<{
@@ -95,11 +114,17 @@ export async function GET() {
     }
     const crews = storeList
       .filter((s) => (goodsCount.get(s.id) ?? 0) > 0)
-      .map((s) => ({
-        crewName: s.crew_name,
-        storeToken: s.store_token,
-        goodsCount: goodsCount.get(s.id) ?? 0,
-      }));
+      .map((s) => {
+        const prof = profileMap.get(s.creator_user_id);
+        return {
+          crewName: s.crew_name,
+          storeToken: s.store_token,
+          goodsCount: goodsCount.get(s.id) ?? 0,
+          logoUrl: prof?.crew_logo_url ?? null,
+          intro: prof?.crew_intro ?? null,
+          region: prof?.crew_region ?? null,
+        };
+      });
 
     return NextResponse.json({ success: true, data: { crews, goods } });
   } catch (error) {
