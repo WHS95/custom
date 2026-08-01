@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CrewProfileEditor } from "@/components/store/CrewProfileEditor";
 import {
   Sheet,
   SheetContent,
@@ -489,7 +490,8 @@ export default function StoreManagePage({
         </TabsContent>
 
         {/* ══ 설정 ══ */}
-        <TabsContent value="settings" className="mt-4">
+        <TabsContent value="settings" className="mt-4 space-y-4">
+          <CrewProfileEditor />
           <SettingsPanel data={data} storeToken={storeToken} onChanged={reload} />
         </TabsContent>
       </Tabs>
