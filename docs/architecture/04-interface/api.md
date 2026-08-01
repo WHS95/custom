@@ -108,6 +108,8 @@
 | `POST /api/store/[storeToken]/convert-all` | 👑 | 열린 굿즈 전부를 **주문 1건**(주문번호 1개)으로 원자적 전환, 배송지 입력 |
 | `POST /api/store/[storeToken]/proposals` | 🟢 | 크루원 디자인 제안 접수(design_snapshot+메모+첨부, 비로그인). 화면 `/store/[token]/propose`→스튜디오 `?propose=` |
 | `GET\|PUT /api/store/[storeToken]/proposals` | 👑 | 제안함 목록 / 채택(→manufacture_reviews 공장 재승인)·반려. 화면 `/store/[token]/proposals` |
+| `GET\|POST /api/store/[storeToken]/fan-letters` `\|` `/[id]`(GET·PUT숨김) `\|` `/[id]/comments`(POST) `\|` `/[id]/like`(POST) | 🟢/👑 | 팬레터 목록·작성(익명·이미지)·상세+댓글·좋아요(rpc)·운영진 숨김. 화면 `/store/[token]/fan-letters` |
+| `GET /stores`(page) | 🟢 | 크루 상점 둘러보기 디렉토리(굿즈 있는 상점 목록) |
 
 > 화면: `/store/[storeToken]`(장바구니 시트·카트바·내 주문), `/store/[storeToken]/manage`
 > (취합현황·주문진행·굿즈·설정 탭). 입금 관리 UI 없음 — 취합은 확인 전용.

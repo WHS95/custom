@@ -73,6 +73,14 @@
 > manufacture_reviews로 변환(공장 재승인) → 상점 등록. 제출은 공개(`POST /api/store/{token}/proposals`),
 > 목록·채택/반려는 상점 소유 운영진만.
 
+### fan_letters / fan_letter_comments (mig 015)
+`fan_letters`: `id(PK)`, `tenant_id`, `store_id→crew_stores(CASCADE)`, `author_name`, `message`,
+`image_url`, `like_count`, `hidden`(운영진 숨김), `created_at`. **RLS(service_role).**
+`fan_letter_comments`: `id(PK)`, `fan_letter_id→fan_letters(CASCADE)`, `author_name`, `message`,
+`is_owner`(크루 답글), `created_at`.
+> 팬(익명)이 크루 상점에 응원 메시지. 좋아요는 rpc `increment_fan_letter_like`(원자 증가) +
+> 브라우저별 1회는 클라이언트 localStorage 가드. 화면 `/store/[token]/fan-letters`.
+
 ### crew_stores (mig 008)
 `id(PK)`, `tenant_id→tenants`, `creator_user_id`, `crew_name`, `store_token`,
 `open_from`·`open_until`(mig 009 — 상점 운영기간, NULL=상시). **RLS.**
