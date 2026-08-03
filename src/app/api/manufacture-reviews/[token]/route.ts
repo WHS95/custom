@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/infrastructure/supabase";
-import { getProductById } from "@/application/product-service";
+import { getProductById, getPrintAreas } from "@/application/product-service";
 import { crewHandleFromEmail } from "@/lib/discord-notify";
 import type { HatView } from "@/lib/store/studio-context";
 
@@ -34,6 +34,9 @@ export async function GET(_request: NextRequest, { params }: Params) {
     const variant = product?.variants.find(
       (v: { id: string }) => v.id === review.color_id,
     );
+    const printAreas = product
+      ? await getPrintAreas(review.product_id, review.color_id)
+      : {};
 
     // 요청자 식별 정보 (핸들·담당자·연락처)
     const { data: creator } = await supabase
@@ -70,6 +73,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
         reviewedAt: review.reviewed_at,
         attachments: review.attachments ?? [],
         designLayers: review.design_snapshot,
+        printAreas,
         designColor: variant
           ? {
               id: variant.id,

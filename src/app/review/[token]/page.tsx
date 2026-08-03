@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { DesignLayer } from "@/components/shared/HatDesignCanvas";
 import { DesignReviewDetail } from "@/components/shared/DesignReviewDetail";
+import type { PrintArea } from "@/lib/print-spec";
 
 interface Attachment {
   name: string;
@@ -30,6 +31,7 @@ interface ReviewData {
   reviewedAt: string | null;
   attachments: Attachment[];
   designLayers: DesignLayer[] | null;
+  printAreas?: Record<string, PrintArea>;
   designColor: {
     id: string;
     label: string;
@@ -130,6 +132,7 @@ export default function FactoryReviewPage({
       <DesignReviewDetail
         designLayers={data.designLayers}
         designColor={data.designColor}
+        printAreas={data.printAreas}
       />
 
       {/* 요청 메모 */}

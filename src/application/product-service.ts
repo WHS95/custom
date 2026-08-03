@@ -80,6 +80,46 @@ export async function getCustomizableAreas(productId: string, colorId?: string):
 }
 
 /**
+ * 뷰별 인쇄 영역 실측 정보 맵 — 공장 작업지시(실물 치수·시안)용.
+ * 실측 가로(printWidthCm)가 설정된 활성 영역만 포함. 색상별 영역이 있으면
+ * 우선하고, 없으면 공통(color_id=null) 영역을 쓴다.
+ */
+export async function getPrintAreas(
+  productId: string,
+  colorId: string,
+): Promise<Record<string, {
+  zoneX: number;
+  zoneY: number;
+  zoneWidth: number;
+  zoneHeight: number;
+  printWidthCm: number;
+}>> {
+  const areas = await getCustomizableAreas(productId, colorId);
+  const byView: Record<string, CustomizableArea> = {};
+  for (const a of areas) {
+    if (!a.isEnabled || a.printWidthCm == null) continue;
+    const existing = byView[a.viewName];
+    // 색상 지정 영역이 공통 영역보다 우선
+    if (!existing || (a.colorId && !existing.colorId)) {
+      byView[a.viewName] = a;
+    }
+  }
+  const result: Record<string, {
+    zoneX: number; zoneY: number; zoneWidth: number; zoneHeight: number; printWidthCm: number;
+  }> = {};
+  for (const [view, a] of Object.entries(byView)) {
+    result[view] = {
+      zoneX: a.zoneX,
+      zoneY: a.zoneY,
+      zoneWidth: a.zoneWidth,
+      zoneHeight: a.zoneHeight,
+      printWidthCm: a.printWidthCm as number,
+    };
+  }
+  return result;
+}
+
+/**
  * 커스터마이즈 영역 저장 (upsert)
  */
 export async function saveCustomizableArea(

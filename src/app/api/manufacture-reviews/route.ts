@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { createServerSupabaseClient } from "@/infrastructure/supabase";
 import { DEFAULT_TENANT_ID } from "@/application/tenant-service";
-import { getProductById } from "@/application/product-service";
+import { getProductById, getPrintAreas } from "@/application/product-service";
 import { getCurrentAuthState } from "@/lib/auth/server-auth";
 import { uploadReviewAttachment } from "@/infrastructure/supabase/storage";
 import {
@@ -203,11 +203,14 @@ export async function GET() {
         .map((p: any) => [p.id, p]),
     );
 
-    const items = (reviews || []).map((r) => {
+    const items = await Promise.all((reviews || []).map(async (r) => {
       const product = productMap.get(r.product_id);
       const variant = product?.variants.find(
         (v: { id: string }) => v.id === r.color_id,
       );
+      const printAreas = product
+        ? await getPrintAreas(r.product_id, r.color_id)
+        : {};
       // 상세 미리보기용 색상 뷰 이미지
       const views = product
         ? Object.fromEntries(
@@ -229,6 +232,7 @@ export async function GET() {
         registered: !!r.registered_collection_id,
         createdAt: r.created_at,
         designLayers: r.design_snapshot,
+        printAreas,
         designColor: variant
           ? {
               id: variant.id,
@@ -238,7 +242,7 @@ export async function GET() {
             }
           : null,
       };
-    });
+    }));
 
     return NextResponse.json({ success: true, data: { reviews: items } });
   } catch (error) {

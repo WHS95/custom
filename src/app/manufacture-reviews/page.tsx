@@ -17,6 +17,7 @@ import {
   DesignReviewDetail,
   type DesignColorInfo,
 } from "@/components/shared/DesignReviewDetail";
+import type { PrintArea } from "@/lib/print-spec";
 import { cn } from "@/lib/utils";
 
 interface ReviewItem {
@@ -33,6 +34,7 @@ interface ReviewItem {
   createdAt: string;
   designLayers: DesignLayer[] | null;
   designColor: DesignColorInfo | null;
+  printAreas?: Record<string, PrintArea>;
 }
 
 const STATUS_META: Record<
@@ -172,6 +174,7 @@ export default function ManufactureReviewsPage() {
                     <DesignReviewDetail
                       designLayers={r.designLayers}
                       designColor={r.designColor}
+                      printAreas={r.printAreas}
                       size="sm"
                     />
                     {r.note && (
