@@ -10,7 +10,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/infrastructure/supabase";
-import { getProductById } from "@/application/product-service";
+import { getProductById, getPrintAreas } from "@/application/product-service";
 import { hasNameField } from "@/lib/personalization";
 import type { HatView } from "@/lib/store/studio-context";
 
@@ -53,6 +53,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
         const variant = product?.variants.find(
           (v: { id: string }) => v.id === col.design_color_id,
         );
+        const printAreas =
+          product && col.design_color_id
+            ? await getPrintAreas(col.product_id!, col.design_color_id)
+            : {};
         const views = product
           ? Object.fromEntries(
               product.images
@@ -102,6 +106,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
           roster,
           sizes,
           designLayers: col.design_snapshot,
+          printAreas,
           designColor: variant
             ? {
                 id: variant.id,

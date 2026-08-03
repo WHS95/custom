@@ -18,7 +18,9 @@
 
 ### product_customizable_areas
 `id(PK)`, `product_id→products`, `color_id`(nullable=공통), `view_name`(front/back/left/right/top),
-`display_name`, `zone_x/y/width/height`(%), `image_url`, `is_enabled`, `sort_order`.
+`display_name`, `zone_x/y/width/height`(%), `print_width_cm`(nullable — mig 017), `image_url`, `is_enabled`, `sort_order`.
+> mig 017: 인쇄 영역 실측 가로 폭(cm). 공장 작업지시(실물크기 300DPI 시안·mm 사양)용.
+> 세로(cm)는 `zone_width:zone_height` 비율로 파생 → 화면과 인쇄물 1:1 대응(왜곡 없음).
 
 ### customers
 `id(PK)`, `tenant_id→tenants`, `name`, `email`, `phone`, `organization_name`.

@@ -9,6 +9,7 @@ import { use, useEffect, useState } from "react";
 import { Package, Truck, Layers } from "lucide-react";
 import type { DesignLayer } from "@/components/shared/HatDesignCanvas";
 import { DesignReviewDetail } from "@/components/shared/DesignReviewDetail";
+import type { PrintArea } from "@/lib/print-spec";
 import { Spinner } from "@/components/ui/spinner";
 
 interface Group {
@@ -21,6 +22,7 @@ interface Group {
     | null;
   sizes: { size: string; quantity: number }[] | null;
   designLayers: DesignLayer[] | null;
+  printAreas?: Record<string, PrintArea>;
   designColor: {
     id: string;
     label: string;
@@ -150,6 +152,7 @@ export default function FactoryOrderPage({
             <DesignReviewDetail
               designLayers={g.designLayers}
               designColor={g.designColor}
+              printAreas={g.printAreas}
               size="sm"
             />
 
