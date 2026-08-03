@@ -292,6 +292,7 @@ export class SupabaseProductRepository implements IProductRepository {
           zone_y: dto.zoneY,
           zone_width: dto.zoneWidth,
           zone_height: dto.zoneHeight,
+          print_width_cm: dto.printWidthCm ?? null,
           image_url: dto.imageUrl || null,
           is_enabled: dto.isEnabled ?? true,
           sort_order: dto.sortOrder ?? 0,
@@ -362,6 +363,8 @@ export class SupabaseProductRepository implements IProductRepository {
       zoneY: Number(row.zone_y),
       zoneWidth: Number(row.zone_width),
       zoneHeight: Number(row.zone_height),
+      printWidthCm:
+        row.print_width_cm == null ? null : Number(row.print_width_cm),
       imageUrl: row.image_url as string | undefined,
       isEnabled: row.is_enabled as boolean,
       sortOrder: row.sort_order as number,

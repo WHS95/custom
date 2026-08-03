@@ -79,6 +79,7 @@ export async function PUT(
       zoneY: body.zoneY,
       zoneWidth: body.zoneWidth,
       zoneHeight: body.zoneHeight,
+      printWidthCm: body.printWidthCm ?? null,
       imageUrl: body.imageUrl,
       isEnabled: body.isEnabled,
       sortOrder: body.sortOrder,

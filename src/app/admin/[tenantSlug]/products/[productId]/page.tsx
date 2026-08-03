@@ -75,6 +75,9 @@ function PrintAreaEditor({
     height: area?.zoneHeight ?? DEFAULT_ZONES[view].height,
   });
   const [isEnabled, setIsEnabled] = useState(area?.isEnabled ?? true);
+  const [printWidthCm, setPrintWidthCm] = useState<string>(
+    area?.printWidthCm != null ? String(area.printWidthCm) : "",
+  );
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -91,6 +94,7 @@ function PrintAreaEditor({
         height: area.zoneHeight,
       });
       setIsEnabled(area.isEnabled);
+      setPrintWidthCm(area.printWidthCm != null ? String(area.printWidthCm) : "");
     }
   }
 
@@ -158,9 +162,16 @@ function PrintAreaEditor({
       zoneY: Math.round(zone.y * 10) / 10,
       zoneWidth: Math.round(zone.width * 10) / 10,
       zoneHeight: Math.round(zone.height * 10) / 10,
+      printWidthCm: printWidthCm.trim() ? parseFloat(printWidthCm) : null,
       isEnabled,
     });
   };
+
+  // 인쇄 영역 종횡비로 파생한 실측 세로(cm) — 화면과 인쇄물 1:1 대응
+  const derivedHeightCm =
+    printWidthCm.trim() && zone.width > 0
+      ? (parseFloat(printWidthCm) * zone.height) / zone.width
+      : null;
 
   return (
     <div className='space-y-4'>
@@ -312,6 +323,37 @@ function PrintAreaEditor({
                 disabled={!isEnabled}
               />
             </div>
+          </div>
+
+          {/* 실측 치수 (공장 작업지시용) */}
+          <div className='space-y-1 rounded-lg border border-amber-200 bg-amber-50 p-3'>
+            <Label className='text-xs font-semibold text-amber-900'>
+              인쇄 영역 실측 가로 (cm) · 공장 작업지시용
+            </Label>
+            <div className='flex items-center gap-2'>
+              <Input
+                type='number'
+                min={1}
+                step={0.5}
+                placeholder='예: 28'
+                value={printWidthCm}
+                onChange={(e) => setPrintWidthCm(e.target.value)}
+                disabled={!isEnabled}
+                className='max-w-[120px]'
+              />
+              <span className='text-sm text-gray-600'>cm (가로)</span>
+              {derivedHeightCm != null && (
+                <span className='text-sm text-amber-900'>
+                  × 세로 {derivedHeightCm.toFixed(1)}cm
+                  <span className='ml-1 text-xs text-gray-500'>(자동)</span>
+                </span>
+              )}
+            </div>
+            <p className='text-[11px] leading-relaxed text-amber-800'>
+              실제 인쇄물 가로 폭을 cm로 입력하세요. 세로는 인쇄 영역 비율로
+              자동 계산됩니다. 이 값으로 공장이 실물 크기 300DPI 시안과 치수를
+              받습니다.
+            </p>
           </div>
 
           <div className='bg-gray-50 p-3 rounded-lg text-xs text-gray-600 space-y-1'>

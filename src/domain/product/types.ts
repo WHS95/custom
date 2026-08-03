@@ -46,6 +46,7 @@ export interface CustomizableArea {
   zoneY: number; // 인쇄 영역 Y (%)
   zoneWidth: number; // 인쇄 영역 너비 (%)
   zoneHeight: number; // 인쇄 영역 높이 (%)
+  printWidthCm?: number | null; // 인쇄 영역 실측 가로 폭(cm) — 공장 작업지시용. 높이는 zone 비율로 파생
   imageUrl?: string; // 해당 뷰 기본 이미지
   isEnabled: boolean;
   sortOrder: number;
@@ -125,6 +126,7 @@ export interface UpsertCustomizableAreaDTO {
   zoneY: number;
   zoneWidth: number;
   zoneHeight: number;
+  printWidthCm?: number | null; // 인쇄 영역 실측 가로 폭(cm)
   imageUrl?: string;
   isEnabled?: boolean;
   sortOrder?: number;

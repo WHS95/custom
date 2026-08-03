@@ -618,6 +618,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_enabled: boolean
+          print_width_cm: number | null
           product_id: string
           sort_order: number
           view_name: string
@@ -633,6 +634,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_enabled?: boolean
+          print_width_cm?: number | null
           product_id: string
           sort_order?: number
           view_name: string
@@ -648,6 +650,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_enabled?: boolean
+          print_width_cm?: number | null
           product_id?: string
           sort_order?: number
           view_name?: string
