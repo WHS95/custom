@@ -36,6 +36,7 @@ export interface DesignLayer {
   color?: string;
   fontSize?: number;
   fontFamily?: string;
+  vertical?: boolean; // 세로쓰기
   nameField?: boolean;
 }
 
@@ -428,6 +429,8 @@ export function HatDesignCanvas({
                       color: layer.color || "#000",
                       fontSize: `${((layer.fontSize || 24) / 400) * canvasSize}px`,
                       fontFamily: layer.fontFamily || undefined,
+                      writingMode: layer.vertical ? "vertical-rl" : undefined,
+                      textOrientation: layer.vertical ? "upright" : undefined,
                     }}
                   >
                     {layer.content}
@@ -526,6 +529,8 @@ export function HatDesignCanvas({
                         color: layer.color || "#000",
                         fontSize: `${((layer.fontSize || 24) / 400) * canvasSize}px`,
                         fontFamily: layer.fontFamily || undefined,
+                        writingMode: layer.vertical ? "vertical-rl" : undefined,
+                        textOrientation: layer.vertical ? "upright" : undefined,
                       }}
                     >
                       {layer.content}
@@ -591,6 +596,7 @@ export function measureTextLayerSize(
   text: string,
   fontSize: number,
   fontFamily: string,
+  vertical = false,
 ): { width: number; height: number } {
   const REFERENCE_SIZE = 400;
   const canvas = document.createElement("canvas");
@@ -599,11 +605,19 @@ export function measureTextLayerSize(
 
   const scaledFontSize = (fontSize / 400) * REFERENCE_SIZE;
   ctx.font = `bold ${scaledFontSize}px ${fontFamily.replace(/'/g, "")}`;
-  const metrics = ctx.measureText(text);
-
   const padding = scaledFontSize * 0.3;
-  const pxWidth = metrics.width + padding;
-  const pxHeight = scaledFontSize * 1.3 + padding;
+
+  let pxWidth: number;
+  let pxHeight: number;
+  if (vertical) {
+    // 세로쓰기: 글자를 위→아래로 쌓음 → 좁고 길쭉
+    const charCount = Math.max(1, [...text.replace(/\s/g, "")].length);
+    pxWidth = scaledFontSize * 1.3 + padding;
+    pxHeight = scaledFontSize * charCount * 1.05 + padding;
+  } else {
+    pxWidth = ctx.measureText(text).width + padding;
+    pxHeight = scaledFontSize * 1.3 + padding;
+  }
 
   const widthPercent = Math.max(
     5,
@@ -611,7 +625,7 @@ export function measureTextLayerSize(
   );
   const heightPercent = Math.max(
     4,
-    Math.min(40, (pxHeight / REFERENCE_SIZE) * 100),
+    Math.min(vertical ? 85 : 40, (pxHeight / REFERENCE_SIZE) * 100),
   );
 
   return { width: widthPercent, height: heightPercent };

@@ -306,9 +306,23 @@ export function OrderStyleStudioLayout({
           <div className='flex-1 flex items-center justify-center p-3 sm:p-6 lg:p-8 bg-gray-100 relative'>
             {selectedTextLayer && (
               <TextEditToolbar
+                content={selectedTextLayer.content}
                 fontFamily={selectedTextLayer.fontFamily || "'Noto Sans KR'"}
                 color={selectedTextLayer.color || "#000000"}
                 fontSize={selectedTextLayer.fontSize || 24}
+                onContentChange={(content) => {
+                  const s = measureTextLayerSize(
+                    content || " ",
+                    selectedTextLayer.fontSize || 24,
+                    selectedTextLayer.fontFamily || "'Noto Sans KR'",
+                    selectedTextLayer.vertical,
+                  );
+                  updateLayer(selectedTextLayer.id, {
+                    content,
+                    width: s.width,
+                    height: s.height,
+                  });
+                }}
                 onFontFamilyChange={(fontFamily) =>
                   updateLayer(selectedTextLayer.id, { fontFamily })
                 }
@@ -318,6 +332,21 @@ export function OrderStyleStudioLayout({
                 onFontSizeChange={(fontSize) =>
                   updateLayer(selectedTextLayer.id, { fontSize })
                 }
+                vertical={selectedTextLayer.vertical}
+                onVerticalToggle={() => {
+                  const nextVertical = !selectedTextLayer.vertical;
+                  const s = measureTextLayerSize(
+                    selectedTextLayer.content || " ",
+                    selectedTextLayer.fontSize || 24,
+                    selectedTextLayer.fontFamily || "'Noto Sans KR'",
+                    nextVertical,
+                  );
+                  updateLayer(selectedTextLayer.id, {
+                    vertical: nextVertical,
+                    width: s.width,
+                    height: s.height,
+                  });
+                }}
                 nameField={selectedTextLayer.nameField}
                 onNameFieldToggle={() =>
                   updateLayer(selectedTextLayer.id, {

@@ -436,9 +436,23 @@ export function StudioLayout({
         {/* 선택된 텍스트 레이어 편집 툴바 */}
         {selectedTextLayer && (
           <TextEditToolbar
+            content={selectedTextLayer.content}
             fontFamily={selectedTextLayer.fontFamily || "'Noto Sans KR'"}
             color={selectedTextLayer.color || "#000000"}
             fontSize={selectedTextLayer.fontSize || 24}
+            onContentChange={(content) => {
+              const s = measureTextLayerSize(
+                content || " ",
+                selectedTextLayer.fontSize || 24,
+                selectedTextLayer.fontFamily || "'Noto Sans KR'",
+                selectedTextLayer.vertical,
+              );
+              handleUpdateLayer(selectedTextLayer.id, {
+                content,
+                width: s.width,
+                height: s.height,
+              });
+            }}
             onFontFamilyChange={(fontFamily) =>
               handleUpdateLayer(selectedTextLayer.id, { fontFamily })
             }
@@ -448,6 +462,21 @@ export function StudioLayout({
             onFontSizeChange={(fontSize) =>
               handleUpdateLayer(selectedTextLayer.id, { fontSize })
             }
+            vertical={selectedTextLayer.vertical}
+            onVerticalToggle={() => {
+              const nextVertical = !selectedTextLayer.vertical;
+              const s = measureTextLayerSize(
+                selectedTextLayer.content || " ",
+                selectedTextLayer.fontSize || 24,
+                selectedTextLayer.fontFamily || "'Noto Sans KR'",
+                nextVertical,
+              );
+              handleUpdateLayer(selectedTextLayer.id, {
+                vertical: nextVertical,
+                width: s.width,
+                height: s.height,
+              });
+            }}
           />
         )}
 

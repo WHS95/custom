@@ -25,6 +25,7 @@ export interface ArtworkLayer {
   color?: string;
   fontSize?: number;
   fontFamily?: string;
+  vertical?: boolean;
 }
 
 const DEFAULT_FONT = "'Noto Sans KR', sans-serif";
@@ -129,7 +130,15 @@ export async function renderPrintArtwork(
       ctx.fillStyle = layer.color || "#000";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(layer.content, 0, 0);
+      if (layer.vertical) {
+        // 세로쓰기: 글자를 위→아래로 쌓아 그림(공백 제외)
+        const chars = [...layer.content.replace(/\s/g, "")];
+        const step = fontPx * 1.05;
+        const startY = -((chars.length - 1) * step) / 2;
+        chars.forEach((ch, i) => ctx.fillText(ch, 0, startY + i * step));
+      } else {
+        ctx.fillText(layer.content, 0, 0);
+      }
     }
     ctx.restore();
   }

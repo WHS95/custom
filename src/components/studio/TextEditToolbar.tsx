@@ -1,29 +1,38 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, Type, UserSquare } from "lucide-react";
+import { ChevronDown, Type, UserSquare, Rows3 } from "lucide-react";
 import { COLOR_PRESETS, FONT_LIST } from "./constants";
 import { useStudioConfig } from "@/lib/store/studio-context";
 
 interface TextEditToolbarProps {
+  content: string;
   fontFamily: string;
   color: string;
   fontSize: number;
+  onContentChange: (content: string) => void;
   onFontFamilyChange: (fontFamily: string) => void;
   onColorChange: (color: string) => void;
   onFontSizeChange: (fontSize: number) => void;
+  /** 세로쓰기 (글자를 위→아래로 나열) */
+  vertical?: boolean;
+  onVerticalToggle?: () => void;
   /** 크루원 이름 자리(개인화) 지정 — 상점 주문 시 각자 이름이 들어감 */
   nameField?: boolean;
   onNameFieldToggle?: () => void;
 }
 
 export function TextEditToolbar({
+  content,
   fontFamily,
   color,
   fontSize,
+  onContentChange,
   onFontFamilyChange,
   onColorChange,
   onFontSizeChange,
+  vertical,
+  onVerticalToggle,
   nameField,
   onNameFieldToggle,
 }: TextEditToolbarProps) {
@@ -59,6 +68,18 @@ export function TextEditToolbar({
           텍스트 편집
         </span>
       </div>
+
+      <div className='w-px h-6 bg-gray-200' />
+
+      {/* 텍스트 내용 편집 */}
+      <input
+        type='text'
+        value={content}
+        onChange={(e) => onContentChange(e.target.value)}
+        placeholder='내용 입력'
+        className='px-2.5 py-1.5 border rounded-lg text-sm w-[110px] sm:w-[140px] focus:outline-none focus:ring-1 focus:ring-gray-900'
+        aria-label='텍스트 내용'
+      />
 
       <div className='w-px h-6 bg-gray-200' />
 
@@ -185,6 +206,26 @@ export function TextEditToolbar({
           {fontSize}px
         </span>
       </div>
+
+      {/* 세로쓰기 토글 */}
+      {onVerticalToggle && (
+        <>
+          <div className='w-px h-6 bg-gray-200' />
+          <button
+            type='button'
+            onClick={onVerticalToggle}
+            title='세로쓰기 (글자를 위→아래로 나열)'
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+              vertical
+                ? "border-[#0B0C0A] bg-[#0B0C0A] text-white"
+                : "border-gray-200 text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            <Rows3 className='w-4 h-4' />
+            <span className='hidden sm:inline'>세로</span>
+          </button>
+        </>
+      )}
 
       {/* 크루원 이름 자리 토글 (개인화) */}
       {onNameFieldToggle && (
