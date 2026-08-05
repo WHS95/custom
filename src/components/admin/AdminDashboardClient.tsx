@@ -135,7 +135,7 @@ export function AdminDashboardClient({
 
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8'>
         <Card
-          className='cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-blue-200'
+          className='cursor-pointer hover:shadow-lg transition-[box-shadow,border-color,transform] duration-200 ease-out active:scale-[0.99] border-2 hover:border-blue-200'
           onClick={() => router.push(`${basePath}/products`)}
         >
           <CardHeader>
@@ -157,7 +157,7 @@ export function AdminDashboardClient({
         </Card>
 
         <Card
-          className='cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-green-200'
+          className='cursor-pointer hover:shadow-lg transition-[box-shadow,border-color,transform] duration-200 ease-out active:scale-[0.99] border-2 hover:border-green-200'
           onClick={() => router.push(`${basePath}/orders`)}
         >
           <CardHeader>
@@ -179,7 +179,7 @@ export function AdminDashboardClient({
         </Card>
 
         <Card
-          className='cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-purple-200'
+          className='cursor-pointer hover:shadow-lg transition-[box-shadow,border-color,transform] duration-200 ease-out active:scale-[0.99] border-2 hover:border-purple-200'
           onClick={() => router.push(`${basePath}/settings`)}
         >
           <CardHeader>
@@ -201,7 +201,7 @@ export function AdminDashboardClient({
         </Card>
 
         <Card
-          className='cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-orange-200'
+          className='cursor-pointer hover:shadow-lg transition-[box-shadow,border-color,transform] duration-200 ease-out active:scale-[0.99] border-2 hover:border-orange-200'
           onClick={() => router.push(`${basePath}/reviews`)}
         >
           <CardHeader>
@@ -223,7 +223,7 @@ export function AdminDashboardClient({
         </Card>
 
         <Card
-          className='cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-amber-200'
+          className='cursor-pointer hover:shadow-lg transition-[box-shadow,border-color,transform] duration-200 ease-out active:scale-[0.99] border-2 hover:border-amber-200'
           onClick={() => router.push(`${basePath}/crew-approvals`)}
         >
           <CardHeader>

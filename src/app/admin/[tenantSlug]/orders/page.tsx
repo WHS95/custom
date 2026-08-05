@@ -430,7 +430,7 @@ export default function AdminOrdersPage() {
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
-                className={`p-3 rounded-lg border transition-all ${
+                className={`p-3 rounded-lg border transition-[background-color,border-color,color,transform] duration-150 ease-out active:scale-[0.97] ${
                   isActive
                     ? "bg-black text-white border-black"
                     : "bg-white hover:border-gray-300"
