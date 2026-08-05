@@ -1,5 +1,5 @@
 /* 인쇄용 폰트 (모자/티셔츠 디자인에서 사용자가 선택) — Studio 캔버스 안에서만 렌더링됨 */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Black+Han+Sans&family=Jua&family=Do+Hyeon&family=Gugi&family=Gasoek+One&family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Gothic+A1:wght@400;700&family=Sunflower:wght@500&family=Oswald:wght@400;700&family=Bebas+Neue&family=Permanent+Marker&family=Bangers&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Black+Han+Sans&family=Jua&family=Do+Hyeon&family=Gugi&family=Gasoek+One&family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Gothic+A1:wght@400;700&family=Sunflower:wght@500&family=Nanum+Brush+Script&family=Nanum+Pen+Script&family=East+Sea+Dokdo&family=Song+Myung&family=Gaegu:wght@400;700&family=Oswald:wght@400;700&family=Bebas+Neue&family=Permanent+Marker&family=Bangers&display=swap');
 
 /* UI 폰트: Pretendard (한·영 통합, 본문/UI 전부) */
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css');

@@ -110,6 +110,25 @@ export function TextAddModal({ open, onClose, onConfirm }: TextAddModalProps) {
                 </span>
               </button>
             ))}
+            {/* 붓글씨·손글씨 폰트 */}
+            <div className='px-2 py-1 bg-gray-50 text-xs font-semibold text-gray-500 sticky top-0'>
+              붓글씨·손글씨
+            </div>
+            {FONT_LIST.filter((f) => f.category === "붓글씨·손글씨").map((font) => (
+              <button
+                key={font.family}
+                onClick={() => setFontFamily(font.family)}
+                className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                  fontFamily === font.family
+                    ? "bg-blue-50 text-blue-700"
+                    : "hover:bg-gray-50"
+                }`}
+              >
+                <span style={{ fontFamily: font.family }} className='text-base'>
+                  {font.label} - 텍스트
+                </span>
+              </button>
+            ))}
             {/* 영문 폰트 */}
             <div className='px-2 py-1 bg-gray-50 text-xs font-semibold text-gray-500 sticky top-0'>
               영문 (English)
