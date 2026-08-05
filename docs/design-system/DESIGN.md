@@ -461,3 +461,31 @@ Nike의 sport accent와 동일한 역할. 이 색들은 **카테고리 타일의
   --font-sans: "Pretendard", "Inter", system-ui, sans-serif;
 }
 ```
+
+## Motion
+
+코드 기준: `src/app/globals.css`의 `--ease-*` 토큰과 유틸리티. (emil-design-eng 원칙 적용)
+
+### 이징 토큰
+
+```css
+--ease-out-quart: cubic-bezier(0.23, 1, 0.32, 1);    /* 진입·UI 반응 기본 */
+--ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1); /* 화면 내 이동/모핑 */
+--ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);        /* 시트/드로어 (iOS 커브) */
+```
+
+### 규칙
+
+- **`transition-all` 금지** — 항상 속성을 명시한다 (`transition-[background-color,transform,...]`).
+- **진입/이탈은 ease-out** 계열. `ease-in`은 UI에서 사용하지 않는다.
+- **UI 전환은 300ms 이하** — 버튼 프레스 100–160ms, 드롭다운 150–250ms, 모달/시트 200–300ms. 이탈은 진입보다 빠르게 (시트: open 300ms / close 250ms).
+- **모든 누를 수 있는 요소에 프레스 피드백** — `active:scale-[0.95~0.98]`.
+- **`scale(0)` 진입 금지** — `zoom-in-95` + 페이드부터 시작.
+- **transform/opacity만 애니메이션** (GPU 합성). width/height/padding 애니메이션 금지.
+- **키보드로 트리거되는 동작은 애니메이션하지 않는다.**
+- **reduced-motion**: globals.css 전역 블록이 처리 — 무한 애니메이션(`animate-bounce` 등)도 자동 중지.
+
+### 유틸리티
+
+- `.skeleton-shimmer` — 스켈레톤 로딩 스윕 (Skeleton 컴포넌트 기본).
+- `.stagger-item` + `style={{ "--stagger-i": i }}` — 리스트/그리드 진입 스태거 (아이템당 40ms, `translate` 속성을 사용해 `active:scale` 프레스와 충돌하지 않음).
