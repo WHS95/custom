@@ -72,7 +72,7 @@ export function HatCustomizer() {
                             <button
                                 key={c.id}
                                 onClick={() => setSelectedColor(c.id)}
-                                className={`w-10 h-10 rounded-full border-2 transition-all ${
+                                className={`w-10 h-10 rounded-full border-2 transition-[transform,border-color,opacity,box-shadow] duration-150 ease-out active:scale-95 ${
                                     selectedColor === c.id 
                                     ? "border-black scale-110 ring-2 ring-offset-2 ring-black/10" 
                                     : "border-transparent opacity-80 hover:opacity-100 hover:scale-105"
@@ -112,7 +112,7 @@ export function HatCustomizer() {
                     <Button variant="outline" className="w-full" onClick={handleSaveDesign}>
                         <Download className="mr-2 h-4 w-4" /> Save Draft
                     </Button>
-                    <Button className="w-full bg-black hover:bg-gray-800 text-white shadow-xl hover:shadow-2xl transition-all">
+                    <Button className="w-full bg-black hover:bg-gray-800 text-white shadow-xl hover:shadow-2xl">
                         <ShoppingBag className="mr-2 h-4 w-4" /> Order Sample
                     </Button>
                 </div>

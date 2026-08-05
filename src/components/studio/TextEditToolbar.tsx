@@ -179,7 +179,7 @@ export function TextEditToolbar({
           <button
             key={c.hex}
             onClick={() => onColorChange(c.hex)}
-            className={`w-5 h-5 rounded-full border transition-all shrink-0 ${
+            className={`w-5 h-5 rounded-full border transition-[transform,border-color,box-shadow] duration-150 ease-out active:scale-95 shrink-0 ${
               color === c.hex
                 ? "border-gray-900 scale-125 ring-1 ring-gray-300"
                 : "border-gray-200 hover:border-gray-400 hover:scale-110"

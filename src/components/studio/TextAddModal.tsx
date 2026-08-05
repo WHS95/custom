@@ -54,10 +54,13 @@ export function TextAddModal({ open, onClose, onConfirm }: TextAddModalProps) {
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center'>
       {/* 오버레이 */}
-      <div className='absolute inset-0 bg-black/40' onClick={onClose} />
+      <div
+        className='absolute inset-0 bg-black/40 animate-in fade-in-0 duration-200'
+        onClick={onClose}
+      />
 
-      {/* 모달 */}
-      <div className='relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto'>
+      {/* 모달 — 중앙 고정이므로 transform-origin은 center 유지 */}
+      <div className='relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200 ease-out-quart'>
         {/* 헤더 */}
         <div className='flex items-center justify-between mb-5'>
           <h2 className='text-lg font-bold'>텍스트 추가</h2>
@@ -161,7 +164,7 @@ export function TextAddModal({ open, onClose, onConfirm }: TextAddModalProps) {
               <button
                 key={c.hex}
                 onClick={() => setColor(c.hex)}
-                className={`w-8 h-8 rounded-full border-2 transition-all ${
+                className={`w-8 h-8 rounded-full border-2 transition-[transform,border-color,box-shadow] duration-150 ease-out active:scale-95 ${
                   color === c.hex
                     ? "border-blue-500 scale-110 ring-2 ring-blue-200"
                     : "border-gray-200 hover:border-gray-400"

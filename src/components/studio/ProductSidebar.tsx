@@ -141,7 +141,7 @@ export function ProductSidebar({
                 <div key={c.id} className='relative'>
                   <button
                     onClick={() => onColorChange(c.id)}
-                    className={`w-10 h-10 lg:w-8 lg:h-8 rounded-full border-2 transition-all ${
+                    className={`w-10 h-10 lg:w-8 lg:h-8 rounded-full border-2 transition-[transform,border-color,box-shadow] duration-150 ease-out active:scale-95 ${
                       selectedColor === c.id
                         ? "ring-2 ring-black ring-offset-1 border-transparent"
                         : "border-gray-200 hover:scale-110"
@@ -255,9 +255,9 @@ export function ProductSidebar({
         <Button
           onClick={handleRequestReview}
           disabled={!hasCurrentDesign}
-          className={`w-full h-11 text-base lg:h-9 lg:text-sm rounded transform transition-all ${
+          className={`w-full h-11 text-base lg:h-9 lg:text-sm rounded ${
             hasCurrentDesign
-              ? "bg-black hover:bg-gray-900 hover:-translate-y-0.5"
+              ? "bg-black hover:bg-gray-900 hover:-translate-y-0.5 active:translate-y-0"
               : "bg-gray-300 cursor-not-allowed"
           }`}
         >
