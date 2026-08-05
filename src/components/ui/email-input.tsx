@@ -149,7 +149,7 @@ export const EmailInput = forwardRef<HTMLInputElement, EmailInputProps>(
         />
 
         {showSuggestions ? (
-          <div className="absolute top-full z-50 mt-1 w-full overflow-hidden rounded-none border border-hairline bg-canvas animate-[fadeIn_0.12s_ease-out]">
+          <div className="absolute top-full z-50 mt-1 w-full overflow-hidden rounded-none border border-hairline bg-canvas animate-in fade-in-0 slide-in-from-top-1 duration-150 ease-out-quart">
             <div className="py-1">
               {suggestions.map((item, index) => (
                 <button
