@@ -260,7 +260,7 @@ export default function CrewStorePage({
               const card = (
                 <div className="group">
                   {/* 이미지 타일 */}
-                  <div className="relative overflow-hidden rounded-xl bg-soft-cloud transition group-hover:shadow-md">
+                  <div className="relative overflow-hidden rounded-xl bg-soft-cloud transition-shadow duration-200 ease-out group-hover:shadow-md">
                     {isPopular && (
                       <span className="absolute left-2.5 top-2.5 z-10 rounded-md bg-[#FF6F1E] px-2 py-1 text-xs font-bold text-white">
                         인기
@@ -272,7 +272,7 @@ export default function CrewStorePage({
                       </span>
                     )}
                     {p.designLayers && p.designColor ? (
-                      <div className={cn("p-4 transition group-hover:scale-[1.03]", closed && "opacity-60")}>
+                      <div className={cn("p-4 transition-transform duration-200 ease-out group-hover:scale-[1.03]", closed && "opacity-60")}>
                         <HatDesignCanvas
                           hatColor={p.designColor.id}
                           currentView={"front" as HatView}
@@ -341,7 +341,7 @@ export default function CrewStorePage({
                 <button
                   key={p.token}
                   type="button"
-                  className="text-left"
+                  className="text-left transition-transform duration-150 ease-out active:scale-[0.98]"
                   onClick={() =>
                     setSelectedProduct({
                       token: p.token,

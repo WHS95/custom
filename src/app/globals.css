@@ -267,16 +267,17 @@
   }
 
   /* 리스트/그리드 진입 스태거 — 부모에서 style={{ "--stagger-i": i }} 주입 */
+  /* translate 속성 사용 — fill:forwards가 scale 프레스 피드백을 덮지 않도록 */
   .stagger-item {
     opacity: 0;
-    transform: translateY(8px);
+    translate: 0 8px;
     animation: stagger-fade-in 300ms var(--ease-out-quart) forwards;
     animation-delay: calc(var(--stagger-i, 0) * 40ms);
   }
   @keyframes stagger-fade-in {
     to {
       opacity: 1;
-      transform: translateY(0);
+      translate: 0 0;
     }
   }
 }

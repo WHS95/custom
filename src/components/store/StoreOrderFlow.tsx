@@ -433,10 +433,10 @@ export function StoreOrderFlow({
     <>
       {/* ── 하단 고정 카트바 ── */}
       {cartSummary.count > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-50 p-3 sm:p-4">
+        <div className="fixed inset-x-0 bottom-0 z-50 p-3 sm:p-4 animate-in slide-in-from-bottom-4 fade-in-0 duration-300 ease-out-quart">
           <button
             onClick={() => setCheckoutOpen(true)}
-            className="mx-auto flex w-full max-w-lg items-center justify-between rounded-xl bg-[#C7FF00] px-5 py-3.5 text-[#0B0C0A] shadow-lg transition active:scale-[0.99]"
+            className="mx-auto flex w-full max-w-lg items-center justify-between rounded-xl bg-[#C7FF00] px-5 py-3.5 text-[#0B0C0A] shadow-lg transition-transform duration-150 ease-out active:scale-[0.97]"
           >
             <span className="font-mono text-sm font-extrabold">
               {cartSummary.kinds}종 {cartSummary.count}장 · {won(cartSummary.amount)}

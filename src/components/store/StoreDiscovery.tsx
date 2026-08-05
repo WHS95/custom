@@ -4,7 +4,7 @@
  * 크루 상점 디스커버리 — 크루 정체성 + 전체 굿즈를 마켓플레이스식으로 둘러본다.
  * 일반 사용자(크루원)에게 메인 진입점.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { Package, ArrowRight, MapPin } from "lucide-react";
 import {
@@ -12,7 +12,7 @@ import {
   type DesignLayer,
 } from "@/components/shared/HatDesignCanvas";
 import type { HatView } from "@/lib/store/studio-context";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DesignColor {
   id: string;
@@ -108,9 +108,29 @@ export function StoreDiscovery() {
       </p>
 
       {crews === null ? (
-        <div className="flex justify-center py-20">
-          <Spinner className="h-8 w-8 text-ink" />
-        </div>
+        <>
+          {/* 실제 레이아웃을 미러링한 스켈레톤 — 스피너보다 체감 로딩이 빠르다 */}
+          <section className="mt-8">
+            <Skeleton className="mb-3 h-6 w-20 rounded-md" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[0, 1].map((i) => (
+                <Skeleton key={i} className="h-36 rounded-2xl" />
+              ))}
+            </div>
+          </section>
+          <section className="mt-10">
+            <Skeleton className="mb-3 h-6 w-24 rounded-md" />
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i}>
+                  <Skeleton className="aspect-square rounded-xl" />
+                  <Skeleton className="mt-2 h-3 w-16 rounded" />
+                  <Skeleton className="mt-1.5 h-4 w-28 rounded" />
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
       ) : crews.length === 0 ? (
         <div className="mt-10 rounded-xl border border-hairline py-16 text-center text-sm text-mute">
           아직 공개된 크루 상점이 없어요.
@@ -121,11 +141,12 @@ export function StoreDiscovery() {
           <section className="mt-8">
             <h2 className="mb-3 text-lg font-bold text-ink">크루 상점</h2>
             <div className="grid gap-4 sm:grid-cols-2">
-              {crews.map((c) => (
+              {crews.map((c, i) => (
                 <Link
                   key={c.storeToken}
                   href={`/store/${c.storeToken}`}
-                  className="group relative overflow-hidden rounded-2xl bg-ink p-5 text-canvas"
+                  className="group stagger-item relative overflow-hidden rounded-2xl bg-ink p-5 text-canvas transition-transform duration-150 ease-out active:scale-[0.98]"
+                  style={{ "--stagger-i": i } as CSSProperties}
                 >
                   {/* 워터마크 크루명 */}
                   <span
@@ -188,7 +209,8 @@ export function StoreDiscovery() {
                 <Link
                   key={`${g.storeToken}-${i}`}
                   href={`/store/${g.storeToken}`}
-                  className="group"
+                  className="group stagger-item transition-transform duration-150 ease-out active:scale-[0.98]"
+                  style={{ "--stagger-i": Math.min(i, 11) } as CSSProperties}
                 >
                   <GoodsPreview g={g} />
                   <div className="mt-2">
